@@ -8,21 +8,14 @@ import pssepath
 try:
     pssepath.add_pssepath()
 except pssepath.PsseImportError:
-    psse35_3_install_path = Path(r"C:\Program Files\PTI\PSSE35\35.3")
-    if psse35_3_install_path.exists():
-        for sub_dir_name in (
-            f"PSSPY{'{}{}'.format(*sys.version_info[:2])}",
-            "PSSBIN",
-        ):
-            sub_dir_path = psse35_3_install_path / sub_dir_name
-            if sub_dir_path.exists:
-                sys.path.insert(0, str(sub_dir_path))
-                os.environ["PATH"] = f"{sub_dir_path};{os.environ['PATH']}"
-                import psse35
-            else:
-                raise IOError(
-                    errno.ENOENT, os.strerror(errno.ENOENT), str(sub_dir_path)
-                )
+    # No PSSE <35 path found
+    # Add PSSE 35 path
+    from pssetools.path_helper import get_psse35_paths
+
+    psse35_paths = get_psse35_paths()
+    sys.path = psse35_paths + sys.path
+    os.environ["PATH"] = os.pathsep.join((*psse35_paths, os.environ["PATH"]))
+    import psse35
 
 import psspy
 import redirect
