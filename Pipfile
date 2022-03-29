@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 pssepath = "*"
+pywin32 = "*"
 
 [dev-packages]
 autoflake = "*"

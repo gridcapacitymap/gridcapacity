@@ -10,7 +10,24 @@ else:
 
 import pssepath
 
-pssepath.add_pssepath()
+try:
+    pssepath.add_pssepath()
+except pssepath.PsseImportError:
+    psse35_3_install_path = Path(r"C:\Program Files\PTI\PSSE35\35.3")
+    if psse35_3_install_path.exists():
+        py_major_minor_version_str = "".join(
+            (str(sys.version_info[i]) for i in range(2))
+        )
+        for sub_dir_name in (
+            "PSSPY" + py_major_minor_version_str,
+            "PSSBIN",
+        ):
+            sub_dir_path = psse35_3_install_path / sub_dir_name
+            if sub_dir_path.exists:
+                sys.path.insert(0, str(sub_dir_path))
+                os.environ["PATH"] = ";".join((str(sub_dir_path), os.environ["PATH"]))
+            else:
+                print("Not found" + str(sub_dir_path))
 
 import psspy
 import redirect
@@ -18,7 +35,7 @@ import redirect
 
 def init_psse():
     redirect.py2psse()
-    psspy.psseinit(80000)
+    psspy.psseinit()
 
 
 def get_case_path(case_name):
@@ -34,6 +51,9 @@ def get_case_path(case_name):
 
 
 def get_example_case_path(case_path):
+    """Get example case filepath from the case filename.
+
+    The `EXAMPLE` directory is retrieved based on the current `psspy` module location."""
     psspy_path = Path(psspy.__file__)
     psse_path = psspy_path.parents[1]
     examples_path = psse_path / "EXAMPLE"
