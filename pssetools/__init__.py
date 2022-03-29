@@ -26,6 +26,7 @@ except pssepath.PsseImportError:
             if sub_dir_path.exists:
                 sys.path.insert(0, str(sub_dir_path))
                 os.environ["PATH"] = ";".join((str(sub_dir_path), os.environ["PATH"]))
+                import psse35
             else:
                 print("Not found" + str(sub_dir_path))
 
@@ -34,7 +35,10 @@ import redirect
 
 
 def init_psse():
-    redirect.py2psse()
+    try:
+        redirect.py2psse()
+    except redirect.RedirectError:
+        pass
     psspy.psseinit()
 
 
