@@ -1,12 +1,7 @@
 import errno
 import os
 import sys
-
-# TODO: change to regular import after moving to Python 3
-if sys.version_info[0] == 3:
-    from pathlib import Path
-else:
-    from pathlib2 import Path
+from pathlib import Path
 
 import pssepath
 
@@ -15,20 +10,19 @@ try:
 except pssepath.PsseImportError:
     psse35_3_install_path = Path(r"C:\Program Files\PTI\PSSE35\35.3")
     if psse35_3_install_path.exists():
-        py_major_minor_version_str = "".join(
-            (str(sys.version_info[i]) for i in range(2))
-        )
         for sub_dir_name in (
-            "PSSPY" + py_major_minor_version_str,
+            f"PSSPY{'{}{}'.format(*sys.version_info[:2])}",
             "PSSBIN",
         ):
             sub_dir_path = psse35_3_install_path / sub_dir_name
             if sub_dir_path.exists:
                 sys.path.insert(0, str(sub_dir_path))
-                os.environ["PATH"] = ";".join((str(sub_dir_path), os.environ["PATH"]))
+                os.environ["PATH"] = f"{sub_dir_path};{os.environ['PATH']}"
                 import psse35
             else:
-                print("Not found" + str(sub_dir_path))
+                raise IOError(
+                    errno.ENOENT, os.strerror(errno.ENOENT), str(sub_dir_path)
+                )
 
 import psspy
 import redirect
