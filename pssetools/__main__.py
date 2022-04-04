@@ -1,4 +1,4 @@
-from pssetools import run_simulation
+from pssetools import run_check
 
 if __name__ == "__main__":
-    run_simulation()
+    run_check()
