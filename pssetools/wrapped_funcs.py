@@ -70,7 +70,27 @@ def abrntypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
+def abuschar() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
+def abuscplx() -> list[list[complex]]:
+    pass
+
+
+@process_psse_api_error_code
+def abusint() -> list[list[int]]:
+    pass
+
+
+@process_psse_api_error_code
 def abusreal() -> list[list[float]]:
+    pass
+
+
+@process_psse_api_error_code
+def abustypes() -> list[list[str]]:
     pass
 
 
