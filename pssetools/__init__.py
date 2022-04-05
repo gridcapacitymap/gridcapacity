@@ -3,19 +3,12 @@ import os
 import sys
 from pathlib import Path
 
-import pssepath
+from pssetools.path_helper import get_psse35_paths
 
-try:
-    pssepath.add_pssepath()
-except pssepath.PsseImportError:
-    # No PSSE <35 path found
-    # Add PSSE 35 path
-    from pssetools.path_helper import get_psse35_paths
-
-    psse35_paths = get_psse35_paths()
-    sys.path = psse35_paths + sys.path
-    os.environ["PATH"] = os.pathsep.join((*psse35_paths, os.environ["PATH"]))
-    import psse35
+psse35_paths = get_psse35_paths()
+sys.path = psse35_paths + sys.path
+os.environ["PATH"] = os.pathsep.join((*psse35_paths, os.environ["PATH"]))
+import psse35
 
 import psspy
 import redirect
