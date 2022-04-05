@@ -98,6 +98,31 @@ def abustypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
+def atrnchar() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
+def atrncplx() -> list[list[complex]]:
+    pass
+
+
+@process_psse_api_error_code
+def atrnint() -> list[list[int]]:
+    pass
+
+
+@process_psse_api_error_code
+def atrnreal() -> list[list[float]]:
+    pass
+
+
+@process_psse_api_error_code
+def atrntypes() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
 def branch_chng_3() -> None:
     pass
 

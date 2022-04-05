@@ -3,10 +3,12 @@ import enum
 from pssetools import wrapped_funcs as wf
 from pssetools.subsystem_data import (
     get_overloaded_branches_ids,
+    get_overloaded_trafos_ids,
     get_overvoltage_buses_ids,
     get_undervoltage_buses_ids,
     print_branches,
     print_buses,
+    print_trafos,
 )
 
 
@@ -16,12 +18,14 @@ class Violations(enum.Flag):
     BUS_OVERVOLTAGE = enum.auto()
     BUS_UNDERVOLTAGE = enum.auto()
     BRANCH_LOADING = enum.auto()
+    TRAFO_LOADING = enum.auto()
 
 
 def check_violations(
-    max_pu_bus_voltage: float = 1.1,
-    min_pu_bus_voltage: float = 0.9,
-    max_pct_branch_loading: float = 100.0,
+    max_bus_voltage_pu: float = 1.1,
+    min_bus_voltage_pu: float = 0.9,
+    max_branch_loading_pct: float = 100.0,
+    max_trafo_loading_pct: float = 100.0,
 ) -> Violations:
     wf.fdns()
     v: Violations = Violations.NO_VIOLATIONS
@@ -30,17 +34,21 @@ def check_violations(
         print("Case not solved!")
         return v
     print(f"\nCHECKING VIOLATIONS")
-    if overloaded_branches_ids := get_overloaded_branches_ids(max_pct_branch_loading):
-        v |= Violations.BRANCH_LOADING
-        print("Overloaded branches:")
-        print_branches(overloaded_branches_ids)
-    if overvoltage_buses_ids := get_overvoltage_buses_ids(max_pu_bus_voltage):
+    if overvoltage_buses_ids := get_overvoltage_buses_ids(max_bus_voltage_pu):
         v |= Violations.BUS_OVERVOLTAGE
         print("Overloaded buses:")
         print_buses(overvoltage_buses_ids)
-    if undervoltage_buses_ids := get_undervoltage_buses_ids(min_pu_bus_voltage):
+    if undervoltage_buses_ids := get_undervoltage_buses_ids(min_bus_voltage_pu):
         v |= Violations.BUS_UNDERVOLTAGE
         print("Overloaded buses:")
         print_buses(undervoltage_buses_ids)
+    if overloaded_branches_ids := get_overloaded_branches_ids(max_branch_loading_pct):
+        v |= Violations.BRANCH_LOADING
+        print("Overloaded branches:")
+        print_branches(overloaded_branches_ids)
+    if overloaded_trafos_ids := get_overloaded_trafos_ids(max_trafo_loading_pct):
+        v |= Violations.TRAFO_LOADING
+        print("Overloaded 2-winding transformers:")
+        print_trafos(overloaded_trafos_ids)
     print(f"Detected violations: {v}\n")
     return v

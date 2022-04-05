@@ -8,6 +8,7 @@ sys.path = psse35_paths + sys.path
 os.environ["PATH"] = os.pathsep.join((*psse35_paths, os.environ["PATH"]))
 import psse35
 
+# `psspy` should be imported only after importing `psse35`
 import psspy
 import redirect
 
