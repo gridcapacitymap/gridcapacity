@@ -1,4 +1,7 @@
+import errno
+import os
 from functools import wraps
+from pathlib import Path
 from typing import Callable, Final, Optional
 
 import psspy
@@ -181,3 +184,34 @@ error_messages_by_api: Final[dict[str, dict[int, str]]] = {
         11: "RSOL converged with Y load conversion due to low voltage",
     },
 }
+
+
+def _get_case_path(case_name):
+    probable_case_path = Path(case_name)
+    case_path = case_path = (
+        probable_case_path
+        if probable_case_path.is_absolute()
+        else _get_example_case_path(probable_case_path)
+    )
+    if not case_path.exists():
+        raise IOError(errno.ENOENT, os.strerror(errno.ENOENT), str(case_path))
+    return case_path
+
+
+def _get_example_case_path(case_path):
+    """Get example case filepath from the case filename.
+
+    The `EXAMPLE` directory is retrieved based on the current `psspy` module location."""
+    psspy_path = Path(psspy.__file__)
+    psse_path = psspy_path.parents[1]
+    examples_path = psse_path / "EXAMPLE"
+    case_path = examples_path / case_path
+    return case_path
+
+
+def open_case(case_name: str):
+    case_path = _get_case_path(case_name)
+    if case_path.suffix == ".sav":
+        case(str(case_path))
+    elif case_path.suffix == ".raw":
+        read(0, str(case_path))
