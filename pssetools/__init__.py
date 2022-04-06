@@ -5,8 +5,6 @@ from pathlib import Path
 
 import pssepath
 
-from pssetools.constants import FDNS_RV, READ_RV, SOLVED_RV
-
 try:
     pssepath.add_pssepath()
 except pssepath.PsseImportError:
@@ -21,6 +19,8 @@ except pssepath.PsseImportError:
 
 import psspy
 import redirect
+
+from pssetools import wrapped_funcs as wf
 
 
 def init_psse():
@@ -58,26 +58,15 @@ def run_simulation():
     init_psse()
     case_name = sys.argv[1] if len(sys.argv) == 2 else "savnw.sav"
     case_path = get_case_path(case_name)
-    print("Starting simulation of " + str(case_path))
+    print(f"Starting simulation of '{case_path}'")
     if case_path.suffix == ".sav":
-        psspy.case(str(case_path))
+        wf.case(str(case_path))
     elif case_path.suffix == ".raw":
-        if (error_code := psspy.read(0, str(case_path))) != 0:
-            raise RuntimeError(
-                f"Failed to read raw file '{case_path}': "
-                f"{READ_RV[error_code]} ({error_code = })"
-            )
-    if (error_code := psspy.fdns()) != 0:
-        raise RuntimeError(
-            f"Failed running FDNS: {FDNS_RV[error_code]} ({error_code = })"
-        )
-    if (solution_convergence_indicator := psspy.solved()) == 0:
-        print(f"Case solved")
-    else:
-        print(
-            f"Case not solved: {SOLVED_RV[solution_convergence_indicator]} "
-            f"({solution_convergence_indicator = })"
-        )
+        wf.read(0, str(case_path))
+    wf.fdns()
+    if not wf.is_solved():
+        return
+    print(f"Case solved")
 
 
 if __name__ == "__main__":
