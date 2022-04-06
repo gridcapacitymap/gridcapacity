@@ -163,6 +163,11 @@ def fdns() -> None:
 
 
 @process_psse_api_error_code
+def fnsl() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def rate_2() -> None:
     pass
 

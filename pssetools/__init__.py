@@ -29,13 +29,19 @@ def run_check():
     case_name = sys.argv[1] if len(sys.argv) == 2 else "savnw.sav"
     wf.open_case(case_name)
     wf.fdns()
-    if not wf.is_solved():
-        return
+    use_full_newton_raphson: bool = False if wf.is_solved() else True
+    if use_full_newton_raphson:
+        # Case should be reopened if `fdns()` fails.
+        # Otherwise `fnsl()` will fail too.
+        wf.open_case(case_name)
+        wf.fnsl()
+        if not wf.is_solved():
+            return
     print(f"Case solved")
 
     # Disable single branch. `intgar=0` is disabled, 1 - enabled.
     # psspy.branch_chng_3(153, 154, "1", intgar=0)
-    check_violations()
+    check_violations(use_full_newton_raphson=use_full_newton_raphson)
     # wf.rate_2(0, 1, 1, 1, 1, 1, 100.0)
 
 

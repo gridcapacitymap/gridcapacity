@@ -28,8 +28,12 @@ def check_violations(
     min_bus_voltage_pu: float = 0.9,
     max_branch_loading_pct: float = 100.0,
     max_trafo_loading_pct: float = 100.0,
+    use_full_newton_raphson: bool = False,
 ) -> Violations:
-    wf.fdns()
+    if not use_full_newton_raphson:
+        wf.fdns()
+    else:
+        wf.fnsl()
     v: Violations = Violations.NO_VIOLATIONS
     if not wf.is_solved():
         v |= Violations.NOT_CONVERGED
