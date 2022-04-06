@@ -3,12 +3,14 @@ import enum
 from pssetools import wrapped_funcs as wf
 from pssetools.subsystem_data import (
     get_overloaded_branches_ids,
+    get_overloaded_trafos_3w_ids,
     get_overloaded_trafos_ids,
     get_overvoltage_buses_ids,
     get_undervoltage_buses_ids,
     print_branches,
     print_buses,
     print_trafos,
+    print_trafos_3w,
 )
 
 
@@ -50,5 +52,9 @@ def check_violations(
         v |= Violations.TRAFO_LOADING
         print("Overloaded 2-winding transformers:")
         print_trafos(overloaded_trafos_ids)
+    if overloaded_trafos_3w_ids := get_overloaded_trafos_3w_ids(max_trafo_loading_pct):
+        v |= Violations.TRAFO_LOADING
+        print("Overloaded 3-winding transformers:")
+        print_trafos_3w(overloaded_trafos_3w_ids)
     print(f"Detected violations: {v}\n")
     return v

@@ -123,6 +123,31 @@ def atrntypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
+def awndchar() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
+def awndcplx() -> list[list[complex]]:
+    pass
+
+
+@process_psse_api_error_code
+def awndint() -> list[list[int]]:
+    pass
+
+
+@process_psse_api_error_code
+def awndreal() -> list[list[float]]:
+    pass
+
+
+@process_psse_api_error_code
+def awndtypes() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
 def branch_chng_3() -> None:
     pass
 
