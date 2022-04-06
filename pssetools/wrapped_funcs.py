@@ -98,6 +98,31 @@ def abustypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
+def agenbuschar() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
+def agenbuscplx() -> list[list[complex]]:
+    pass
+
+
+@process_psse_api_error_code
+def agenbusint() -> list[list[int]]:
+    pass
+
+
+@process_psse_api_error_code
+def agenbusreal() -> list[list[float]]:
+    pass
+
+
+@process_psse_api_error_code
+def agenbustypes() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
 def atrnchar() -> list[list[str]]:
     pass
 
