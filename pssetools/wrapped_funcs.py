@@ -265,3 +265,4 @@ def open_case(case_name: str):
         case(str(case_path))
     elif case_path.suffix == ".raw":
         read(0, str(case_path))
+    print(f"Opened file '{case_path}'")
