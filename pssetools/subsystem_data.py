@@ -30,6 +30,13 @@ def get_bus_field(field_name: str) -> list[FieldType]:
     return value
 
 
+def get_load_field(field_name: str) -> list[FieldType]:
+    field_type = wf.aloadtypes(string=field_name)[0]
+    api_func: Callable = getattr(wf, f"aload{field_type2func_suffix[field_type]}")
+    value = api_func(string=field_name)[0]
+    return value
+
+
 def get_plant_bus_field(field_name: str) -> list[FieldType]:
     field_type = wf.agenbustypes(string=field_name)[0]
     api_func: Callable = getattr(wf, f"agenbus{field_type2func_suffix[field_type]}")
@@ -156,6 +163,26 @@ def print_buses(
         if selected_ids is None or row in selected_ids:
             print(tuple(values[col][row] for col in range(len(values))))
     print(bus_fields)
+
+
+def print_loads(
+    selected_ids: Optional[tuple[int]] = None,
+    load_fields: tuple[str, ...] = (
+        "number",
+        "exName",
+        "id",
+        "mvaAct",
+    ),
+):
+    values: tuple[list[FieldType]] = tuple(
+        get_load_field(field_name) for field_name in load_fields
+    )
+
+    print(load_fields)
+    for row in range(len(values[0])):
+        if selected_ids is None or row in selected_ids:
+            print(tuple(values[col][row] for col in range(len(values))))
+    print(load_fields)
 
 
 def print_swing_buses(

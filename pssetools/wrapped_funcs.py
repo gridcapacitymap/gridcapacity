@@ -123,6 +123,31 @@ def agenbustypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
+def aloadchar() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
+def aloadcplx() -> list[list[complex]]:
+    pass
+
+
+@process_psse_api_error_code
+def aloadint() -> list[list[int]]:
+    pass
+
+
+@process_psse_api_error_code
+def aloadreal() -> list[list[float]]:
+    pass
+
+
+@process_psse_api_error_code
+def aloadtypes() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
 def atrnchar() -> list[list[str]]:
     pass
 
