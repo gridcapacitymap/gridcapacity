@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pssepath = "*"
 pywin32 = "*"
 
 [dev-packages]
@@ -14,4 +13,4 @@ ipython = "*"
 isort = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.9"
