@@ -1,0 +1,11 @@
+# https://mypy.readthedocs.io/en/latest/config_file.html#example-pyproject-toml
+[tool.mypy]
+no_silence_site_packages = true
+
+[[tool.mypy.overrides]]
+module = [
+    "psse35",
+    "psspy",
+    "redirect"
+]
+ignore_missing_imports = true
