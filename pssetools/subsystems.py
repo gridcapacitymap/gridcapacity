@@ -9,7 +9,26 @@ class Load:
     number: int
     ex_name: str
     load_id: str
-    mva_act: complex
+    _mva_act: complex
+
+    def __enter__(self) -> None:
+        self._original_mva_act = self.mva_act
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        if self.mva_act != self._original_mva_act:
+            self.mva_act = self._original_mva_act
+
+    @property
+    def mva_act(self) -> complex:
+        return self._mva_act
+
+    @mva_act.setter
+    def mva_act(self, mva_act: complex) -> None:
+        wf.load_chng_6(self.number, self.load_id, realar=[mva_act.real, mva_act.imag])
+        self._mva_act = mva_act
+
+    def set_multiplier(self, multiplier: float) -> None:
+        self.mva_act = multiplier * self._original_mva_act
 
 
 @dataclass

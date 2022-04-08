@@ -217,6 +217,11 @@ def fnsl() -> None:
 
 
 @process_psse_api_error_code
+def load_chng_6() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def rate_2() -> None:
     pass
 
