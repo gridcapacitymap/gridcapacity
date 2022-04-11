@@ -13,7 +13,7 @@ import psspy
 import redirect
 
 from pssetools import wrapped_funcs as wf
-from pssetools.analysis import check_violations
+from pssetools.violations_analysis import check_violations
 
 
 def init_psse():
