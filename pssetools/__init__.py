@@ -13,7 +13,8 @@ import psspy
 import redirect
 
 from pssetools import wrapped_funcs as wf
-from pssetools.violations_analysis import check_violations
+from pssetools.capacity_analysis import headroom
+from pssetools.violations_analysis import ViolationsLimits
 
 
 def init_psse():
@@ -39,10 +40,21 @@ def run_check():
             return
     print(f"Case solved")
 
-    # Disable single branch. `intgar=0` is disabled, 1 - enabled.
-    # psspy.branch_chng_3(153, 154, "1", intgar=0)
-    check_violations(use_full_newton_raphson=use_full_newton_raphson)
-    # wf.rate_2(0, 1, 1, 1, 1, 1, 100.0)
+    normal_limits: ViolationsLimits = ViolationsLimits(
+        max_bus_voltage_pu=1.1,
+        min_bus_voltage_pu=0.9,
+        max_branch_loading_pct=100.0,
+        max_trafo_loading_pct=110.0,
+        max_swing_bus_power_mw=1000.0,
+    )
+    headroom_dict = headroom(
+        upper_limit_p_mw=100.0,
+        normal_limits=normal_limits,
+        use_full_newton_raphson=use_full_newton_raphson,
+    )
+    print("Available additional capacity")
+    for load, capacity_mw in headroom_dict.items():
+        print(f"{load} {capacity_mw=}")
 
 
 if __name__ == "__main__":

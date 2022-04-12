@@ -18,6 +18,9 @@ class Load:
         if self.mva_act != self._original_mva_act:
             self.mva_act = self._original_mva_act
 
+    def __hash__(self):
+        return hash((self.number, self.ex_name, self.load_id))
+
     @property
     def mva_act(self) -> complex:
         return self._mva_act
