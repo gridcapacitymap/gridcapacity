@@ -47,6 +47,7 @@ class Load:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         if self.mva_act != self._original_mva_act:
             self.mva_act = self._original_mva_act
+        del self._original_mva_act
 
     def __hash__(self):
         return hash((self.number, self.ex_name, self.load_id))
@@ -57,6 +58,11 @@ class Load:
 
     @mva_act.setter
     def mva_act(self, mva_act: complex) -> None:
+        if not hasattr(self, "_original_mva_act"):
+            raise RuntimeError(
+                "Load modification without context manager is prohibited. "
+                "Use `with load:`."
+            )
         wf.load_chng_6(self.number, self.load_id, realar=[mva_act.real, mva_act.imag])
         self._mva_act = mva_act
 
