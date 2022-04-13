@@ -30,6 +30,13 @@ def get_bus_field(field_name: str) -> list[FieldType]:
     return value
 
 
+def get_load_field(field_name: str) -> list[FieldType]:
+    field_type = wf.aloadtypes(string=field_name)[0]
+    api_func: Callable = getattr(wf, f"aload{field_type2func_suffix[field_type]}")
+    value = api_func(string=field_name)[0]
+    return value
+
+
 def get_plant_bus_field(field_name: str) -> list[FieldType]:
     field_type = wf.agenbustypes(string=field_name)[0]
     api_func: Callable = getattr(wf, f"agenbus{field_type2func_suffix[field_type]}")
@@ -51,67 +58,67 @@ def get_trafo_3w_field(field_name: str) -> list[FieldType]:
     return value
 
 
-def get_overloaded_branches_ids(max_branch_loading_pct: float) -> tuple[int]:
+def get_overloaded_branches_ids(max_branch_loading_pct: float) -> tuple[int, ...]:
     """Check `Percent from bus current of rating set 1`"""
-    ids: tuple[int] = tuple(
+    ids: tuple[int, ...] = tuple(
         branch_id
-        for branch_id, pct_rate1 in enumerate(get_branch_field("pctRate1"))
+        for branch_id, pct_rate1 in enumerate(wf.abrnreal(string="pctRate1")[0])
         if pct_rate1 > max_branch_loading_pct
     )
     return ids
 
 
-def get_overloaded_swing_buses_ids(max_swing_bus_power_mw: float) -> tuple[int]:
-    ids: tuple[int] = tuple(
+def get_overloaded_swing_buses_ids(max_swing_bus_power_mw: float) -> tuple[int, ...]:
+    ids: tuple[int, ...] = tuple(
         bus_id
         for bus_id, (bus_type, mva) in enumerate(
-            zip(get_plant_bus_field("type"), get_plant_bus_field("mva"))
+            zip(wf.agenbusint(string="type")[0], wf.agenbusreal(string="mva")[0])
         )
         if bus_type == SWING_BUS and mva > max_swing_bus_power_mw
     )
     return ids
 
 
-def get_overloaded_trafos_3w_ids(max_trafo_3w_loading_pct: float) -> tuple[int]:
+def get_overloaded_trafos_3w_ids(max_trafo_3w_loading_pct: float) -> tuple[int, ...]:
     """Check `Percent from bus current of rating set 1`"""
-    ids: tuple[int] = tuple(
+    ids: tuple[int, ...] = tuple(
         trafo_3w_id
-        for trafo_3w_id, pct_rate1 in enumerate(get_trafo_3w_field("pctRate1"))
+        for trafo_3w_id, pct_rate1 in enumerate(wf.awndreal(string="pctRate1")[0])
         if pct_rate1 > max_trafo_3w_loading_pct
     )
     return ids
 
 
-def get_overloaded_trafos_ids(max_trafo_loading_pct: float) -> tuple[int]:
+def get_overloaded_trafos_ids(max_trafo_loading_pct: float) -> tuple[int, ...]:
     """Check `Percent from bus current of rating set 1`"""
-    ids: tuple[int] = tuple(
+    ids: tuple[int, ...] = tuple(
         trafo_id
-        for trafo_id, pct_rate1 in enumerate(get_trafo_field("pctRate1"))
+        for trafo_id, pct_rate1 in enumerate(wf.atrnreal(string="pctRate1")[0])
         if pct_rate1 > max_trafo_loading_pct
     )
     return ids
 
 
-def get_overvoltage_buses_ids(max_bus_voltage: float) -> tuple[int]:
-    ids: tuple[int] = tuple(
+def get_overvoltage_buses_ids(max_bus_voltage: float) -> tuple[int, ...]:
+    ids: tuple[int, ...] = tuple(
         bus_id
-        for bus_id, pu_voltage in enumerate(get_bus_field("pu"))
+        for bus_id, pu_voltage in enumerate(wf.abusreal(string="pu")[0])
         if pu_voltage > max_bus_voltage
     )
     return ids
 
 
-def get_undervoltage_buses_ids(min_bus_voltage: float) -> tuple[int]:
-    ids: tuple[int] = tuple(
+def get_undervoltage_buses_ids(min_bus_voltage: float) -> tuple[int, ...]:
+    ids: tuple[int, ...] = tuple(
         bus_id
-        for bus_id, pu_voltage in enumerate(get_bus_field("pu"))
+        for bus_id, pu_voltage in enumerate(wf.abusreal(string="pu")[0])
         if pu_voltage < min_bus_voltage
     )
     return ids
 
 
 def print_branches(
-    selected_ids: Optional[tuple[int]] = None,
+    selected_ids: Optional[tuple[int, ...]] = None,
     branch_fields: tuple[str, ...] = (
         "fromNumber",
         "fromName",
@@ -124,7 +131,7 @@ def print_branches(
         "pctRate1",
     ),
 ):
-    values: tuple[list[FieldType]] = tuple(
+    values: tuple[list[FieldType], ...] = tuple(
         get_branch_field(field_name) for field_name in branch_fields
     )
 
@@ -136,7 +143,7 @@ def print_branches(
 
 
 def print_buses(
-    selected_ids: Optional[tuple[int]] = None,
+    selected_ids: Optional[tuple[int, ...]] = None,
     bus_fields: tuple[str, ...] = (
         "number",
         "name",
@@ -147,7 +154,7 @@ def print_buses(
         "nVLmLo",
     ),
 ):
-    values: tuple[list[FieldType]] = tuple(
+    values: tuple[list[FieldType], ...] = tuple(
         get_bus_field(field_name) for field_name in bus_fields
     )
 
@@ -158,8 +165,28 @@ def print_buses(
     print(bus_fields)
 
 
+def print_loads(
+    selected_ids: Optional[tuple[int, ...]] = None,
+    load_fields: tuple[str, ...] = (
+        "number",
+        "exName",
+        "id",
+        "mvaAct",
+    ),
+):
+    values: tuple[list[FieldType], ...] = tuple(
+        get_load_field(field_name) for field_name in load_fields
+    )
+
+    print(load_fields)
+    for row in range(len(values[0])):
+        if selected_ids is None or row in selected_ids:
+            print(tuple(values[col][row] for col in range(len(values))))
+    print(load_fields)
+
+
 def print_swing_buses(
-    selected_ids: Optional[tuple[int]] = None,
+    selected_ids: Optional[tuple[int, ...]] = None,
     plant_bus_fields: tuple[str, ...] = (
         "number",
         "exName",
@@ -167,7 +194,7 @@ def print_swing_buses(
         "pqGen",
     ),
 ):
-    values: tuple[list[FieldType]] = tuple(
+    values: tuple[list[FieldType], ...] = tuple(
         get_plant_bus_field(field_name) for field_name in plant_bus_fields
     )
     buses_types: list[int] = wf.agenbusint(string="type")[0]
@@ -180,7 +207,7 @@ def print_swing_buses(
 
 
 def print_trafos(
-    selected_ids: Optional[tuple[int]] = None,
+    selected_ids: Optional[tuple[int, ...]] = None,
     trafo_fields: tuple[str, ...] = (
         "fromNumber",
         "fromExName",
@@ -193,7 +220,7 @@ def print_trafos(
         "pctRate1",
     ),
 ):
-    values: tuple[list[FieldType]] = tuple(
+    values: tuple[list[FieldType], ...] = tuple(
         get_trafo_field(field_name) for field_name in trafo_fields
     )
 
@@ -205,7 +232,7 @@ def print_trafos(
 
 
 def print_trafos_3w(
-    selected_ids: Optional[tuple[int]] = None,
+    selected_ids: Optional[tuple[int, ...]] = None,
     trafo_3w_fields: tuple[str, ...] = (
         "wind1Number",
         "wind1ExName",
@@ -220,7 +247,7 @@ def print_trafos_3w(
         "pctRate1",
     ),
 ):
-    values: tuple[list[FieldType]] = tuple(
+    values: tuple[list[FieldType], ...] = tuple(
         get_trafo_3w_field(field_name) for field_name in trafo_3w_fields
     )
 

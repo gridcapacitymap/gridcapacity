@@ -1,4 +1,5 @@
 import enum
+from dataclasses import dataclass
 
 from pssetools import wrapped_funcs as wf
 from pssetools.subsystem_data import (
@@ -24,6 +25,15 @@ class Violations(enum.Flag):
     BRANCH_LOADING = enum.auto()
     TRAFO_LOADING = enum.auto()
     SWING_BUS_LOADING = enum.auto()
+
+
+@dataclass
+class ViolationsLimits:
+    max_bus_voltage_pu: float
+    min_bus_voltage_pu: float
+    max_branch_loading_pct: float
+    max_trafo_loading_pct: float
+    max_swing_bus_power_mw: float
 
 
 def check_violations(

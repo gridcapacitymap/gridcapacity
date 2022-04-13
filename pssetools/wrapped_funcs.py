@@ -41,8 +41,7 @@ def process_psse_api_error_code(func: Callable) -> Callable:
             raise PsseApiCallError(
                 f"Failed running {api_name=}: {error_message} ({error_code=})"
             )
-        if return_value is not None:
-            return return_value
+        return return_value
 
     return wrapper
 
@@ -123,6 +122,31 @@ def agenbustypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
+def aloadchar() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
+def aloadcplx() -> list[list[complex]]:
+    pass
+
+
+@process_psse_api_error_code
+def aloadint() -> list[list[int]]:
+    pass
+
+
+@process_psse_api_error_code
+def aloadreal() -> list[list[float]]:
+    pass
+
+
+@process_psse_api_error_code
+def aloadtypes() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
 def atrnchar() -> list[list[str]]:
     pass
 
@@ -189,6 +213,11 @@ def fdns() -> None:
 
 @process_psse_api_error_code
 def fnsl() -> None:
+    pass
+
+
+@process_psse_api_error_code
+def load_chng_6() -> None:
     pass
 
 
