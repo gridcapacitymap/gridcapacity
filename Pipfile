@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 pywin32 = "*"
+tqdm = "*"
 
 [dev-packages]
 autoflake = "*"
