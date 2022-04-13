@@ -52,10 +52,13 @@ class Loads:
         )
 
     def __iter__(self) -> Iterator[Load]:
-        for load_idx in range(len(self._raw_loads.number)):
+        for load_idx in range(len(self)):
             yield Load(
                 self._raw_loads.number[load_idx],
                 self._raw_loads.ex_name[load_idx],
                 self._raw_loads.load_id[load_idx],
                 self._raw_loads.mva_act[load_idx],
             )
+
+    def __len__(self) -> int:
+        return len(self._raw_loads.number)
