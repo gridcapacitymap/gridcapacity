@@ -2,6 +2,8 @@ import enum
 import logging
 from dataclasses import dataclass
 
+import psspy
+
 from pssetools import wrapped_funcs as wf
 from pssetools.subsystem_data import (
     get_overloaded_branches_ids,
@@ -39,6 +41,11 @@ class ViolationsLimits:
     max_swing_bus_power_mw: float
 
 
+class SolutionConvergenceIndicator(enum.IntFlag):
+    MET_CONVERGENCE_TOLERANCE = 0
+    BLOWN_UP = 2
+
+
 def check_violations(
     max_bus_voltage_pu: float = 1.1,
     min_bus_voltage_pu: float = 0.9,
@@ -47,15 +54,17 @@ def check_violations(
     max_swing_bus_power_mw: float = 1000.0,
     use_full_newton_raphson: bool = False,
 ) -> Violations:
-    if not use_full_newton_raphson:
-        wf.fdns()
-    else:
-        wf.fnsl()
+    run_solver(use_full_newton_raphson)
     v: Violations = Violations.NO_VIOLATIONS
-    if not wf.is_solved():
-        v |= Violations.NOT_CONVERGED
-        log.info("Case not solved!")
-        return v
+    convergence_indicator = psspy.solved()
+    if convergence_indicator != SolutionConvergenceIndicator.MET_CONVERGENCE_TOLERANCE:
+        # Try flat start if there was a blown up
+        if convergence_indicator == SolutionConvergenceIndicator.BLOWN_UP:
+            run_solver(use_full_newton_raphson, use_flat_start=True)
+        if not wf.is_solved():
+            v |= Violations.NOT_CONVERGED
+            log.info("Case not solved!")
+            return v
     log.info(f"\nCHECKING VIOLATIONS")
     if overvoltage_buses_ids := get_overvoltage_buses_ids(max_bus_voltage_pu):
         v |= Violations.BUS_OVERVOLTAGE
@@ -85,3 +94,11 @@ def check_violations(
         print_swing_buses(overloaded_swing_buses_ids)
     log.info(f"Detected violations: {v}\n")
     return v
+
+
+def run_solver(use_full_newton_raphson: bool, use_flat_start: bool = False):
+    flat_start_setting: int = 1 if use_flat_start else 0
+    if not use_full_newton_raphson:
+        wf.fdns(options6=flat_start_setting)
+    else:
+        wf.fnsl(options6=flat_start_setting)
