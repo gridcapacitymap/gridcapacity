@@ -1,5 +1,7 @@
 import dataclasses
-from typing import Optional, Final
+from typing import Final, Optional
+
+from tqdm import tqdm
 
 from pssetools.subsystems import Load, Loads
 from pssetools.violations_analysis import Violations, ViolationsLimits, check_violations
@@ -76,15 +78,23 @@ def headroom(
 ) -> dict[Load, float]:
     """Return dict of load to max additional active power in MW"""
     headroom_dict: dict[Load, float] = {}
-    for load in Loads():
-        load_max_capacity_pu: float = max_capacity_pu(
-            load,
-            upper_limit_p_mw,
-            solver_tolerance_mw,
-            normal_limits,
-            contingency_limits,
-            contingency_scenario,
-            use_full_newton_raphson,
-        )
-        headroom_dict[load] = (load_max_capacity_pu - 1.0) * load.mva_act.real
+    loads: Loads = Loads()
+    print("Analysing headroom")
+    with tqdm(
+        total=len(loads),
+        postfix=[{}],
+    ) as progress:
+        for load in loads:
+            load_max_capacity_pu: float = max_capacity_pu(
+                load,
+                upper_limit_p_mw,
+                solver_tolerance_mw,
+                normal_limits,
+                contingency_limits,
+                contingency_scenario,
+                use_full_newton_raphson,
+            )
+            headroom_dict[load] = (load_max_capacity_pu - 1.0) * load.mva_act.real
+            progress.postfix[0]["load_number"] = load.number
+            progress.update()
     return headroom_dict

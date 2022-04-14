@@ -1,10 +1,13 @@
 import errno
+import logging
 import os
 from functools import wraps
 from pathlib import Path
 from typing import Callable, Final, Optional
 
 import psspy
+
+log = logging.getLogger(__name__)
 
 
 def process_psse_api_error_code(func: Callable) -> Callable:
@@ -122,6 +125,11 @@ def agenbustypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
+def alert_output() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def aloadchar() -> list[list[str]]:
     pass
 
@@ -222,12 +230,27 @@ def load_chng_6() -> None:
 
 
 @process_psse_api_error_code
+def progress_output() -> None:
+    pass
+
+
+@process_psse_api_error_code
+def prompt_output() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def rate_2() -> None:
     pass
 
 
 @process_psse_api_error_code
 def read() -> None:
+    pass
+
+
+@process_psse_api_error_code
+def report_output() -> None:
     pass
 
 
@@ -324,4 +347,4 @@ def open_case(case_name: str):
         case(str(case_path))
     elif case_path.suffix == ".raw":
         read(0, str(case_path))
-    print(f"Opened file '{case_path}'")
+    log.info(f"Opened file '{case_path}'")

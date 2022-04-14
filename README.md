@@ -17,3 +17,17 @@ pipenv run python -m pssetools [case_name.sav]
 ```
 
 The `savnw.sav` will be used if the case name is omitted. The case name is a file name from the PSS®E `EXAMPLE` directory or an absolute file path.
+
+## Environment variables #
+
+| ENV                  | Description           |
+|----------------------|:----------------------|
+| `PSSE_TOOLS_VERBOSE` | Enable verbose output |
+
+
+To start the project with verbose output enabled, run:
+
+```powershell
+$env:PSSE_TOOLS_VERBOSE = ’1’
+pipenv run python -m pssetools
+```

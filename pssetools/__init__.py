@@ -1,7 +1,11 @@
+import logging
 import os
 import sys
+from typing import Final
 
 from pssetools.path_helper import get_psse35_paths
+
+log = logging.getLogger(__name__)
 
 psse35_paths = get_psse35_paths()
 sys.path = psse35_paths + sys.path
@@ -23,9 +27,20 @@ def init_psse():
     except redirect.RedirectError:
         pass
     psspy.psseinit()
+    if not os.environ.get("PSSE_TOOLS_VERBOSE"):
+        # Suppress all PSSE output
+        no_output: Final[int] = 6
+        wf.alert_output(no_output)
+        wf.progress_output(no_output)
+        wf.prompt_output(no_output)
+        wf.report_output(no_output)
 
 
 def run_check():
+    logging_level: int = (
+        logging.WARNING if not os.environ.get("PSSE_TOOLS_VERBOSE") else logging.DEBUG
+    )
+    logging.basicConfig(level=logging_level)
     init_psse()
     case_name = sys.argv[1] if len(sys.argv) == 2 else "savnw.sav"
     wf.open_case(case_name)
@@ -38,7 +53,7 @@ def run_check():
         wf.fnsl()
         if not wf.is_solved():
             return
-    print(f"Case solved")
+    log.info(f"Case solved")
 
     normal_limits: ViolationsLimits = ViolationsLimits(
         max_bus_voltage_pu=1.1,
@@ -52,7 +67,7 @@ def run_check():
         normal_limits=normal_limits,
         use_full_newton_raphson=use_full_newton_raphson,
     )
-    print("Available additional capacity")
+    print("Available additional capacity:")
     for load, capacity_mw in headroom_dict.items():
         print(f"{load} {capacity_mw=}")
 
