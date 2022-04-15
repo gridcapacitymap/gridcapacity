@@ -4,7 +4,7 @@ from typing import Iterator, Optional
 
 from tqdm import tqdm
 
-from pssetools.subsystems import Bus, Buses, Load, Loads
+from pssetools.subsystems import Bus, Buses, Load, Loads, TemporaryBusLoad
 from pssetools.violations_analysis import Violations, ViolationsLimits, check_violations
 
 
@@ -26,8 +26,8 @@ def is_feasible(
     return violations == Violations.NO_VIOLATIONS
 
 
-def max_load_capacity_pq_mw(
-    load: Load,
+def max_bus_capacity_pq_mw(
+    bus: Bus,
     upper_limit_pq_mw: complex,
     solver_tolerance_p_mw: float = 5.0,
     max_iterations: int = 10,
@@ -38,9 +38,10 @@ def max_load_capacity_pq_mw(
 ) -> complex:
     """Return max additional load PQ power in MW"""
     lower_limit_pq_mw: complex = 0j
-    with load:
+    temp_load: TemporaryBusLoad = TemporaryBusLoad(bus)
+    with temp_load:
         # If upper limit is available, return it immediately
-        load.set_additional_load(upper_limit_pq_mw)
+        temp_load(upper_limit_pq_mw)
         if is_feasible(
             normal_limits,
             contingency_limits,
@@ -51,7 +52,7 @@ def max_load_capacity_pq_mw(
         # First iteration was initial upper limit check. Subtract it.
         for i in range(max_iterations - 1):
             middle_pq_mw: complex = (lower_limit_pq_mw + upper_limit_pq_mw) / 2
-            load.set_additional_load(middle_pq_mw)
+            temp_load(middle_pq_mw)
             if is_feasible(
                 normal_limits,
                 contingency_limits,
@@ -77,6 +78,7 @@ class BusHeadroom:
 
 def buses_headroom(
     upper_limit_p_mw: float,
+    q_to_p_ratio: float = 0.8,
     solver_tolerance_p_mw: float = 5.0,
     max_iterations: int = 10,
     normal_limits: Optional[ViolationsLimits] = None,
@@ -99,32 +101,35 @@ def buses_headroom(
         except StopIteration:
             loads_available = False
         for bus in buses:
-            bus_actual_load_mw: complex = 0j
-            last_load: Load
+            actual_load_mw: complex = 0j
             while loads_available and load.number <= bus.number:
                 if load.number == bus.number:
-                    bus_actual_load_mw += load.mva_act
-                    last_load = load
+                    actual_load_mw += load.mva_act
                 try:
                     load = next(loads_iterator)
                 except StopIteration:
                     loads_available = False
-            bus_capacity_available_mw: complex = 0j
-            if bus_actual_load_mw != 0j:
-                q_to_p_ratio: float = bus_actual_load_mw.imag / bus_actual_load_mw.real
-                bus_capacity_available_mw = max_load_capacity_pq_mw(
-                    last_load,
-                    upper_limit_p_mw + (q_to_p_ratio * upper_limit_p_mw * 1j),
-                    solver_tolerance_p_mw,
-                    max_iterations,
-                    normal_limits,
-                    contingency_limits,
-                    contingency_scenario,
-                    use_full_newton_raphson,
+            upper_limit_pq_mw: complex
+            if actual_load_mw.real == 0:
+                upper_limit_pq_mw = upper_limit_p_mw + (
+                    q_to_p_ratio * upper_limit_p_mw * 1j
                 )
-            headroom.append(
-                BusHeadroom(bus, bus_actual_load_mw, bus_capacity_available_mw)
+            else:
+                actual_q_to_p_ratio: float = actual_load_mw.imag / actual_load_mw.real
+                upper_limit_pq_mw = upper_limit_p_mw + (
+                    actual_q_to_p_ratio * upper_limit_p_mw * 1j
+                )
+            bus_capacity_available_mw: complex = max_bus_capacity_pq_mw(
+                bus,
+                upper_limit_pq_mw,
+                solver_tolerance_p_mw,
+                max_iterations,
+                normal_limits,
+                contingency_limits,
+                contingency_scenario,
+                use_full_newton_raphson,
             )
+            headroom.append(BusHeadroom(bus, actual_load_mw, bus_capacity_available_mw))
             progress.postfix[0]["bus_number"] = bus.number
             progress.update()
     return headroom

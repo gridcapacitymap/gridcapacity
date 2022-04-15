@@ -225,6 +225,11 @@ def fnsl() -> None:
 
 
 @process_psse_api_error_code
+def load_data_6() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def load_chng_6() -> None:
     pass
 
@@ -236,6 +241,11 @@ def progress_output() -> None:
 
 @process_psse_api_error_code
 def prompt_output() -> None:
+    pass
+
+
+@process_psse_api_error_code
+def purgload() -> None:
     pass
 
 

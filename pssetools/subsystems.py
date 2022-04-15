@@ -34,43 +34,15 @@ class Buses:
         return len(self._raw_buses.number)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Load:
     number: int
     ex_name: str
     load_id: str
-    _mva_act: complex
-
-    def __enter__(self) -> None:
-        self._original_mva_act = self.mva_act
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        if self.mva_act != self._original_mva_act:
-            self.mva_act = self._original_mva_act
-        del self._original_mva_act
-
-    def __hash__(self):
-        return hash((self.number, self.ex_name, self.load_id))
-
-    @property
-    def mva_act(self) -> complex:
-        return self._mva_act
-
-    @mva_act.setter
-    def mva_act(self, mva_act: complex) -> None:
-        if not hasattr(self, "_original_mva_act"):
-            raise RuntimeError(
-                "Load modification without context manager is prohibited. "
-                "Use `with load:`."
-            )
-        wf.load_chng_6(self.number, self.load_id, realar=[mva_act.real, mva_act.imag])
-        self._mva_act = mva_act
-
-    def set_additional_load(self, additional_load: complex) -> None:
-        self.mva_act = self._original_mva_act + additional_load
+    mva_act: complex
 
 
-@dataclass
+@dataclass(frozen=True)
 class RawLoads:
     number: list[int]
     ex_name: list[str]
@@ -98,3 +70,31 @@ class Loads:
 
     def __len__(self) -> int:
         return len(self._raw_loads.number)
+
+
+class TemporaryBusLoad:
+    TEMP_LOAD_ID: str = "Tm"
+
+    def __init__(self, bus: Bus) -> None:
+        self._bus: Bus = bus
+        self._context_manager_is_active: bool = False
+
+    def __enter__(self):
+        # Create load
+        wf.load_data_6(self._bus.number, self.TEMP_LOAD_ID)
+        self._context_manager_is_active = True
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        # Delete load
+        wf.purgload(self._bus.number, self.TEMP_LOAD_ID)
+        self._context_manager_is_active = False
+
+    def __call__(self, new_load: complex) -> None:
+        if not self._context_manager_is_active:
+            raise RuntimeError(
+                "Load modification without context manager is prohibited. "
+                "Use `with TemporaryBusLoad(bus) as temp_load:`."
+            )
+        wf.load_chng_6(
+            self._bus.number, self.TEMP_LOAD_ID, realar=[new_load.real, new_load.imag]
+        )
