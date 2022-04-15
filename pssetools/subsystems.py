@@ -4,6 +4,36 @@ from typing import Callable, Final, Iterator
 from pssetools import wrapped_funcs as wf
 
 
+@dataclass(frozen=True)
+class Bus:
+    number: int
+    ex_name: str
+
+
+@dataclass
+class RawBuses:
+    number: list[int]
+    ex_name: list[str]
+
+
+class Buses:
+    def __init__(self) -> None:
+        self._raw_buses: RawBuses = RawBuses(
+            wf.abusint(string="number")[0],
+            wf.abuschar(string="exName")[0],
+        )
+
+    def __iter__(self) -> Iterator[Bus]:
+        for bus_idx in range(len(self)):
+            yield Bus(
+                self._raw_buses.number[bus_idx],
+                self._raw_buses.ex_name[bus_idx],
+            )
+
+    def __len__(self) -> int:
+        return len(self._raw_buses.number)
+
+
 @dataclass
 class Load:
     number: int
@@ -30,8 +60,8 @@ class Load:
         wf.load_chng_6(self.number, self.load_id, realar=[mva_act.real, mva_act.imag])
         self._mva_act = mva_act
 
-    def set_multiplier(self, multiplier: float) -> None:
-        self.mva_act = multiplier * self._original_mva_act
+    def set_additional_load(self, additional_load: complex) -> None:
+        self.mva_act = self._original_mva_act + additional_load
 
 
 @dataclass
