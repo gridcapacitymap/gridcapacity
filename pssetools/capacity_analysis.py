@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Iterator, Optional
+from typing import Final, Iterator, Optional
 
 from tqdm import tqdm
 
@@ -76,6 +76,47 @@ class BusHeadroom:
     bus_capacity_available_mw: complex
 
 
+class LoadsAccumulator:
+    def __init__(
+        self,
+        upper_limit_p_mw: float,
+        q_to_p_ratio: float,
+    ):
+        self._upper_limit_p_mw: Final[float] = upper_limit_p_mw
+        self._q_to_p_ratio: Final[float] = q_to_p_ratio
+        self._loads_iterator: Iterator = iter(Loads())
+        self._loads_available: bool = True
+        try:
+            self._load: Load = next(self._loads_iterator)
+        except StopIteration:
+            self._loads_available = False
+        self._actual_load_mw: complex = 0j
+
+    def bus_actual_load_pq_mw(self, bus_number: int):
+        self._actual_load_mw = 0j
+        while self._loads_available and self._load.number <= bus_number:
+            if self._load.number == bus_number:
+                self._actual_load_mw += self._load.mva_act
+            try:
+                self._load = next(self._loads_iterator)
+            except StopIteration:
+                self._loads_available = False
+        return self._actual_load_mw
+
+    def upper_limit_pq_mw(self) -> complex:
+        if self._actual_load_mw.real == 0:
+            return self._upper_limit_p_mw + (
+                self._q_to_p_ratio * self._upper_limit_p_mw * 1j
+            )
+        else:
+            actual_q_to_p_ratio: float = (
+                self._actual_load_mw.imag / self._actual_load_mw.real
+            )
+            return self._upper_limit_p_mw + (
+                actual_q_to_p_ratio * self._upper_limit_p_mw * 1j
+            )
+
+
 def buses_headroom(
     upper_limit_p_mw: float,
     q_to_p_ratio: float = 0.8,
@@ -94,31 +135,14 @@ def buses_headroom(
         total=len(buses),
         postfix=[{}],
     ) as progress:
-        loads_available: bool = True
-        try:
-            loads_iterator: Iterator = iter(Loads())
-            load: Load = next(loads_iterator)
-        except StopIteration:
-            loads_available = False
+        loads_accumulator: LoadsAccumulator = LoadsAccumulator(
+            upper_limit_p_mw, q_to_p_ratio
+        )
         for bus in buses:
-            actual_load_mw: complex = 0j
-            while loads_available and load.number <= bus.number:
-                if load.number == bus.number:
-                    actual_load_mw += load.mva_act
-                try:
-                    load = next(loads_iterator)
-                except StopIteration:
-                    loads_available = False
-            upper_limit_pq_mw: complex
-            if actual_load_mw.real == 0:
-                upper_limit_pq_mw = upper_limit_p_mw + (
-                    q_to_p_ratio * upper_limit_p_mw * 1j
-                )
-            else:
-                actual_q_to_p_ratio: float = actual_load_mw.imag / actual_load_mw.real
-                upper_limit_pq_mw = upper_limit_p_mw + (
-                    actual_q_to_p_ratio * upper_limit_p_mw * 1j
-                )
+            actual_load_mw: complex = loads_accumulator.bus_actual_load_pq_mw(
+                bus.number
+            )
+            upper_limit_pq_mw: complex = loads_accumulator.upper_limit_pq_mw()
             bus_capacity_available_mw: complex = max_bus_capacity_pq_mw(
                 bus,
                 upper_limit_pq_mw,
