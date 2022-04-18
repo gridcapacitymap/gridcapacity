@@ -210,6 +210,11 @@ def branch_chng_3() -> None:
 
 
 @process_psse_api_error_code
+def brnint() -> int:
+    pass
+
+
+@process_psse_api_error_code
 def case() -> None:
     pass
 

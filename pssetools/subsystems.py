@@ -1,7 +1,58 @@
+from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Callable, Final, Iterator
+from typing import Iterator
 
 from pssetools import wrapped_funcs as wf
+
+
+@dataclass(frozen=True)
+class Branch:
+    from_number: int
+    to_number: int
+    branch_id: str
+
+    def is_enabled(self) -> bool:
+        """Return `True` if is enabled"""
+        status: int = wf.brnint(
+            self.from_number, self.to_number, self.branch_id, "STATUS"
+        )
+        return status != 0
+
+
+@dataclass
+class RawBranches:
+    from_number: list[int]
+    to_number: list[int]
+    branch_id: list[str]
+
+
+class Branches:
+    def __init__(self) -> None:
+        self._raw_branches: RawBranches = RawBranches(
+            wf.abrnint(string="fromNumber")[0],
+            wf.abrnint(string="toNumber")[0],
+            wf.abrnchar(string="id")[0],
+        )
+
+    def __iter__(self) -> Iterator[Branch]:
+        for branch_idx in range(len(self)):
+            yield Branch(
+                self._raw_branches.from_number[branch_idx],
+                self._raw_branches.to_number[branch_idx],
+                self._raw_branches.branch_id[branch_idx],
+            )
+
+    def __len__(self) -> int:
+        return len(self._raw_branches.from_number)
+
+
+@contextmanager
+def disable_branch(branch: Branch) -> Iterator:
+    try:
+        wf.branch_chng_3(branch.from_number, branch.to_number, branch.branch_id, st=0)
+        yield
+    finally:
+        wf.branch_chng_3(branch.from_number, branch.to_number, branch.branch_id, st=1)
 
 
 @dataclass(frozen=True)

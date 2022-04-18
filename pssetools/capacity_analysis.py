@@ -5,6 +5,7 @@ from typing import Final, Iterator, Optional
 
 from tqdm import tqdm
 
+from pssetools.contingency_analysis import ContingencyScenario, contingency_check
 from pssetools.subsystems import Bus, Buses, Load, Loads, TemporaryBusLoad
 from pssetools.violations_analysis import Violations, ViolationsLimits, check_violations
 
@@ -32,7 +33,7 @@ class CapacityAnalyser:
         max_iterations: int,
         normal_limits: Optional[ViolationsLimits],
         contingency_limits: Optional[ViolationsLimits],
-        contingency_scenario,
+        contingency_scenario: ContingencyScenario,
         use_full_newton_raphson: bool,
     ):
         self._upper_limit_p_mw: Final[float] = upper_limit_p_mw
@@ -41,7 +42,7 @@ class CapacityAnalyser:
         self._max_iterations: Final[int] = max_iterations
         self._normal_limits: Final[Optional[ViolationsLimits]] = normal_limits
         self._contingency_limits: Final[Optional[ViolationsLimits]] = contingency_limits
-        self._contingency_scenario = contingency_scenario
+        self._contingency_scenario: Final[ContingencyScenario] = contingency_scenario
         self._use_full_newton_raphson: Final[bool] = use_full_newton_raphson
         self._loads_iterator: Iterator = iter(Loads())
         self._loads_available: bool = True
@@ -141,6 +142,18 @@ class CapacityAnalyser:
                 **dataclasses.asdict(self._normal_limits),
                 use_full_newton_raphson=self._use_full_newton_raphson,
             )
+        if violations == Violations.NO_VIOLATIONS:
+            if self._contingency_limits is None:
+                violations = contingency_check(
+                    contingency_scenario=self._contingency_scenario,
+                    use_full_newton_raphson=self._use_full_newton_raphson,
+                )
+            else:
+                violations = contingency_check(
+                    contingency_scenario=self._contingency_scenario,
+                    **dataclasses.asdict(self._contingency_limits),
+                    use_full_newton_raphson=self._use_full_newton_raphson,
+                )
         return violations == Violations.NO_VIOLATIONS
 
 
@@ -151,7 +164,7 @@ def buses_headroom(
     max_iterations: int = 10,
     normal_limits: Optional[ViolationsLimits] = None,
     contingency_limits: Optional[ViolationsLimits] = None,
-    contingency_scenario=None,
+    contingency_scenario: ContingencyScenario = ContingencyScenario(()),
     use_full_newton_raphson: bool = False,
 ) -> tuple[BusHeadroom, ...]:
     """Return actual load and max additional PQ power in MW for each bus"""

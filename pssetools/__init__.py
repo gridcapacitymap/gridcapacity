@@ -18,6 +18,7 @@ import redirect
 
 from pssetools import wrapped_funcs as wf
 from pssetools.capacity_analysis import buses_headroom
+from pssetools.contingency_analysis import ContingencyScenario, get_contingency_scenario
 from pssetools.violations_analysis import ViolationsLimits
 
 
@@ -62,9 +63,13 @@ def run_check():
         max_trafo_loading_pct=110.0,
         max_swing_bus_power_mw=1000.0,
     )
+    contingency_scenario: ContingencyScenario = get_contingency_scenario(
+        use_full_newton_raphson=use_full_newton_raphson,
+    )
     headroom = buses_headroom(
         upper_limit_p_mw=100.0,
         normal_limits=normal_limits,
+        contingency_scenario=contingency_scenario,
         use_full_newton_raphson=use_full_newton_raphson,
     )
     print("Available additional capacity:")
