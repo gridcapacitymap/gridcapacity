@@ -270,6 +270,10 @@ def report_output() -> None:
 
 
 @process_psse_api_error_code
+def rsol() -> None:
+    pass
+
+@process_psse_api_error_code
 def solved() -> None:
     pass
 

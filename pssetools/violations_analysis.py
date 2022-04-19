@@ -98,11 +98,9 @@ def check_violations(
 
 
 def run_solver(use_full_newton_raphson: bool, use_flat_start: bool = False):
+    full_newton_raphson_setting: int = 1 if use_full_newton_raphson else 0
     flat_start_setting: int = 1 if use_flat_start else 0
     try:
-        if not use_full_newton_raphson:
-            wf.fdns(options6=flat_start_setting)
-        else:
-            wf.fnsl(options6=flat_start_setting)
+        wf.rsol(options1=full_newton_raphson_setting, options7=flat_start_setting)
     except PsseApiCallError as e:
         log.info(e.args)
