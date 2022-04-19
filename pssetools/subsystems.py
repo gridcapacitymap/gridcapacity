@@ -3,6 +3,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Iterator
 
+import psspy
+
 from pssetools import wrapped_funcs as wf
 from pssetools.wrapped_funcs import PsseApiCallError
 
@@ -52,14 +54,22 @@ class Branches:
 
 @contextmanager
 def disable_branch(branch: Branch) -> Iterator[bool]:
+    is_disabled: bool = False
     try:
-        wf.branch_chng_3(branch.from_number, branch.to_number, branch.branch_id, st=0)
-        yield True
-    except PsseApiCallError as e:
-        log.exception(e)
-        yield False
+        error_code: int = psspy.branch_chng_3(
+            branch.from_number, branch.to_number, branch.branch_id, st=0
+        )
+        if error_code == 0:
+            is_disabled = True
+            yield is_disabled
+        else:
+            log.info(f"Failed disabling branch {branch=} {error_code=}")
+            yield is_disabled
     finally:
-        wf.branch_chng_3(branch.from_number, branch.to_number, branch.branch_id, st=1)
+        if is_disabled:
+            wf.branch_chng_3(
+                branch.from_number, branch.to_number, branch.branch_id, st=1
+            )
 
 
 @dataclass(frozen=True)
@@ -203,15 +213,19 @@ class Trafos:
 
 @contextmanager
 def disable_trafo(trafo: Trafo) -> Iterator[bool]:
+    is_disabled: bool = False
     try:
-        wf.two_winding_chng_6(
+        error_code, _ = psspy.two_winding_chng_6(
             trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=0
         )
-        yield True
-    except PsseApiCallError as e:
-        log.exception(e)
-        yield False
+        if error_code == 0:
+            is_disabled = True
+            yield is_disabled
+        else:
+            log.info(f"Failed disabling trafo {trafo=} {error_code=}")
+            yield is_disabled
     finally:
-        wf.two_winding_chng_6(
-            trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=1
-        )
+        if is_disabled:
+            wf.two_winding_chng_6(
+                trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=1
+            )
