@@ -6,6 +6,7 @@ no_silence_site_packages = true
 module = [
     "psse35",
     "psspy",
-    "redirect"
+    "redirect",
+    "tqdm"
 ]
 ignore_missing_imports = true

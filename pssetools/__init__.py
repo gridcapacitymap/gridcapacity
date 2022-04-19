@@ -17,7 +17,7 @@ import psspy
 import redirect
 
 from pssetools import wrapped_funcs as wf
-from pssetools.capacity_analysis import headroom
+from pssetools.capacity_analysis import buses_headroom
 from pssetools.violations_analysis import ViolationsLimits
 
 
@@ -62,14 +62,14 @@ def run_check():
         max_trafo_loading_pct=110.0,
         max_swing_bus_power_mw=1000.0,
     )
-    headroom_dict = headroom(
+    headroom = buses_headroom(
         upper_limit_p_mw=100.0,
         normal_limits=normal_limits,
         use_full_newton_raphson=use_full_newton_raphson,
     )
     print("Available additional capacity:")
-    for load, capacity_mw in headroom_dict.items():
-        print(f"{load} {capacity_mw=}")
+    for bus_headroom in headroom:
+        print(bus_headroom)
 
 
 if __name__ == "__main__":
