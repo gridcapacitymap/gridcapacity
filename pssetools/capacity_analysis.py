@@ -5,7 +5,11 @@ from typing import Final, Iterator, Optional
 
 from tqdm import tqdm
 
-from pssetools.contingency_analysis import ContingencyScenario, contingency_check
+from pssetools.contingency_analysis import (
+    ContingencyScenario,
+    contingency_check,
+    get_contingency_scenario,
+)
 from pssetools.subsystems import Bus, Buses, Load, Loads, TemporaryBusLoad
 from pssetools.violations_analysis import Violations, ViolationsLimits, check_violations
 
@@ -164,7 +168,7 @@ def buses_headroom(
     max_iterations: int = 10,
     normal_limits: Optional[ViolationsLimits] = None,
     contingency_limits: Optional[ViolationsLimits] = None,
-    contingency_scenario: ContingencyScenario = ContingencyScenario(()),
+    contingency_scenario: Optional[ContingencyScenario] = None,
     use_full_newton_raphson: bool = False,
 ) -> tuple[BusHeadroom, ...]:
     """Return actual load and max additional PQ power in MW for each bus"""
@@ -175,7 +179,9 @@ def buses_headroom(
         max_iterations,
         normal_limits,
         contingency_limits,
-        contingency_scenario,
+        contingency_scenario
+        if contingency_scenario is not None
+        else get_contingency_scenario(),
         use_full_newton_raphson,
     )
     return capacity_analyser.buses_headroom()

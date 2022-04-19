@@ -1,13 +1,21 @@
 import dataclasses
 from dataclasses import dataclass
 
-from pssetools.subsystems import Branch, Branches, disable_branch
+from pssetools.subsystems import (
+    Branch,
+    Branches,
+    Trafo,
+    Trafos,
+    disable_branch,
+    disable_trafo,
+)
 from pssetools.violations_analysis import Violations, ViolationsLimits, check_violations
 
 
 @dataclass
 class ContingencyScenario:
     branches: tuple[Branch, ...]
+    trafos: tuple[Trafo, ...]
 
 
 def get_contingency_scenario(
@@ -30,16 +38,36 @@ def get_contingency_scenario(
         for branch in Branches()
         if branch_is_not_critical(branch, contingency_limits, use_full_newton_raphson)
     )
-    return ContingencyScenario(not_critical_branches)
+    not_critical_trafos: tuple[Trafo, ...] = tuple(
+        trafo
+        for trafo in Trafos()
+        if trafo_is_not_critical(trafo, contingency_limits, use_full_newton_raphson)
+    )
+    return ContingencyScenario(not_critical_branches, not_critical_trafos)
 
 
 def branch_is_not_critical(
-    branch,
+    branch: Branch,
     contingency_limits: ViolationsLimits,
     use_full_newton_raphson: bool,
 ) -> bool:
     if branch.is_enabled():
         with disable_branch(branch):
+            violations: Violations = check_violations(
+                **dataclasses.asdict(contingency_limits),
+                use_full_newton_raphson=use_full_newton_raphson
+            )
+            return violations == Violations.NO_VIOLATIONS
+    return False
+
+
+def trafo_is_not_critical(
+    trafo: Trafo,
+    contingency_limits: ViolationsLimits,
+    use_full_newton_raphson: bool,
+) -> bool:
+    if trafo.is_enabled():
+        with disable_trafo(trafo):
             violations: Violations = check_violations(
                 **dataclasses.asdict(contingency_limits),
                 use_full_newton_raphson=use_full_newton_raphson
@@ -68,6 +96,15 @@ def contingency_check(
     for branch in contingency_scenario.branches:
         if branch.is_enabled():
             with disable_branch(branch):
+                violations |= check_violations(
+                    **dataclasses.asdict(contingency_limits),
+                    use_full_newton_raphson=use_full_newton_raphson
+                )
+                if violations != Violations.NO_VIOLATIONS:
+                    return violations
+    for trafo in contingency_scenario.trafos:
+        if trafo.is_enabled():
+            with disable_trafo(trafo):
                 violations |= check_violations(
                     **dataclasses.asdict(contingency_limits),
                     use_full_newton_raphson=use_full_newton_raphson

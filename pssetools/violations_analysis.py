@@ -18,6 +18,7 @@ from pssetools.subsystem_data import (
     print_trafos,
     print_trafos_3w,
 )
+from pssetools.wrapped_funcs import PsseApiCallError
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +99,10 @@ def check_violations(
 
 def run_solver(use_full_newton_raphson: bool, use_flat_start: bool = False):
     flat_start_setting: int = 1 if use_flat_start else 0
-    if not use_full_newton_raphson:
-        wf.fdns(options6=flat_start_setting)
-    else:
-        wf.fnsl(options6=flat_start_setting)
+    try:
+        if not use_full_newton_raphson:
+            wf.fdns(options6=flat_start_setting)
+        else:
+            wf.fnsl(options6=flat_start_setting)
+    except PsseApiCallError as e:
+        log.info(e.args)

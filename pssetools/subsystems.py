@@ -149,3 +149,59 @@ class TemporaryBusLoad:
         wf.load_chng_6(
             self._bus.number, self.TEMP_LOAD_ID, realar=[new_load.real, new_load.imag]
         )
+
+
+@dataclass(frozen=True)
+class Trafo:
+    from_number: int
+    to_number: int
+    trafo_id: str
+
+    def is_enabled(self) -> bool:
+        """Return `True` if is enabled"""
+        # Trafo status is available through the branches `brnint` API only.
+        # It isn't available through the trafos `xfrint` API.
+        status: int = wf.brnint(
+            self.from_number, self.to_number, self.trafo_id, "STATUS"
+        )
+        return status != 0
+
+
+@dataclass
+class RawTrafos:
+    from_number: list[int]
+    to_number: list[int]
+    trafo_id: list[str]
+
+
+class Trafos:
+    def __init__(self) -> None:
+        self._raw_trafos: RawTrafos = RawTrafos(
+            wf.atrnint(string="fromNumber")[0],
+            wf.atrnint(string="toNumber")[0],
+            wf.atrnchar(string="id")[0],
+        )
+
+    def __iter__(self) -> Iterator[Trafo]:
+        for trafo_idx in range(len(self)):
+            yield Trafo(
+                self._raw_trafos.from_number[trafo_idx],
+                self._raw_trafos.to_number[trafo_idx],
+                self._raw_trafos.trafo_id[trafo_idx],
+            )
+
+    def __len__(self) -> int:
+        return len(self._raw_trafos.from_number)
+
+
+@contextmanager
+def disable_trafo(trafo: Trafo) -> Iterator:
+    try:
+        wf.two_winding_chng_6(
+            trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=0
+        )
+        yield
+    finally:
+        wf.two_winding_chng_6(
+            trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=1
+        )
