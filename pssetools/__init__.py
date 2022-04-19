@@ -44,12 +44,14 @@ def run_check():
     init_psse()
     case_name = sys.argv[1] if len(sys.argv) == 2 else "savnw.sav"
     wf.open_case(case_name)
-    wf.rsol()
+    # `options10=1` Restore original solution and settings on solution failure
+    wf.rsol(options10=1)
     use_full_newton_raphson: bool = False if wf.is_solved() else True
     if use_full_newton_raphson:
-        # options1=1 Full Newton-Raphson (FNSL)
-        # options7=1 flat start
-        wf.rsol(options1=1, options7=1)
+        # `options1=1` Full Newton-Raphson (FNSL)
+        # `options7=1` Flat start
+        # `options10=1` Restore original solution and settings on solution failure
+        wf.rsol(options1=1, options7=1, options10=1)
         if not wf.is_solved():
             return
     log.info(f"Case solved")
