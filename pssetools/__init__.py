@@ -71,7 +71,7 @@ def run_check():
         max_swing_bus_power_mva=1000.0,
     )
     headroom = buses_headroom(
-        upper_limit_p_mva=100.0,
+        upper_limit_p_mw=100.0,
         normal_limits=normal_limits,
         contingency_limits=contingency_limits,
         use_full_newton_raphson=use_full_newton_raphson,
