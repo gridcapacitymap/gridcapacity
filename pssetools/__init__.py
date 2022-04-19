@@ -60,10 +60,10 @@ def run_check():
         min_bus_voltage_pu=0.9,
         max_branch_loading_pct=100.0,
         max_trafo_loading_pct=110.0,
-        max_swing_bus_power_mw=1000.0,
+        max_swing_bus_power_mva=1000.0,
     )
     headroom = buses_headroom(
-        upper_limit_p_mw=100.0,
+        upper_limit_p_mva=100.0,
         normal_limits=normal_limits,
         use_full_newton_raphson=use_full_newton_raphson,
     )

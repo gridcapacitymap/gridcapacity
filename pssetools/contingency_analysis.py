@@ -23,7 +23,7 @@ def get_contingency_scenario(
     min_bus_voltage_pu: float = 0.88,
     max_branch_loading_pct: float = 120.0,
     max_trafo_loading_pct: float = 120.0,
-    max_swing_bus_power_mw: float = 1000.0,
+    max_swing_bus_power_mva: float = 1000.0,
     use_full_newton_raphson: bool = False,
 ) -> ContingencyScenario:
     contingency_limits: ViolationsLimits = ViolationsLimits(
@@ -31,7 +31,7 @@ def get_contingency_scenario(
         min_bus_voltage_pu=min_bus_voltage_pu,
         max_branch_loading_pct=max_branch_loading_pct,
         max_trafo_loading_pct=max_trafo_loading_pct,
-        max_swing_bus_power_mw=max_swing_bus_power_mw,
+        max_swing_bus_power_mva=max_swing_bus_power_mva,
     )
     not_critical_branches: tuple[Branch, ...] = tuple(
         branch
@@ -82,7 +82,7 @@ def contingency_check(
     min_bus_voltage_pu: float = 0.88,
     max_branch_loading_pct: float = 120.0,
     max_trafo_loading_pct: float = 120.0,
-    max_swing_bus_power_mw: float = 1000.0,
+    max_swing_bus_power_mva: float = 1000.0,
     use_full_newton_raphson: bool = False,
 ) -> Violations:
     contingency_limits: ViolationsLimits = ViolationsLimits(
@@ -90,7 +90,7 @@ def contingency_check(
         min_bus_voltage_pu=min_bus_voltage_pu,
         max_branch_loading_pct=max_branch_loading_pct,
         max_trafo_loading_pct=max_trafo_loading_pct,
-        max_swing_bus_power_mw=max_swing_bus_power_mw,
+        max_swing_bus_power_mva=max_swing_bus_power_mva,
     )
     violations: Violations = Violations.NO_VIOLATIONS
     for branch in contingency_scenario.branches:

@@ -70,13 +70,13 @@ def get_overloaded_branches_ids(max_branch_loading_pct: float) -> tuple[int, ...
     return ids
 
 
-def get_overloaded_swing_buses_ids(max_swing_bus_power_mw: float) -> tuple[int, ...]:
+def get_overloaded_swing_buses_ids(max_swing_bus_power_mva: float) -> tuple[int, ...]:
     ids: tuple[int, ...] = tuple(
         bus_id
         for bus_id, (bus_type, mva) in enumerate(
             zip(wf.agenbusint(string="type")[0], wf.agenbusreal(string="mva")[0])
         )
-        if bus_type == SWING_BUS and mva > max_swing_bus_power_mw
+        if bus_type == SWING_BUS and mva > max_swing_bus_power_mva
     )
     return ids
 

@@ -39,7 +39,7 @@ class ViolationsLimits:
     min_bus_voltage_pu: float
     max_branch_loading_pct: float
     max_trafo_loading_pct: float
-    max_swing_bus_power_mw: float
+    max_swing_bus_power_mva: float
 
 
 class SolutionConvergenceIndicator(enum.IntFlag):
@@ -52,7 +52,7 @@ def check_violations(
     min_bus_voltage_pu: float = 0.9,
     max_branch_loading_pct: float = 100.0,
     max_trafo_loading_pct: float = 100.0,
-    max_swing_bus_power_mw: float = 1000.0,
+    max_swing_bus_power_mva: float = 1000.0,
     use_full_newton_raphson: bool = False,
 ) -> Violations:
     run_solver(use_full_newton_raphson)
@@ -88,10 +88,10 @@ def check_violations(
         log.info(f"Overloaded 3-winding transformers ({max_trafo_loading_pct=}):")
         print_trafos_3w(overloaded_trafos_3w_ids)
     if overloaded_swing_buses_ids := get_overloaded_swing_buses_ids(
-        max_swing_bus_power_mw
+        max_swing_bus_power_mva
     ):
         v |= Violations.SWING_BUS_LOADING
-        log.info(f"Overloaded swing buses ({max_swing_bus_power_mw=}):")
+        log.info(f"Overloaded swing buses ({max_swing_bus_power_mva=}):")
         print_swing_buses(overloaded_swing_buses_ids)
     log.info(f"Detected violations: {v}\n")
     return v
