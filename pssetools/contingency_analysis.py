@@ -52,12 +52,13 @@ def branch_is_not_critical(
     use_full_newton_raphson: bool,
 ) -> bool:
     if branch.is_enabled():
-        with disable_branch(branch):
-            violations: Violations = check_violations(
-                **dataclasses.asdict(contingency_limits),
-                use_full_newton_raphson=use_full_newton_raphson
-            )
-            return violations == Violations.NO_VIOLATIONS
+        with disable_branch(branch) as is_disabled:
+            if is_disabled:
+                violations: Violations = check_violations(
+                    **dataclasses.asdict(contingency_limits),
+                    use_full_newton_raphson=use_full_newton_raphson
+                )
+                return violations == Violations.NO_VIOLATIONS
     return False
 
 
@@ -67,11 +68,12 @@ def trafo_is_not_critical(
     use_full_newton_raphson: bool,
 ) -> bool:
     if trafo.is_enabled():
-        with disable_trafo(trafo):
-            violations: Violations = check_violations(
-                **dataclasses.asdict(contingency_limits),
-                use_full_newton_raphson=use_full_newton_raphson
-            )
+        with disable_trafo(trafo) as is_disabled:
+            if is_disabled:
+                violations: Violations = check_violations(
+                    **dataclasses.asdict(contingency_limits),
+                    use_full_newton_raphson=use_full_newton_raphson
+                )
             return violations == Violations.NO_VIOLATIONS
     return False
 

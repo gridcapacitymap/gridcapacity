@@ -1,8 +1,12 @@
+import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Iterator
 
 from pssetools import wrapped_funcs as wf
+from pssetools.wrapped_funcs import PsseApiCallError
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -47,10 +51,13 @@ class Branches:
 
 
 @contextmanager
-def disable_branch(branch: Branch) -> Iterator:
+def disable_branch(branch: Branch) -> Iterator[bool]:
     try:
         wf.branch_chng_3(branch.from_number, branch.to_number, branch.branch_id, st=0)
-        yield
+        yield True
+    except PsseApiCallError as e:
+        log.exception(e)
+        yield False
     finally:
         wf.branch_chng_3(branch.from_number, branch.to_number, branch.branch_id, st=1)
 
@@ -195,12 +202,15 @@ class Trafos:
 
 
 @contextmanager
-def disable_trafo(trafo: Trafo) -> Iterator:
+def disable_trafo(trafo: Trafo) -> Iterator[bool]:
     try:
         wf.two_winding_chng_6(
             trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=0
         )
-        yield
+        yield True
+    except PsseApiCallError as e:
+        log.exception(e)
+        yield False
     finally:
         wf.two_winding_chng_6(
             trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=1
