@@ -62,9 +62,17 @@ def run_check():
         max_trafo_loading_pct=110.0,
         max_swing_bus_power_mva=1000.0,
     )
+    contingency_limits: ViolationsLimits = ViolationsLimits(
+        max_bus_voltage_pu=1.12,
+        min_bus_voltage_pu=0.88,
+        max_branch_loading_pct=120.0,
+        max_trafo_loading_pct=120.0,
+        max_swing_bus_power_mva=1000.0,
+    )
     headroom = buses_headroom(
         upper_limit_p_mva=100.0,
         normal_limits=normal_limits,
+        contingency_limits=contingency_limits,
         use_full_newton_raphson=use_full_newton_raphson,
     )
     print("Available additional capacity:")
