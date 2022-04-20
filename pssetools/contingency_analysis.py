@@ -74,7 +74,7 @@ def trafo_is_not_critical(
                     **dataclasses.asdict(contingency_limits),
                     use_full_newton_raphson=use_full_newton_raphson
                 )
-            return violations == Violations.NO_VIOLATIONS
+                return violations == Violations.NO_VIOLATIONS
     return False
 
 
