@@ -1,5 +1,6 @@
 """Grid capacity analysis"""
 import dataclasses
+import math
 from dataclasses import dataclass
 from typing import Final, Iterator, Optional, Union
 
@@ -50,7 +51,7 @@ class CapacityAnalyser:
     def __init__(
         self,
         upper_limit_p_mw: float,
-        q_to_p_ratio: float,
+        power_factor: float,
         solver_tolerance_p_mw: float,
         max_iterations: int,
         normal_limits: Optional[ViolationsLimits],
@@ -58,8 +59,12 @@ class CapacityAnalyser:
         contingency_scenario: ContingencyScenario,
         use_full_newton_raphson: bool,
     ):
+        upper_limit_q_mw: Final[float] = upper_limit_p_mw * math.tan(
+            math.acos(power_factor)
+        )
+        self._upper_limit_mva: Final[complex] = upper_limit_p_mw + 1j * upper_limit_q_mw
         self._upper_limit_p_mw: Final[float] = upper_limit_p_mw
-        self._q_to_p_ratio: Final[float] = q_to_p_ratio
+        self._q_to_p_ratio: Final[float] = power_factor
         self._solver_tolerance_p_mw: Final[float] = solver_tolerance_p_mw
         self._max_iterations: Final[int] = max_iterations
         self._normal_limits: Final[Optional[ViolationsLimits]] = normal_limits
@@ -86,14 +91,12 @@ class CapacityAnalyser:
     def bus_headroom(self, bus: Bus, progress: tqdm) -> BusHeadroom:
         """Return bus actual load and max additional PQ power in MVA"""
         actual_load_mva: complex = self.bus_actual_load_mva(bus.number)
-        upper_limit_mva: complex = self.bus_upper_limit_mva(actual_load_mva)
         bus_capacity_available_mva: complex = self.max_bus_capacity_mva(
             bus,
-            upper_limit_mva,
         )
         limiting_factor: Optional[LimitingFactor] = None
         if bus_capacity_available_mva == 0j:
-            limiting_factor = self.get_limiting_factor(bus, upper_limit_mva)
+            limiting_factor = self.get_limiting_factor(bus)
         progress.postfix[0]["bus_number"] = bus.number
         progress.update()
         return BusHeadroom(
@@ -115,24 +118,12 @@ class CapacityAnalyser:
                 self._loads_available = False
         return actual_load_mva
 
-    def bus_upper_limit_mva(self, actual_load_mva: complex) -> complex:
-        """The active power (P) is fixed.
-        The reactive power (Q) is proportional to the bus load
-        if the latter exists."""
-        upper_limit_q_mw: float
-        if actual_load_mva.real == 0:
-            upper_limit_q_mw = self._q_to_p_ratio * self._upper_limit_p_mw
-        else:
-            actual_q_to_p_ratio: float = actual_load_mva.imag / actual_load_mva.real
-            upper_limit_q_mw = actual_q_to_p_ratio * self._upper_limit_p_mw
-        return self._upper_limit_p_mw + (upper_limit_q_mw * 1j)
-
     def max_bus_capacity_mva(
         self,
         bus: Bus,
-        upper_limit_mva: complex,
     ) -> complex:
         """Return max additional load PQ power in MVA"""
+        upper_limit_mva: complex = self._upper_limit_mva
         lower_limit_mva: complex = 0j
         temp_load: TemporaryBusLoad = TemporaryBusLoad(bus)
         with temp_load:
@@ -183,11 +174,11 @@ class CapacityAnalyser:
                 )
         return violations == Violations.NO_VIOLATIONS
 
-    def get_limiting_factor(self, bus: Bus, upper_limit_mva: complex) -> LimitingFactor:
+    def get_limiting_factor(self, bus: Bus) -> LimitingFactor:
         temp_load: TemporaryBusLoad = TemporaryBusLoad(bus)
         with temp_load:
             # If upper limit is available, return it immediately
-            temp_load(upper_limit_mva)
+            temp_load(self._upper_limit_mva)
             violations: Violations
             limiting_subsystem: LimitingSubsystem
             if self._normal_limits is None:
@@ -218,7 +209,7 @@ class CapacityAnalyser:
 
 def buses_headroom(
     upper_limit_p_mw: float,
-    q_to_p_ratio: float = 0.8,
+    power_factor: float = 0.9,
     solver_tolerance_p_mw: float = 5.0,
     max_iterations: int = 10,
     normal_limits: Optional[ViolationsLimits] = None,
@@ -229,7 +220,7 @@ def buses_headroom(
     """Return actual load and max additional PQ power in MVA for each bus"""
     capacity_analyser: CapacityAnalyser = CapacityAnalyser(
         upper_limit_p_mw,
-        q_to_p_ratio,
+        power_factor,
         solver_tolerance_p_mw,
         max_iterations,
         normal_limits,
