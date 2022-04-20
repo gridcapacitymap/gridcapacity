@@ -2,11 +2,17 @@
 "Subsystem Data Retrieval" of the PSSE 35 API.
 """
 import logging
+import os
 from typing import Callable, Final, Optional, Union
 
 from pssetools import wrapped_funcs as wf
 
 log = logging.getLogger(__name__)
+LOG_LEVEL: Final[int] = (
+    logging.INFO
+    if not os.getenv("PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS")
+    else logging.WARNING
+)
 field_type2func_suffix: Final[dict[str, str]] = {
     "I": "int",
     "R": "real",
@@ -137,11 +143,11 @@ def print_branches(
         get_branch_field(field_name) for field_name in branch_fields
     )
 
-    log.info(branch_fields)
+    log.log(LOG_LEVEL, branch_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(branch_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, branch_fields)
 
 
 def print_buses(
@@ -160,11 +166,11 @@ def print_buses(
         get_bus_field(field_name) for field_name in bus_fields
     )
 
-    log.info(bus_fields)
+    log.log(LOG_LEVEL, bus_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(bus_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, bus_fields)
 
 
 def print_loads(
@@ -180,11 +186,11 @@ def print_loads(
         get_load_field(field_name) for field_name in load_fields
     )
 
-    log.info(load_fields)
+    log.log(LOG_LEVEL, load_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(load_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, load_fields)
 
 
 def print_swing_buses(
@@ -201,11 +207,11 @@ def print_swing_buses(
     )
     buses_types: list[int] = wf.agenbusint(string="type")[0]
 
-    log.info(plant_bus_fields)
+    log.log(LOG_LEVEL, plant_bus_fields)
     for row, bus_type in zip(range(len(values[0])), buses_types):
         if bus_type == SWING_BUS and (selected_ids is None or row in selected_ids):
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(plant_bus_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, plant_bus_fields)
 
 
 def print_trafos(
@@ -226,11 +232,11 @@ def print_trafos(
         get_trafo_field(field_name) for field_name in trafo_fields
     )
 
-    log.info(trafo_fields)
+    log.log(LOG_LEVEL, trafo_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(trafo_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, trafo_fields)
 
 
 def print_trafos_3w(
@@ -253,8 +259,8 @@ def print_trafos_3w(
         get_trafo_3w_field(field_name) for field_name in trafo_3w_fields
     )
 
-    log.info(trafo_3w_fields)
+    log.log(LOG_LEVEL, trafo_3w_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(trafo_3w_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, trafo_3w_fields)

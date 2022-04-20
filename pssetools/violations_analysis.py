@@ -1,6 +1,8 @@
 import enum
 import logging
+import os
 from dataclasses import dataclass
+from typing import Final
 
 import psspy
 
@@ -21,6 +23,11 @@ from pssetools.subsystem_data import (
 from pssetools.wrapped_funcs import PsseApiCallError
 
 log = logging.getLogger(__name__)
+LOG_LEVEL: Final[int] = (
+    logging.INFO
+    if not os.getenv("PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS")
+    else logging.WARNING
+)
 
 
 class Violations(enum.Flag):
@@ -70,34 +77,38 @@ def check_violations(
             run_solver(use_full_newton_raphson, use_flat_start=True)
         if not wf.is_solved():
             v |= Violations.NOT_CONVERGED
-            log.info("Case not solved!")
+            log.log(LOG_LEVEL, "Case not solved!")
             return v
     log.info(f"\nCHECKING VIOLATIONS")
     if overvoltage_buses_ids := get_overvoltage_buses_ids(max_bus_voltage_pu):
         v |= Violations.BUS_OVERVOLTAGE
-        log.info(f"Overvoltage buses ({max_bus_voltage_pu=}):")
+        log.log(LOG_LEVEL, f"Overvoltage buses ({max_bus_voltage_pu=}):")
         print_buses(overvoltage_buses_ids)
     if undervoltage_buses_ids := get_undervoltage_buses_ids(min_bus_voltage_pu):
         v |= Violations.BUS_UNDERVOLTAGE
-        log.info(f"Undervoltage buses ({min_bus_voltage_pu=}):")
+        log.log(LOG_LEVEL, f"Undervoltage buses ({min_bus_voltage_pu=}):")
         print_buses(undervoltage_buses_ids)
     if overloaded_branches_ids := get_overloaded_branches_ids(max_branch_loading_pct):
         v |= Violations.BRANCH_LOADING
-        log.info(f"Overloaded branches ({max_branch_loading_pct=}):")
+        log.log(LOG_LEVEL, f"Overloaded branches ({max_branch_loading_pct=}):")
         print_branches(overloaded_branches_ids)
     if overloaded_trafos_ids := get_overloaded_trafos_ids(max_trafo_loading_pct):
         v |= Violations.TRAFO_LOADING
-        log.info(f"Overloaded 2-winding transformers ({max_trafo_loading_pct=}):")
+        log.log(
+            LOG_LEVEL, f"Overloaded 2-winding transformers ({max_trafo_loading_pct=}):"
+        )
         print_trafos(overloaded_trafos_ids)
     if overloaded_trafos_3w_ids := get_overloaded_trafos_3w_ids(max_trafo_loading_pct):
         v |= Violations.TRAFO_LOADING
-        log.info(f"Overloaded 3-winding transformers ({max_trafo_loading_pct=}):")
+        log.log(
+            LOG_LEVEL, f"Overloaded 3-winding transformers ({max_trafo_loading_pct=}):"
+        )
         print_trafos_3w(overloaded_trafos_3w_ids)
     if overloaded_swing_buses_ids := get_overloaded_swing_buses_ids(
         max_swing_bus_power_mva
     ):
         v |= Violations.SWING_BUS_LOADING
-        log.info(f"Overloaded swing buses ({max_swing_bus_power_mva=}):")
+        log.log(LOG_LEVEL, f"Overloaded swing buses ({max_swing_bus_power_mva=}):")
         print_swing_buses(overloaded_swing_buses_ids)
     log.info(f"Detected violations: {v}\n")
     return v
@@ -114,4 +125,4 @@ def run_solver(use_full_newton_raphson: bool, use_flat_start: bool = False):
             options10=1,
         )
     except PsseApiCallError as e:
-        log.info(e.args)
+        log.log(LOG_LEVEL, e.args)

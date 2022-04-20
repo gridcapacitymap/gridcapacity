@@ -20,9 +20,10 @@ The `savnw.sav` will be used if the case name is omitted. The case name is a fil
 
 ## Environment variables #
 
-| ENV                  | Description           |
-|----------------------|:----------------------|
-| `PSSE_TOOLS_VERBOSE` | Enable verbose output |
+| ENV                                       | Description              |
+|-------------------------------------------|:-------------------------|
+| `PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS` | Enable violations output |
+| `PSSE_TOOLS_VERBOSE`                      | Enable verbose output    |
 
 
 To start the project with verbose output enabled, run:
