@@ -1,6 +1,7 @@
 """Grid capacity analysis"""
 import dataclasses
 import math
+from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Final, Iterator, Optional, Union
 
@@ -52,6 +53,7 @@ class CapacityAnalyser:
         self,
         upper_limit_p_mw: float,
         power_factor: float,
+        selected_buses_ids: Optional[Collection[int]],
         solver_tolerance_p_mw: float,
         max_iterations: int,
         normal_limits: Optional[ViolationsLimits],
@@ -65,6 +67,7 @@ class CapacityAnalyser:
         self._upper_limit_mva: Final[complex] = upper_limit_p_mw + 1j * upper_limit_q_mw
         self._upper_limit_p_mw: Final[float] = upper_limit_p_mw
         self._q_to_p_ratio: Final[float] = power_factor
+        self._selected_buses_ids: Optional[Collection[int]] = selected_buses_ids
         self._solver_tolerance_p_mw: Final[float] = solver_tolerance_p_mw
         self._max_iterations: Final[int] = max_iterations
         self._normal_limits: Final[Optional[ViolationsLimits]] = normal_limits
@@ -83,10 +86,17 @@ class CapacityAnalyser:
         buses: Buses = Buses()
         print("Analysing headroom")
         with tqdm(
-            total=len(buses),
+            total=len(buses)
+            if self._selected_buses_ids is None
+            else len(self._selected_buses_ids),
             postfix=[{}],
         ) as progress:
-            return tuple(self.bus_headroom(bus, progress) for bus in buses)
+            return tuple(
+                self.bus_headroom(bus, progress)
+                for bus in buses
+                if self._selected_buses_ids is None
+                or bus.number in self._selected_buses_ids
+            )
 
     def bus_headroom(self, bus: Bus, progress: tqdm) -> BusHeadroom:
         """Return bus actual load and max additional PQ power in MVA"""
@@ -210,6 +220,7 @@ class CapacityAnalyser:
 def buses_headroom(
     upper_limit_p_mw: float,
     power_factor: float = 0.9,
+    selected_buses_ids: Optional[Collection[int]] = None,
     solver_tolerance_p_mw: float = 5.0,
     max_iterations: int = 10,
     normal_limits: Optional[ViolationsLimits] = None,
@@ -221,6 +232,7 @@ def buses_headroom(
     capacity_analyser: CapacityAnalyser = CapacityAnalyser(
         upper_limit_p_mw,
         power_factor,
+        selected_buses_ids,
         solver_tolerance_p_mw,
         max_iterations,
         normal_limits,

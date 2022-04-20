@@ -3,10 +3,10 @@ import os
 import sys
 import winreg
 from pathlib import Path
-from typing import Final, List, Optional
+from typing import Final, Optional
 
 
-def get_psse35_paths() -> List[str]:
+def get_psse35_paths() -> list[str]:
     with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\PTI\PSSE 35") as pti_key:
         last_sub_key: Optional[str] = None
         try:
@@ -18,7 +18,7 @@ def get_psse35_paths() -> List[str]:
             raise (RuntimeError("PSSE 35 keys not found in Windows Registry"))
         with winreg.OpenKey(pti_key, rf"{last_sub_key}\Product Paths") as paths_key:
             try:
-                psse_paths: List[str] = list(
+                psse_paths: list[str] = list(
                     winreg.QueryValueEx(paths_key, key)[0]
                     for key in (
                         "PsseExePath",
