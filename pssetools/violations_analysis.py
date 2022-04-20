@@ -45,6 +45,9 @@ class ViolationsLimits:
 class SolutionConvergenceIndicator(enum.IntFlag):
     MET_CONVERGENCE_TOLERANCE = 0
     BLOWN_UP = 2
+    RSOL_CONVERGED_WITH_PHASE_SHIFT_LOCKED = 10
+    RSOL_CONVERGED_WITH_TOLN_INCREASED = 11
+    RSOL_CONVERGED_WITH_Y_LOAD_CONVERSION_DUE_TO_LOW_VOLTAGE = 12
 
 
 def check_violations(
@@ -57,10 +60,13 @@ def check_violations(
 ) -> Violations:
     run_solver(use_full_newton_raphson)
     v: Violations = Violations.NO_VIOLATIONS
-    convergence_indicator = psspy.solved()
-    if convergence_indicator != SolutionConvergenceIndicator.MET_CONVERGENCE_TOLERANCE:
+    sol_ci = psspy.solved()
+    if (
+        sol_ci != SolutionConvergenceIndicator.MET_CONVERGENCE_TOLERANCE
+        or sol_ci < SolutionConvergenceIndicator.RSOL_CONVERGED_WITH_PHASE_SHIFT_LOCKED
+    ):
         # Try flat start if there was a blown up
-        if convergence_indicator == SolutionConvergenceIndicator.BLOWN_UP:
+        if sol_ci == SolutionConvergenceIndicator.BLOWN_UP:
             run_solver(use_full_newton_raphson, use_flat_start=True)
         if not wf.is_solved():
             v |= Violations.NOT_CONVERGED
