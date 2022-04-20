@@ -27,8 +27,8 @@ from pssetools.violations_analysis import Violations, ViolationsLimits, check_vi
 
 @dataclass
 class LimitingFactor:
-    violations: Violations
-    subsystem: LimitingSubsystem
+    v: Violations
+    ss: LimitingSubsystem
 
 
 @dataclass
@@ -36,7 +36,7 @@ class BusHeadroom:
     bus: Bus
     actual_load_mva: complex
     bus_capacity_available_mva: complex
-    limiting_factor: Optional[LimitingFactor]
+    lf: Optional[LimitingFactor]
 
 
 class CapacityAnalyser:
@@ -204,7 +204,7 @@ class CapacityAnalyser:
                         **dataclasses.asdict(self._contingency_limits),
                         use_full_newton_raphson=self._use_full_newton_raphson,
                     )
-            return LimitingFactor(violations=violations, subsystem=limiting_subsystem)
+            return LimitingFactor(v=violations, ss=limiting_subsystem)
 
 
 def buses_headroom(
