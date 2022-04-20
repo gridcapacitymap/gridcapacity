@@ -1,17 +1,33 @@
 """Grid capacity analysis"""
 import dataclasses
 from dataclasses import dataclass
-from typing import Final, Iterator, Optional
+from typing import Final, Iterator, Optional, Union
 
 from tqdm import tqdm
 
 from pssetools.contingency_analysis import (
     ContingencyScenario,
+    LimitingSubsystem,
     contingency_check,
+    get_contingency_limiting_subsystem,
     get_contingency_scenario,
 )
-from pssetools.subsystems import Bus, Buses, Load, Loads, TemporaryBusLoad
+from pssetools.subsystems import (
+    Branch,
+    Bus,
+    Buses,
+    Load,
+    Loads,
+    TemporaryBusLoad,
+    Trafo,
+)
 from pssetools.violations_analysis import Violations, ViolationsLimits, check_violations
+
+
+@dataclass
+class LimitingFactor:
+    violations: Violations
+    subsystem: LimitingSubsystem
 
 
 @dataclass
@@ -19,6 +35,7 @@ class BusHeadroom:
     bus: Bus
     actual_load_mva: complex
     bus_capacity_available_mva: complex
+    limiting_factor: Optional[LimitingFactor]
 
 
 class CapacityAnalyser:
@@ -27,6 +44,7 @@ class CapacityAnalyser:
      - loads analysis
      - max capacity analysis
      - feasibility check
+     - getting limiting factor
     """
 
     def __init__(
@@ -73,9 +91,14 @@ class CapacityAnalyser:
             bus,
             upper_limit_mva,
         )
+        limiting_factor: Optional[LimitingFactor] = None
+        if bus_capacity_available_mva == 0j:
+            limiting_factor = self.get_limiting_factor(bus, upper_limit_mva)
         progress.postfix[0]["bus_number"] = bus.number
         progress.update()
-        return BusHeadroom(bus, actual_load_mva, bus_capacity_available_mva)
+        return BusHeadroom(
+            bus, actual_load_mva, bus_capacity_available_mva, limiting_factor
+        )
 
     def bus_actual_load_mva(self, bus_number: int) -> complex:
         """Return sum of all bus loads"""
@@ -100,9 +123,7 @@ class CapacityAnalyser:
         if actual_load_mva.real == 0:
             upper_limit_q_mw = self._q_to_p_ratio * self._upper_limit_p_mw
         else:
-            actual_q_to_p_ratio: float = (
-                actual_load_mva.imag / actual_load_mva.real
-            )
+            actual_q_to_p_ratio: float = actual_load_mva.imag / actual_load_mva.real
             upper_limit_q_mw = actual_q_to_p_ratio * self._upper_limit_p_mw
         return self._upper_limit_p_mw + (upper_limit_q_mw * 1j)
 
@@ -161,6 +182,38 @@ class CapacityAnalyser:
                     use_full_newton_raphson=self._use_full_newton_raphson,
                 )
         return violations == Violations.NO_VIOLATIONS
+
+    def get_limiting_factor(self, bus: Bus, upper_limit_mva: complex) -> LimitingFactor:
+        temp_load: TemporaryBusLoad = TemporaryBusLoad(bus)
+        with temp_load:
+            # If upper limit is available, return it immediately
+            temp_load(upper_limit_mva)
+            violations: Violations
+            limiting_subsystem: LimitingSubsystem
+            if self._normal_limits is None:
+                violations = check_violations(
+                    use_full_newton_raphson=self._use_full_newton_raphson
+                )
+            else:
+                violations = check_violations(
+                    **dataclasses.asdict(self._normal_limits),
+                    use_full_newton_raphson=self._use_full_newton_raphson,
+                )
+            if violations != Violations.NO_VIOLATIONS:
+                limiting_subsystem = None
+            else:
+                if self._contingency_limits is None:
+                    limiting_subsystem = get_contingency_limiting_subsystem(
+                        contingency_scenario=self._contingency_scenario,
+                        use_full_newton_raphson=self._use_full_newton_raphson,
+                    )
+                else:
+                    limiting_subsystem = get_contingency_limiting_subsystem(
+                        contingency_scenario=self._contingency_scenario,
+                        **dataclasses.asdict(self._contingency_limits),
+                        use_full_newton_raphson=self._use_full_newton_raphson,
+                    )
+            return LimitingFactor(violations=violations, subsystem=limiting_subsystem)
 
 
 def buses_headroom(
