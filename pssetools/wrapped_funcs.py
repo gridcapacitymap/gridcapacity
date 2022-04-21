@@ -241,6 +241,11 @@ def brnint() -> int:
 
 
 @process_psse_api_error_code
+def bus_chng_4() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def case() -> None:
     pass
 
