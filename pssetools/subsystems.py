@@ -76,12 +76,14 @@ def disable_branch(branch: Branch) -> Iterator[bool]:
 class Bus:
     number: int
     ex_name: str
+    type: int
 
 
 @dataclass
 class RawBuses:
     number: list[int]
     ex_name: list[str]
+    type: list[int]
 
 
 class Buses:
@@ -89,6 +91,7 @@ class Buses:
         self._raw_buses: RawBuses = RawBuses(
             wf.abusint(string="number")[0],
             wf.abuschar(string="exName")[0],
+            wf.abusint(string="type")[0],
         )
 
     def __iter__(self) -> Iterator[Bus]:
@@ -96,6 +99,7 @@ class Buses:
             yield Bus(
                 self._raw_buses.number[bus_idx],
                 self._raw_buses.ex_name[bus_idx],
+                self._raw_buses.type[bus_idx],
             )
 
     def __len__(self) -> int:
