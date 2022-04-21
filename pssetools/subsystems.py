@@ -1,7 +1,7 @@
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Iterator
+from typing import Iterator, Union
 
 import psspy
 
@@ -166,6 +166,37 @@ class TemporaryBusLoad:
         wf.load_chng_6(
             self._bus.number, self.TEMP_LOAD_ID, realar=[new_load.real, new_load.imag]
         )
+
+
+class TemporaryBusMachine:
+    TEMP_MACHINE_ID: str = "Tm"
+
+    def __init__(self, bus: Bus) -> None:
+        self._bus: Bus = bus
+        self._context_manager_is_active: bool = False
+
+    def __enter__(self):
+        # Create machine
+        wf.machine_data_4(self._bus.number, self.TEMP_MACHINE_ID)
+        self._context_manager_is_active = True
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        # Delete machine
+        wf.purgmac(self._bus.number, self.TEMP_MACHINE_ID)
+        self._context_manager_is_active = False
+
+    def __call__(self, gen_mva: complex) -> None:
+        if not self._context_manager_is_active:
+            raise RuntimeError(
+                "Machine modification without context manager is prohibited. "
+                "Use `with TemporaryBusMachine(bus) as temp_gen:`."
+            )
+        wf.machine_chng_4(
+            self._bus.number, self.TEMP_MACHINE_ID, realar=[gen_mva.real, gen_mva.imag]
+        )
+
+
+TemporaryBusSubsystem = Union[TemporaryBusLoad, TemporaryBusMachine]
 
 
 @dataclass(frozen=True)

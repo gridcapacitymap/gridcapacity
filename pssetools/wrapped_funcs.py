@@ -240,6 +240,16 @@ def load_chng_6() -> None:
 
 
 @process_psse_api_error_code
+def machine_data_4() -> None:
+    pass
+
+
+@process_psse_api_error_code
+def machine_chng_4() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def progress_output() -> None:
     pass
 
@@ -251,6 +261,11 @@ def prompt_output() -> None:
 
 @process_psse_api_error_code
 def purgload() -> None:
+    pass
+
+
+@process_psse_api_error_code
+def purgmac() -> None:
     pass
 
 
