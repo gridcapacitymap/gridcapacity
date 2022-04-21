@@ -140,6 +140,44 @@ class Loads:
         return len(self._raw_loads.number)
 
 
+@dataclass(frozen=True)
+class Machine:
+    number: int
+    ex_name: str
+    machine_id: str
+    pq_gen: complex
+
+
+@dataclass(frozen=True)
+class RawMachines:
+    number: list[int]
+    ex_name: list[str]
+    machine_id: list[str]
+    pq_gen: list[complex]
+
+
+class Machines:
+    def __init__(self) -> None:
+        self._raw_machines: RawMachines = RawMachines(
+            wf.amachint(string="number")[0],
+            wf.amachchar(string="exName")[0],
+            wf.amachchar(string="id")[0],
+            wf.amachcplx(string="pqGen")[0],
+        )
+
+    def __iter__(self) -> Iterator[Machine]:
+        for machine_idx in range(len(self)):
+            yield Machine(
+                self._raw_machines.number[machine_idx],
+                self._raw_machines.ex_name[machine_idx],
+                self._raw_machines.machine_id[machine_idx],
+                self._raw_machines.pq_gen[machine_idx],
+            )
+
+    def __len__(self) -> int:
+        return len(self._raw_machines.number)
+
+
 class TemporaryBusLoad:
     TEMP_LOAD_ID: str = "Tm"
 

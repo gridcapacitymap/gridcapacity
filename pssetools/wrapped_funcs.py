@@ -155,6 +155,31 @@ def aloadtypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
+def amachchar() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
+def amachcplx() -> list[list[complex]]:
+    pass
+
+
+@process_psse_api_error_code
+def amachint() -> list[list[int]]:
+    pass
+
+
+@process_psse_api_error_code
+def amachreal() -> list[list[float]]:
+    pass
+
+
+@process_psse_api_error_code
+def amachtypes() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
 def atrnchar() -> list[list[str]]:
     pass
 

@@ -19,6 +19,8 @@ from pssetools.subsystems import (
     Buses,
     Load,
     Loads,
+    Machine,
+    Machines,
     TemporaryBusLoad,
     TemporaryBusMachine,
     TemporaryBusSubsystem,
@@ -36,6 +38,7 @@ class LimitingFactor:
 class BusHeadroom:
     bus: Bus
     actual_load_mva: complex
+    actual_gen_mva: complex
     load_avail_mva: complex
     gen_avail_mva: complex
     lf: Optional[LimitingFactor]
@@ -89,6 +92,12 @@ class CapacityAnalyser:
             self._load: Load = next(self._loads_iterator)
         except StopIteration:
             self._loads_available = False
+        self._machines_iterator: Iterator = iter(Machines())
+        self._machines_available: bool = True
+        try:
+            self._machine: Machine = next(self._machines_iterator)
+        except StopIteration:
+            self._machines_available = False
 
     def buses_headroom(self) -> tuple[BusHeadroom, ...]:
         """Return actual load and max additional PQ power in MVA for each bus"""
@@ -110,6 +119,7 @@ class CapacityAnalyser:
     def bus_headroom(self, bus: Bus, progress: tqdm) -> BusHeadroom:
         """Return bus actual load and max additional PQ power in MVA"""
         actual_load_mva: complex = self.bus_actual_load_mva(bus.number)
+        actual_gen_mva: complex = self.bus_actual_gen_mva(bus.number)
         limiting_factor: Optional[LimitingFactor] = None
         load_available_mva: complex
         temp_load: TemporaryBusLoad = TemporaryBusLoad(bus)
@@ -121,8 +131,8 @@ class CapacityAnalyser:
                 limiting_factor = self.get_limiting_factor(
                     temp_load, self._upper_load_limit_mva
                 )
-        gen_available_mva: complex
-        if load_available_mva != 0j:
+        gen_available_mva: complex = 0j
+        if actual_gen_mva != 0 and load_available_mva != 0j:
             temp_gen: TemporaryBusMachine = TemporaryBusMachine(bus)
             with temp_gen:
                 gen_available_mva = self.max_power_available_mva(
@@ -137,6 +147,7 @@ class CapacityAnalyser:
         return BusHeadroom(
             bus=bus,
             actual_load_mva=actual_load_mva,
+            actual_gen_mva=actual_gen_mva,
             load_avail_mva=load_available_mva,
             gen_avail_mva=gen_available_mva,
             lf=limiting_factor,
@@ -156,6 +167,21 @@ class CapacityAnalyser:
             except StopIteration:
                 self._loads_available = False
         return actual_load_mva
+
+    def bus_actual_gen_mva(self, bus_number: int) -> complex:
+        """Return sum of all bus generators"""
+        actual_gen_mva: complex = 0j
+        # Buses and machines are sorted by bus number [PSSE API.pdf].
+        # So machines are iterated until machine bus number is lower or equal
+        # to the bus number.
+        while self._machines_available and self._machine.number <= bus_number:
+            if self._machine.number == bus_number:
+                actual_gen_mva += self._machine.pq_gen
+            try:
+                self._machine = next(self._machines_iterator)
+            except StopIteration:
+                self._machines_available = False
+        return actual_gen_mva
 
     def max_power_available_mva(
         self,
