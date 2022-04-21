@@ -25,7 +25,12 @@ from pssetools.subsystems import (
     TemporaryBusMachine,
     TemporaryBusSubsystem,
 )
-from pssetools.violations_analysis import Violations, ViolationsLimits, check_violations
+from pssetools.violations_analysis import (
+    PowerFlows,
+    Violations,
+    ViolationsLimits,
+    check_violations,
+)
 
 
 @dataclass
@@ -109,6 +114,7 @@ class CapacityAnalyser:
             else len(self._selected_buses_ids),
             postfix=[{}],
         ) as progress:
+            PowerFlows.reset_count()
             return tuple(
                 self.bus_headroom(bus, progress)
                 for bus in buses
@@ -143,6 +149,7 @@ class CapacityAnalyser:
                         temp_gen, self._upper_gen_limit_mva
                     )
         progress.postfix[0]["bus_number"] = bus.number
+        progress.postfix[0]["power_flows"] = PowerFlows.count
         progress.update()
         return BusHeadroom(
             bus=bus,

@@ -30,6 +30,23 @@ LOG_LEVEL: Final[int] = (
 )
 
 
+class PowerFlows:
+    _power_flows_count: int = 0
+
+    @classmethod
+    @property
+    def count(cls) -> int:
+        return cls._power_flows_count
+
+    @classmethod
+    def increment_count(cls) -> None:
+        cls._power_flows_count += 1
+
+    @classmethod
+    def reset_count(cls) -> None:
+        cls._power_flows_count = 0
+
+
 class Violations(enum.Flag):
     NO_VIOLATIONS = 0
     NOT_CONVERGED = enum.auto()
@@ -126,3 +143,4 @@ def run_solver(use_full_newton_raphson: bool, use_flat_start: bool = False):
         )
     except PsseApiCallError as e:
         log.log(LOG_LEVEL, e.args)
+    PowerFlows.increment_count()
