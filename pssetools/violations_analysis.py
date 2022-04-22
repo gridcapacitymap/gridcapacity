@@ -85,10 +85,7 @@ def check_violations(
     run_solver(use_full_newton_raphson)
     v: Violations = Violations.NO_VIOLATIONS
     sol_ci = psspy.solved()
-    if (
-        sol_ci != SolutionConvergenceIndicator.MET_CONVERGENCE_TOLERANCE
-        or sol_ci < SolutionConvergenceIndicator.RSOL_CONVERGED_WITH_PHASE_SHIFT_LOCKED
-    ):
+    if sol_ci != SolutionConvergenceIndicator.MET_CONVERGENCE_TOLERANCE:
         # Try flat start if there was a blown up
         if sol_ci == SolutionConvergenceIndicator.BLOWN_UP:
             run_solver(use_full_newton_raphson, use_flat_start=True)
@@ -132,15 +129,12 @@ def check_violations(
 
 
 def run_solver(use_full_newton_raphson: bool, use_flat_start: bool = False):
-    full_newton_raphson_setting: int = 1 if use_full_newton_raphson else 0
     flat_start_setting: int = 1 if use_flat_start else 0
     try:
-        # `options10=1` Restore original solution and settings on solution failure
-        wf.rsol(
-            options1=full_newton_raphson_setting,
-            options7=flat_start_setting,
-            options10=1,
-        )
+        if not use_full_newton_raphson:
+            wf.fdns(options6=flat_start_setting)
+        else:
+            wf.fdns(options6=flat_start_setting)
     except PsseApiCallError as e:
         log.log(LOG_LEVEL, e.args)
     PowerFlows.increment_count()
