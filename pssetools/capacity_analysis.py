@@ -62,7 +62,8 @@ class CapacityAnalyser:
         self,
         upper_load_limit_p_mw: float,
         upper_gen_limit_p_mw: float,
-        power_factor: float,
+        load_power_factor: float,
+        gen_power_factor: float,
         selected_buses_ids: Optional[Collection[int]],
         solver_tolerance_p_mw: float,
         max_iterations: int,
@@ -72,18 +73,17 @@ class CapacityAnalyser:
         use_full_newton_raphson: bool,
     ):
         upper_load_limit_q_mw: Final[float] = upper_load_limit_p_mw * math.tan(
-            math.acos(power_factor)
+            math.acos(load_power_factor)
         )
         self._upper_load_limit_mva: Final[complex] = (
             upper_load_limit_p_mw + 1j * upper_load_limit_q_mw
         )
         upper_gen_limit_q_mw: Final[float] = upper_gen_limit_p_mw * math.tan(
-            math.acos(power_factor)
+            math.acos(gen_power_factor)
         )
         self._upper_gen_limit_mva: Final[complex] = (
             upper_gen_limit_p_mw + 1j * upper_gen_limit_q_mw
         )
-        self._q_to_p_ratio: Final[float] = power_factor
         self._selected_buses_ids: Optional[Collection[int]] = selected_buses_ids
         self._solver_tolerance_p_mw: Final[float] = solver_tolerance_p_mw
         self._max_iterations: Final[int] = max_iterations
@@ -281,7 +281,8 @@ class CapacityAnalyser:
 def buses_headroom(
     upper_load_limit_p_mw: float,
     upper_gen_limit_p_mw: float,
-    power_factor: float = 0.9,
+    load_power_factor: float = 0.9,
+    gen_power_factor: float = 0.9,
     selected_buses_ids: Optional[Collection[int]] = None,
     solver_tolerance_p_mw: float = 5.0,
     max_iterations: int = 10,
@@ -294,7 +295,8 @@ def buses_headroom(
     capacity_analyser: CapacityAnalyser = CapacityAnalyser(
         upper_load_limit_p_mw,
         upper_gen_limit_p_mw,
-        power_factor,
+        load_power_factor,
+        gen_power_factor,
         selected_buses_ids,
         solver_tolerance_p_mw,
         max_iterations,
