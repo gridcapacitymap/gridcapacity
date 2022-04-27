@@ -265,12 +265,12 @@ class CapacityAnalyser:
             limiting_subsystem = None
         else:
             if self._contingency_limits is None:
-                limiting_subsystem = get_contingency_limiting_subsystem(
+                violations, limiting_subsystem = get_contingency_limiting_subsystem(
                     contingency_scenario=self._contingency_scenario,
                     use_full_newton_raphson=self._use_full_newton_raphson,
                 )
             else:
-                limiting_subsystem = get_contingency_limiting_subsystem(
+                violations, limiting_subsystem = get_contingency_limiting_subsystem(
                     contingency_scenario=self._contingency_scenario,
                     **dataclasses.asdict(self._contingency_limits),
                     use_full_newton_raphson=self._use_full_newton_raphson,

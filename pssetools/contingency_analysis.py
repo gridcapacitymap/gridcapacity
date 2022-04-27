@@ -128,7 +128,7 @@ def get_contingency_limiting_subsystem(
     max_trafo_loading_pct: float = 120.0,
     max_swing_bus_power_mva: float = 1000.0,
     use_full_newton_raphson: bool = False,
-) -> LimitingSubsystem:
+) -> tuple[Violations, LimitingSubsystem]:
     contingency_limits: ViolationsLimits = ViolationsLimits(
         max_bus_voltage_pu=max_bus_voltage_pu,
         min_bus_voltage_pu=min_bus_voltage_pu,
@@ -146,7 +146,7 @@ def get_contingency_limiting_subsystem(
                     use_full_newton_raphson=use_full_newton_raphson
                 )
                 if violations != Violations.NO_VIOLATIONS:
-                    return branch
+                    return violations, branch
     for trafo in contingency_scenario.trafos:
         if trafo.is_enabled():
             with disable_trafo(trafo):
@@ -155,5 +155,5 @@ def get_contingency_limiting_subsystem(
                     use_full_newton_raphson=use_full_newton_raphson
                 )
                 if violations != Violations.NO_VIOLATIONS:
-                    return trafo
-    return None
+                    return violations, trafo
+    return violations, None
