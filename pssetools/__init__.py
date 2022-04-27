@@ -50,6 +50,7 @@ def run_check():
         # `options6=1` Flat start
         wf.fnsl(options6=1)
         if not wf.is_solved():
+            log.warning(f"The base {case_name=} wasn't solved. Exiting.")
             return
     log.info(f"Case solved")
 
