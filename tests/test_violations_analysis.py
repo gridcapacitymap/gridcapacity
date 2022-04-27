@@ -6,7 +6,9 @@ from pssetools.violations_analysis import Violations, check_violations
 
 
 class CheckViolations(unittest.TestCase):
-    pssetools.init_psse()
+    @classmethod
+    def setUpClass(cls) -> None:
+        pssetools.init_psse()
 
     def test_not_converged(self):
         wf.open_case("savnw.sav")
