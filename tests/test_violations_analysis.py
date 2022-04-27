@@ -23,9 +23,11 @@ class CheckViolations(unittest.TestCase):
         )
 
     def test_bus_undervoltage(self):
-        wf.open_case("savnw_nb.sav")
+        wf.open_case("savnw.sav")
+        wf.branch_chng_3(152, 3004, "1", st=0)
+        wf.branch_chng_3(153, 3006, "1", st=0)
         self.assertEqual(
-            check_violations(max_trafo_loading_pct=110.0, max_branch_loading_pct=300.0),
+            check_violations(max_trafo_loading_pct=115.0, max_branch_loading_pct=115.0),
             Violations.BUS_UNDERVOLTAGE,
         )
 
@@ -40,7 +42,7 @@ class CheckViolations(unittest.TestCase):
 
     def test_swing_bus_loading(self):
         wf.open_case("savnw.sav")
-        wf.load_data_6(3011, "1", [1, 5, 5, 55, 1, 0, 0], realar1=1000.0)
+        wf.load_data_6(3011, "1", realar1=1000.0)
         self.assertEqual(
             check_violations(max_trafo_loading_pct=110.0),
             Violations.SWING_BUS_LOADING,
@@ -49,7 +51,7 @@ class CheckViolations(unittest.TestCase):
     def test_no_violations(self):
         wf.open_case("savnw.sav")
         self.assertEqual(
-            check_violations(max_trafo_loading_pct=110), Violations.NO_VIOLATIONS
+            Violations.NO_VIOLATIONS, check_violations(max_trafo_loading_pct=110)
         )
 
 
