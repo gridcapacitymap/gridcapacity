@@ -138,7 +138,7 @@ def run_solver(use_full_newton_raphson: bool, use_flat_start: bool = False):
         if not use_full_newton_raphson:
             wf.fdns(options6=flat_start_setting)
         else:
-            wf.fdns(options6=flat_start_setting)
+            wf.fnsl(options6=flat_start_setting)
     except PsseApiCallError as e:
         log.log(LOG_LEVEL, e.args)
     PowerFlows.increment_count()
