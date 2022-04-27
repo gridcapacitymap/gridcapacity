@@ -68,6 +68,7 @@ class ViolationsLimits:
 
 class SolutionConvergenceIndicator(enum.IntFlag):
     MET_CONVERGENCE_TOLERANCE = 0
+    ITERATION_LIMIT_EXCEEDED = 1
     BLOWN_UP = 2
     RSOL_CONVERGED_WITH_PHASE_SHIFT_LOCKED = 10
     RSOL_CONVERGED_WITH_TOLN_INCREASED = 11
@@ -86,8 +87,11 @@ def check_violations(
     v: Violations = Violations.NO_VIOLATIONS
     sol_ci = psspy.solved()
     if sol_ci != SolutionConvergenceIndicator.MET_CONVERGENCE_TOLERANCE:
-        # Try flat start if there was a blown up
-        if sol_ci == SolutionConvergenceIndicator.BLOWN_UP:
+        # Try flat start if iteration limit is exceeded or there is a blown up
+        if (
+            sol_ci == SolutionConvergenceIndicator.ITERATION_LIMIT_EXCEEDED
+            or sol_ci == SolutionConvergenceIndicator.BLOWN_UP
+        ):
             run_solver(use_full_newton_raphson, use_flat_start=True)
         if not wf.is_solved():
             v |= Violations.NOT_CONVERGED
