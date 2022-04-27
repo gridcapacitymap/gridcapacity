@@ -304,7 +304,7 @@ def buses_headroom(
         contingency_limits,
         contingency_scenario
         if contingency_scenario is not None
-        else get_contingency_scenario(),
+        else get_contingency_scenario(**dataclasses.asdict(contingency_limits)),
         use_full_newton_raphson,
     )
     return capacity_analyser.buses_headroom()
