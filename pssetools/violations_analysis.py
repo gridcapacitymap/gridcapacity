@@ -2,7 +2,7 @@ import enum
 import logging
 import os
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, Optional
 
 import psspy
 
@@ -82,21 +82,18 @@ def check_violations(
     max_trafo_loading_pct: float = 100.0,
     max_swing_bus_power_mva: float = 1000.0,
     use_full_newton_raphson: bool = False,
+    solver_opts: Optional[dict] = {"options1": 1, "options5": 1},
 ) -> Violations:
-    run_solver(use_full_newton_raphson)
+    """Default solver options:
+    `options1=1` Use tap adjustment option setting
+    `options5=1` Use switched shunt adjustment option setting
+    """
+    run_solver(use_full_newton_raphson, solver_opts)
     v: Violations = Violations.NO_VIOLATIONS
-    sol_ci = psspy.solved()
-    if sol_ci != SolutionConvergenceIndicator.MET_CONVERGENCE_TOLERANCE:
-        # Try flat start if iteration limit is exceeded or there is a blown up
-        if (
-            sol_ci == SolutionConvergenceIndicator.ITERATION_LIMIT_EXCEEDED
-            or sol_ci == SolutionConvergenceIndicator.BLOWN_UP
-        ):
-            run_solver(use_full_newton_raphson, use_flat_start=True)
-        if not wf.is_solved():
-            v |= Violations.NOT_CONVERGED
-            log.log(LOG_LEVEL, "Case not solved!")
-            return v
+    if not wf.is_solved():
+        v |= Violations.NOT_CONVERGED
+        log.log(LOG_LEVEL, "Case not solved!")
+        return v
     log.info(f"\nCHECKING VIOLATIONS")
     if overvoltage_buses_ids := get_overvoltage_buses_ids(max_bus_voltage_pu):
         v |= Violations.BUS_OVERVOLTAGE
@@ -135,13 +132,19 @@ def check_violations(
     return v
 
 
-def run_solver(use_full_newton_raphson: bool, use_flat_start: bool = False):
-    flat_start_setting: int = 1 if use_flat_start else 0
+def run_solver(
+    use_full_newton_raphson: bool,
+    solver_opts: Optional[dict] = {"options1": 1, "options5": 1},
+) -> None:
+    """Default solver options:
+    `options1=1` Use tap adjustment option setting
+    `options5=1` Use switched shunt adjustment option setting
+    """
     try:
         if not use_full_newton_raphson:
-            wf.fdns(options6=flat_start_setting)
+            wf.fdns(**solver_opts)
         else:
-            wf.fnsl(options6=flat_start_setting)
+            wf.fnsl(**solver_opts)
     except PsseApiCallError as e:
         log.log(LOG_LEVEL, e.args)
     PowerFlows.increment_count()
