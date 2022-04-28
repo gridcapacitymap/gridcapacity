@@ -1,5 +1,6 @@
 """Grid capacity analysis"""
 import dataclasses
+import logging
 import math
 from collections.abc import Collection
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from typing import Final, Iterator, Optional, Union
 
 from tqdm import tqdm
 
+from pssetools import wrapped_funcs as wf
 from pssetools.contingency_analysis import (
     ContingencyScenario,
     LimitingSubsystem,
@@ -30,7 +32,10 @@ from pssetools.violations_analysis import (
     Violations,
     ViolationsLimits,
     check_violations,
+    run_solver,
 )
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -60,6 +65,7 @@ class CapacityAnalyser:
 
     def __init__(
         self,
+        case_name: str,
         upper_load_limit_p_mw: float,
         upper_gen_limit_p_mw: float,
         load_power_factor: float,
@@ -69,9 +75,9 @@ class CapacityAnalyser:
         max_iterations: int,
         normal_limits: Optional[ViolationsLimits],
         contingency_limits: Optional[ViolationsLimits],
-        contingency_scenario: ContingencyScenario,
-        use_full_newton_raphson: bool,
+        contingency_scenario: Optional[ContingencyScenario] = None,
     ):
+        self._case_name: str = case_name
         upper_load_limit_q_mw: Final[float] = upper_load_limit_p_mw * math.tan(
             math.acos(load_power_factor)
         )
@@ -89,8 +95,11 @@ class CapacityAnalyser:
         self._max_iterations: Final[int] = max_iterations
         self._normal_limits: Final[Optional[ViolationsLimits]] = normal_limits
         self._contingency_limits: Final[Optional[ViolationsLimits]] = contingency_limits
-        self._contingency_scenario: Final[ContingencyScenario] = contingency_scenario
-        self._use_full_newton_raphson: Final[bool] = use_full_newton_raphson
+        self._use_full_newton_raphson: Final[bool] = not self.fdns_is_applicable()
+        self.check_base_case_violations()
+        self._contingency_scenario: Final[
+            ContingencyScenario
+        ] = self.handle_empty_contingency_scenario(contingency_scenario)
         self._loads_iterator: Iterator = iter(Loads())
         self._loads_available: bool = True
         try:
@@ -103,6 +112,41 @@ class CapacityAnalyser:
             self._machine: Machine = next(self._machines_iterator)
         except StopIteration:
             self._machines_available = False
+
+    def fdns_is_applicable(self) -> bool:
+        """Fixed slope Decoupled Newton-Raphson Solver (FDNS) is applicable"""
+        wf.open_case(self._case_name)
+        run_solver(use_full_newton_raphson=False)
+        is_applicable: Final[bool] = True if wf.is_solved() else False
+        if not is_applicable:
+            # Reload the case and run power flow to get solution convergence
+            # after failed FDNS
+            wf.open_case(self._case_name)
+            run_solver(use_full_newton_raphson=True)
+        log.info(f"Case solved")
+        return is_applicable
+
+    def check_base_case_violations(self) -> None:
+        """Raise `RuntimeError` if base case has violations"""
+        base_case_violations: Violations = self.check_violations()
+        if base_case_violations != Violations.NO_VIOLATIONS:
+            raise RuntimeError(f"The base case has {base_case_violations}")
+
+    def handle_empty_contingency_scenario(
+        self, contingency_scenario: Optional[ContingencyScenario]
+    ) -> ContingencyScenario:
+        """Returns new contingency scenario if none is provided"""
+        if contingency_scenario is not None:
+            return contingency_scenario
+        if self._contingency_limits is None:
+            contingency_scenario = get_contingency_scenario()
+        else:
+            contingency_scenario = get_contingency_scenario(
+                **dataclasses.asdict(self._contingency_limits)
+            )
+        # Reopen file to fix potential solver problems after building contingency scenario
+        wf.open_case(self._case_name)
+        return contingency_scenario
 
     def buses_headroom(self) -> tuple[BusHeadroom, ...]:
         """Return actual load and max additional PQ power in MVA for each bus"""
@@ -220,6 +264,12 @@ class CapacityAnalyser:
 
     def is_feasible(self) -> bool:
         """Return `True` if feasible"""
+        violations: Violations = self.check_violations()
+        if violations == Violations.NO_VIOLATIONS:
+            violations = self.contingency_check()
+        return violations == Violations.NO_VIOLATIONS
+
+    def check_violations(self):
         violations: Violations
         if self._normal_limits is None:
             violations = check_violations(
@@ -230,19 +280,22 @@ class CapacityAnalyser:
                 **dataclasses.asdict(self._normal_limits),
                 use_full_newton_raphson=self._use_full_newton_raphson,
             )
-        if violations == Violations.NO_VIOLATIONS:
-            if self._contingency_limits is None:
-                violations = contingency_check(
-                    contingency_scenario=self._contingency_scenario,
-                    use_full_newton_raphson=self._use_full_newton_raphson,
-                )
-            else:
-                violations = contingency_check(
-                    contingency_scenario=self._contingency_scenario,
-                    **dataclasses.asdict(self._contingency_limits),
-                    use_full_newton_raphson=self._use_full_newton_raphson,
-                )
-        return violations == Violations.NO_VIOLATIONS
+        return violations
+
+    def contingency_check(self):
+        violations: Violations
+        if self._contingency_limits is None:
+            violations = contingency_check(
+                contingency_scenario=self._contingency_scenario,
+                use_full_newton_raphson=self._use_full_newton_raphson,
+            )
+        else:
+            violations = contingency_check(
+                contingency_scenario=self._contingency_scenario,
+                **dataclasses.asdict(self._contingency_limits),
+                use_full_newton_raphson=self._use_full_newton_raphson,
+            )
+        return violations
 
     def get_limiting_factor(
         self,
@@ -279,6 +332,7 @@ class CapacityAnalyser:
 
 
 def buses_headroom(
+    case_name: str,
     upper_load_limit_p_mw: float,
     upper_gen_limit_p_mw: float,
     load_power_factor: float = 0.9,
@@ -289,10 +343,10 @@ def buses_headroom(
     normal_limits: Optional[ViolationsLimits] = None,
     contingency_limits: Optional[ViolationsLimits] = None,
     contingency_scenario: Optional[ContingencyScenario] = None,
-    use_full_newton_raphson: bool = False,
 ) -> tuple[BusHeadroom, ...]:
     """Return actual load and max additional PQ power in MVA for each bus"""
     capacity_analyser: CapacityAnalyser = CapacityAnalyser(
+        case_name,
         upper_load_limit_p_mw,
         upper_gen_limit_p_mw,
         load_power_factor,
@@ -302,9 +356,6 @@ def buses_headroom(
         max_iterations,
         normal_limits,
         contingency_limits,
-        contingency_scenario
-        if contingency_scenario is not None
-        else get_contingency_scenario(**dataclasses.asdict(contingency_limits)),
-        use_full_newton_raphson,
+        contingency_scenario,
     )
     return capacity_analyser.buses_headroom()

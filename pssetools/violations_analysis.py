@@ -128,7 +128,10 @@ def check_violations(
         v |= Violations.SWING_BUS_LOADING
         log.log(LOG_LEVEL, f"Overloaded swing buses ({max_swing_bus_power_mva=}):")
         print_swing_buses(overloaded_swing_buses_ids)
-    log.info(f"Detected violations: {v}\n")
+    log.log(
+        logging.INFO if v == Violations.NO_VIOLATIONS else LOG_LEVEL,
+        f"Detected violations: {v}\n",
+    )
     return v
 
 

@@ -1,4 +1,5 @@
 import errno
+import functools
 import logging
 import os
 from functools import wraps
@@ -383,9 +384,10 @@ error_messages_by_api: Final[dict[str, dict[int, str]]] = {
 }
 
 
+@functools.cache
 def _get_case_path(case_name):
     probable_case_path = Path(case_name)
-    case_path = case_path = (
+    case_path = (
         probable_case_path
         if probable_case_path.is_absolute()
         else _get_example_case_path(probable_case_path)
