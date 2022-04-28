@@ -4,19 +4,19 @@ import logging
 import math
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Final, Iterator, Optional, Union
+from typing import Final, Iterator, Optional
 
 from tqdm import tqdm
 
 from pssetools import wrapped_funcs as wf
 from pssetools.contingency_analysis import (
     ContingencyScenario,
-    LimitingSubsystem,
-    contingency_check,
-    get_contingency_limiting_subsystem,
-    get_contingency_scenario,
+    LimitingFactor,
+    get_contingency_limiting_factor,
 )
 from pssetools.subsystems import (
+    Branch,
+    Branches,
     Bus,
     Buses,
     Load,
@@ -26,6 +26,10 @@ from pssetools.subsystems import (
     TemporaryBusLoad,
     TemporaryBusMachine,
     TemporaryBusSubsystem,
+    Trafo,
+    Trafos,
+    disable_branch,
+    disable_trafo,
 )
 from pssetools.violations_analysis import (
     PowerFlows,
@@ -36,12 +40,6 @@ from pssetools.violations_analysis import (
 )
 
 log = logging.getLogger(__name__)
-
-
-@dataclass
-class LimitingFactor:
-    v: Violations
-    ss: LimitingSubsystem
 
 
 @dataclass
@@ -72,6 +70,7 @@ class CapacityAnalyser:
         gen_power_factor: float,
         selected_buses_ids: Optional[Collection[int]],
         solver_tolerance_p_mw: float,
+        solver_opts: dict,
         max_iterations: int,
         normal_limits: Optional[ViolationsLimits],
         contingency_limits: Optional[ViolationsLimits],
@@ -92,6 +91,7 @@ class CapacityAnalyser:
         )
         self._selected_buses_ids: Optional[Collection[int]] = selected_buses_ids
         self._solver_tolerance_p_mw: Final[float] = solver_tolerance_p_mw
+        self._solver_opts: dict = solver_opts
         self._max_iterations: Final[int] = max_iterations
         self._normal_limits: Final[Optional[ViolationsLimits]] = normal_limits
         self._contingency_limits: Final[Optional[ViolationsLimits]] = contingency_limits
@@ -116,13 +116,13 @@ class CapacityAnalyser:
     def fdns_is_applicable(self) -> bool:
         """Fixed slope Decoupled Newton-Raphson Solver (FDNS) is applicable"""
         wf.open_case(self._case_name)
-        run_solver(use_full_newton_raphson=False)
+        run_solver(use_full_newton_raphson=False, solver_opts=self._solver_opts)
         is_applicable: Final[bool] = True if wf.is_solved() else False
         if not is_applicable:
             # Reload the case and run power flow to get solution convergence
             # after failed FDNS
             wf.open_case(self._case_name)
-            run_solver(use_full_newton_raphson=True)
+            run_solver(use_full_newton_raphson=True, solver_opts=self._solver_opts)
         log.info(f"Case solved")
         return is_applicable
 
@@ -138,12 +138,7 @@ class CapacityAnalyser:
         """Returns new contingency scenario if none is provided"""
         if contingency_scenario is not None:
             return contingency_scenario
-        if self._contingency_limits is None:
-            contingency_scenario = get_contingency_scenario()
-        else:
-            contingency_scenario = get_contingency_scenario(
-                **dataclasses.asdict(self._contingency_limits)
-            )
+        contingency_scenario = self.get_contingency_scenario()
         # Reopen file to fix potential solver problems after building contingency scenario
         wf.open_case(self._case_name)
         return contingency_scenario
@@ -170,28 +165,23 @@ class CapacityAnalyser:
         """Return bus actual load and max additional PQ power in MVA"""
         actual_load_mva: complex = self.bus_actual_load_mva(bus.number)
         actual_gen_mva: complex = self.bus_actual_gen_mva(bus.number)
-        limiting_factor: Optional[LimitingFactor] = None
+        limiting_factor: Optional[LimitingFactor]
         load_available_mva: complex
         temp_load: TemporaryBusLoad = TemporaryBusLoad(bus)
         with temp_load:
-            load_available_mva = self.max_power_available_mva(
+            load_available_mva, limiting_factor = self.max_power_available_mva(
                 temp_load, self._upper_load_limit_mva
             )
-            if load_available_mva == 0j:
-                limiting_factor = self.get_limiting_factor(
-                    temp_load, self._upper_load_limit_mva
-                )
         gen_available_mva: complex = 0j
         if actual_gen_mva != 0 and load_available_mva != 0j:
             temp_gen: TemporaryBusMachine = TemporaryBusMachine(bus)
             with temp_gen:
-                gen_available_mva = self.max_power_available_mva(
+                gen_lf: LimitingFactor
+                gen_available_mva, gen_lf = self.max_power_available_mva(
                     temp_gen, self._upper_gen_limit_mva
                 )
                 if gen_available_mva == 0j:
-                    limiting_factor = self.get_limiting_factor(
-                        temp_gen, self._upper_gen_limit_mva
-                    )
+                    limiting_factor = gen_lf
         progress.postfix[0]["bus_number"] = bus.number
         progress.postfix[0]["power_flows"] = PowerFlows.count
         progress.update()
@@ -238,18 +228,22 @@ class CapacityAnalyser:
         self,
         temp_subsystem: TemporaryBusSubsystem,
         upper_limit_mva: complex,
-    ) -> complex:
-        """Return max additional PQ power in MVA"""
+    ) -> tuple[complex, Optional[LimitingFactor]]:
+        """Return max additional PQ power in MVA and a limiting factor"""
         lower_limit_mva: complex = 0j
+        is_feasible: bool
+        limiting_factor: Optional[LimitingFactor]
         # If upper limit is available, return it immediately
         temp_subsystem(upper_limit_mva)
-        if self.is_feasible():
-            return upper_limit_mva
+        is_feasible, limiting_factor = self.feasibility_check()
+        if is_feasible:
+            return upper_limit_mva, limiting_factor
         # First iteration was initial upper limit check. Subtract it.
         for i in range(self._max_iterations - 1):
             middle_mva: complex = (lower_limit_mva + upper_limit_mva) / 2
             temp_subsystem(middle_mva)
-            if self.is_feasible():
+            is_feasible, limiting_factor = self.feasibility_check()
+            if is_feasible:
                 # Middle point is feasible: headroom is above
                 lower_limit_mva = middle_mva
             else:
@@ -260,75 +254,82 @@ class CapacityAnalyser:
                 < self._solver_tolerance_p_mw
             ):
                 break
-        return lower_limit_mva
+        return lower_limit_mva, limiting_factor
 
-    def is_feasible(self) -> bool:
-        """Return `True` if feasible"""
-        violations: Violations = self.check_violations()
-        if violations == Violations.NO_VIOLATIONS:
-            violations = self.contingency_check()
-        return violations == Violations.NO_VIOLATIONS
+    def feasibility_check(self) -> tuple[bool, Optional[LimitingFactor]]:
+        """Return `True` if feasible, else `False` with limiting factor"""
+        violations: Violations
+        limiting_factor: Optional[LimitingFactor]
+        if (violations := self.check_violations()) != Violations.NO_VIOLATIONS:
+            return False, LimitingFactor(violations, None)
+        else:
+            limiting_factor = self.contingency_check()
+            if limiting_factor.v != Violations.NO_VIOLATIONS:
+                return False, limiting_factor
+        return True, None
 
-    def check_violations(self):
+    def check_violations(self) -> Violations:
         violations: Violations
         if self._normal_limits is None:
             violations = check_violations(
-                use_full_newton_raphson=self._use_full_newton_raphson
+                use_full_newton_raphson=self._use_full_newton_raphson,
+                solver_opts=self._solver_opts,
             )
         else:
             violations = check_violations(
                 **dataclasses.asdict(self._normal_limits),
                 use_full_newton_raphson=self._use_full_newton_raphson,
+                solver_opts=self._solver_opts,
             )
         return violations
 
-    def contingency_check(self):
-        violations: Violations
+    def contingency_check(self) -> LimitingFactor:
+        limiting_factor: LimitingFactor
         if self._contingency_limits is None:
-            violations = contingency_check(
+            limiting_factor = get_contingency_limiting_factor(
                 contingency_scenario=self._contingency_scenario,
                 use_full_newton_raphson=self._use_full_newton_raphson,
             )
         else:
-            violations = contingency_check(
+            limiting_factor = get_contingency_limiting_factor(
                 contingency_scenario=self._contingency_scenario,
                 **dataclasses.asdict(self._contingency_limits),
                 use_full_newton_raphson=self._use_full_newton_raphson,
             )
-        return violations
+        return limiting_factor
 
-    def get_limiting_factor(
+    def get_contingency_scenario(
         self,
-        temp_subsystem: TemporaryBusSubsystem,
-        upper_limit_mva: complex,
-    ) -> LimitingFactor:
-        temp_subsystem(upper_limit_mva)
-        violations: Violations
-        limiting_subsystem: LimitingSubsystem
-        if self._normal_limits is None:
-            violations = check_violations(
-                use_full_newton_raphson=self._use_full_newton_raphson
-            )
-        else:
-            violations = check_violations(
-                **dataclasses.asdict(self._normal_limits),
-                use_full_newton_raphson=self._use_full_newton_raphson,
-            )
-        if violations != Violations.NO_VIOLATIONS:
-            limiting_subsystem = None
-        else:
-            if self._contingency_limits is None:
-                violations, limiting_subsystem = get_contingency_limiting_subsystem(
-                    contingency_scenario=self._contingency_scenario,
-                    use_full_newton_raphson=self._use_full_newton_raphson,
-                )
-            else:
-                violations, limiting_subsystem = get_contingency_limiting_subsystem(
-                    contingency_scenario=self._contingency_scenario,
-                    **dataclasses.asdict(self._contingency_limits),
-                    use_full_newton_raphson=self._use_full_newton_raphson,
-                )
-        return LimitingFactor(v=violations, ss=limiting_subsystem)
+    ) -> ContingencyScenario:
+        not_critical_branches: tuple[Branch, ...] = tuple(
+            branch for branch in Branches() if self.branch_is_not_critical(branch)
+        )
+        not_critical_trafos: tuple[Trafo, ...] = tuple(
+            trafo for trafo in Trafos() if self.trafo_is_not_critical(trafo)
+        )
+        return ContingencyScenario(not_critical_branches, not_critical_trafos)
+
+    def branch_is_not_critical(
+        self,
+        branch: Branch,
+    ) -> bool:
+        if branch.is_enabled():
+            with disable_branch(branch) as is_disabled:
+                if is_disabled:
+                    violations: Violations = self.check_violations()
+                    return violations == Violations.NO_VIOLATIONS
+        return False
+
+    def trafo_is_not_critical(
+        self,
+        trafo: Trafo,
+    ) -> bool:
+        if trafo.is_enabled():
+            with disable_trafo(trafo) as is_disabled:
+                if is_disabled:
+                    violations: Violations = self.check_violations()
+                    return violations == Violations.NO_VIOLATIONS
+        return False
 
 
 def buses_headroom(
@@ -339,12 +340,18 @@ def buses_headroom(
     gen_power_factor: float = 0.9,
     selected_buses_ids: Optional[Collection[int]] = None,
     solver_tolerance_p_mw: float = 5.0,
+    solver_opts: Optional[dict] = {"options1": 1, "options5": 1},
     max_iterations: int = 10,
     normal_limits: Optional[ViolationsLimits] = None,
     contingency_limits: Optional[ViolationsLimits] = None,
     contingency_scenario: Optional[ContingencyScenario] = None,
 ) -> tuple[BusHeadroom, ...]:
-    """Return actual load and max additional PQ power in MVA for each bus"""
+    """Return actual load and max additional PQ power in MVA for each bus
+
+    Default solver options:
+        `options1=1` Use tap adjustment option setting
+        `options5=1` Use switched shunt adjustment option setting
+    """
     capacity_analyser: CapacityAnalyser = CapacityAnalyser(
         case_name,
         upper_load_limit_p_mw,
@@ -353,6 +360,7 @@ def buses_headroom(
         gen_power_factor,
         selected_buses_ids,
         solver_tolerance_p_mw,
+        solver_opts,
         max_iterations,
         normal_limits,
         contingency_limits,
