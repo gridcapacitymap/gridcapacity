@@ -13,39 +13,42 @@ class CheckViolations(unittest.TestCase):
     def test_not_converged(self):
         wf.open_case("savnw.sav")
         wf.branch_chng_3(154, 3008, "1", realar1=10.0)
-        self.assertEqual(check_violations(), Violations.NOT_CONVERGED)
+        self.assertEqual(Violations.NOT_CONVERGED, check_violations())
 
     def test_bus_overvoltage(self):
         wf.open_case("savnw.sav")
         self.assertEqual(
-            check_violations(max_trafo_loading_pct=110.0, max_bus_voltage_pu=0.9),
             Violations.BUS_OVERVOLTAGE,
+            check_violations(max_trafo_loading_pct=110.0, max_bus_voltage_pu=0.9),
         )
 
     def test_bus_undervoltage(self):
-        wf.open_case("savnw.sav")
-        wf.branch_chng_3(152, 3004, "1", st=0)
-        wf.branch_chng_3(153, 3006, "1", st=0)
+        wf.open_case("iec60909_testnetwork_50Hz.sav")
         self.assertEqual(
-            check_violations(max_trafo_loading_pct=115.0, max_branch_loading_pct=115.0),
             Violations.BUS_UNDERVOLTAGE,
+            check_violations(
+                use_full_newton_raphson=True, max_trafo_loading_pct=1200.0
+            ),
         )
 
     def test_branch_loading(self):
         wf.open_case("savnw.sav")
-        wf.load_chng_6(205, "1", realar1=900.0, realar2=500.0)
-        self.assertEqual(check_violations(), Violations.BRANCH_LOADING)
+        wf.branch_chng_3(152, 3004, "1", st=0)
+        wf.branch_chng_3(153, 3006, "1", st=0)
+        self.assertEqual(
+            Violations.BRANCH_LOADING,
+            check_violations(max_trafo_loading_pct=115.0, max_branch_loading_pct=115.0),
+        )
 
-    def test_trafo_loading(self):
+    def test_2w_trafo_loading(self):
         wf.open_case("savnw.sav")
-        self.assertEqual(check_violations(), Violations.TRAFO_LOADING)
+        self.assertEqual(Violations.TRAFO_LOADING, check_violations())
 
     def test_swing_bus_loading(self):
         wf.open_case("savnw.sav")
         wf.load_data_6(3011, "1", realar1=1000.0)
         self.assertEqual(
-            check_violations(max_trafo_loading_pct=110.0),
-            Violations.SWING_BUS_LOADING,
+            Violations.SWING_BUS_LOADING, check_violations(max_trafo_loading_pct=110.0)
         )
 
     def test_no_violations(self):
