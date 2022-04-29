@@ -2,6 +2,7 @@ import unittest
 
 import pssetools
 from pssetools import wrapped_funcs as wf
+from pssetools.subsystem_data import get_overloaded_trafos_3w_ids
 from pssetools.violations_analysis import Violations, check_violations
 
 
@@ -43,6 +44,12 @@ class CheckViolations(unittest.TestCase):
     def test_2w_trafo_loading(self):
         wf.open_case("savnw.sav")
         self.assertEqual(Violations.TRAFO_LOADING, check_violations())
+
+    def test_3w_trafo_loading(self):
+        wf.open_case("iec60909_testnetwork_50Hz.sav")
+        self.assertEqual(
+            (2, 3, 4, 5), get_overloaded_trafos_3w_ids(max_trafo_3w_loading_pct=100.0)
+        )
 
     def test_swing_bus_loading(self):
         wf.open_case("savnw.sav")
