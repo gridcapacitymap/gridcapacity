@@ -1,7 +1,9 @@
+import dataclasses
 import logging
+from collections.abc import Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Iterator, Union
+from typing import Iterator, Optional, Union, overload
 
 import psspy
 
@@ -84,26 +86,79 @@ class RawBuses:
     number: list[int]
     ex_name: list[str]
     type: list[int]
+    pu: list[float]
 
 
-class Buses:
+class Buses(Sequence):
     def __init__(self) -> None:
+        self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._raw_buses: RawBuses = RawBuses(
             wf.abusint(string="number")[0],
             wf.abuschar(string="exName")[0],
             wf.abusint(string="type")[0],
+            wf.abusreal(string="pu")[0],
         )
 
-    def __iter__(self) -> Iterator[Bus]:
-        for bus_idx in range(len(self)):
-            yield Bus(
-                self._raw_buses.number[bus_idx],
-                self._raw_buses.ex_name[bus_idx],
-                self._raw_buses.type[bus_idx],
+    @overload
+    def __getitem__(self, idx: int) -> Bus:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> tuple[Bus, ...]:
+        ...
+
+    def __getitem__(self, idx):
+        if isinstance(idx, int):
+            return Bus(
+                self._raw_buses.number[idx],
+                self._raw_buses.ex_name[idx],
+                self._raw_buses.type[idx],
+            )
+        elif isinstance(idx, slice):
+            return tuple(
+                Bus(*args)
+                for args in zip(
+                    self._raw_buses.number[idx],
+                    self._raw_buses.ex_name[idx],
+                    self._raw_buses.type[idx],
+                )
             )
 
     def __len__(self) -> int:
         return len(self._raw_buses.number)
+
+    def get_overvoltage_indexes(self, max_bus_voltage: float) -> tuple[int, ...]:
+        return tuple(
+            bus_id
+            for bus_id, pu_voltage in enumerate(self._raw_buses.pu)
+            if pu_voltage > max_bus_voltage
+        )
+
+    def get_voltage_pu(
+        self,
+        selected_indexes: tuple[int, ...],
+    ) -> tuple[float, ...]:
+        return tuple(self._raw_buses.pu[idx] for idx in selected_indexes)
+
+    def log(
+        self,
+        level: int,
+        selected_indexes: Optional[tuple[int, ...]] = None,
+    ):
+        if not log.isEnabledFor(level):
+            return
+        bus_fields: tuple[str, ...] = tuple((*dataclasses.asdict(self[0]).keys(), "pu"))
+        self._log.log(level, bus_fields)
+        for idx, bus in enumerate(self):
+            if selected_indexes is None or idx in selected_indexes:
+                self._log.log(
+                    level,
+                    tuple(
+                        val
+                        for val in (*dataclasses.astuple(bus), self._raw_buses.pu[idx])
+                    ),
+                )
+        self._log.log(level, bus_fields)
 
 
 @dataclass(frozen=True)

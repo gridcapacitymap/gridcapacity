@@ -16,7 +16,7 @@ import redirect
 
 from pssetools import wrapped_funcs as wf
 from pssetools.capacity_analysis import buses_headroom
-from pssetools.violations_analysis import ViolationsLimits
+from pssetools.violations_analysis import ViolationsLimits, ViolationsStats
 
 
 def init_psse():
@@ -67,6 +67,9 @@ def run_check():
         print("Available additional capacity:")
         for bus_headroom in headroom:
             print(bus_headroom)
+        if not ViolationsStats.is_empty():
+            print(f"\n{'VIOLATIONS STATS':^80}")
+            ViolationsStats.print()
 
 
 if __name__ == "__main__":

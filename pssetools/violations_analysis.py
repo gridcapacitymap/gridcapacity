@@ -1,8 +1,10 @@
 import enum
 import logging
 import os
+from collections import defaultdict
+from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Final, Optional
+from typing import Final
 
 import psspy
 
@@ -12,7 +14,6 @@ from pssetools.subsystem_data import (
     get_overloaded_swing_buses_ids,
     get_overloaded_trafos_3w_ids,
     get_overloaded_trafos_ids,
-    get_overvoltage_buses_ids,
     get_undervoltage_buses_ids,
     print_branches,
     print_buses,
@@ -20,6 +21,7 @@ from pssetools.subsystem_data import (
     print_trafos,
     print_trafos_3w,
 )
+from pssetools.subsystems import Buses
 from pssetools.wrapped_funcs import PsseApiCallError
 
 log = logging.getLogger(__name__)
@@ -66,6 +68,65 @@ class ViolationsLimits:
     max_swing_bus_power_mva: float
 
 
+SubsystemIdxToViolationValues = dict[int, list[float]]
+LimitValueToSubsystem = dict[float, SubsystemIdxToViolationValues]
+ViolationTypeToLimitValue = dict[Violations, LimitValueToSubsystem]
+
+
+def limit_value_to_subsystem() -> LimitValueToSubsystem:
+    def subsystem_idx_to_violation_values() -> SubsystemIdxToViolationValues:
+        return defaultdict(list)
+
+    return defaultdict(subsystem_idx_to_violation_values)
+
+
+class ViolationsStats:
+    _violations_stats: ViolationTypeToLimitValue = defaultdict(limit_value_to_subsystem)
+
+    @classmethod
+    def reset(cls) -> None:
+        cls._violations_stats = defaultdict(limit_value_to_subsystem)
+
+    @classmethod
+    def is_empty(cls):
+        return len(cls._violations_stats.keys()) == 0
+
+    @classmethod
+    def append_violations(
+        cls,
+        violation: Violations,
+        limit_value: float,
+        subsystem_indexes: Collection[int],
+        violated_values: Collection[float],
+    ):
+        for subsystem_index, violated_value in zip(subsystem_indexes, violated_values):
+            cls._violations_stats[violation][limit_value][subsystem_index].append(
+                violated_value
+            )
+
+    @classmethod
+    def print(cls) -> None:
+        for violation, limit_value_to_ss_violations in cls._violations_stats.items():
+            subsystem: Buses
+            if violation == Violations.BUS_OVERVOLTAGE:
+                subsystem: Buses = Buses()
+            else:
+                raise RuntimeError(f"Unknown {violation=}")
+
+            for limit, ss_violations in sorted(
+                limit_value_to_ss_violations.items(),
+                key=lambda items: items[1],
+                reverse=True,
+            ):
+                print(f"{violation} {limit=}")
+                for ss_idx, violated_values in sorted(
+                    ss_violations.items(), key=lambda items: max(items[1]), reverse=True
+                ):
+                    print(
+                        f"{subsystem[ss_idx]}: {tuple(sorted(violated_values, reverse=True))}"
+                    )
+
+
 class SolutionConvergenceIndicator(enum.IntFlag):
     MET_CONVERGENCE_TOLERANCE = 0
     ITERATION_LIMIT_EXCEEDED = 1
@@ -82,7 +143,7 @@ def check_violations(
     max_trafo_loading_pct: float = 100.0,
     max_swing_bus_power_mva: float = 1000.0,
     use_full_newton_raphson: bool = False,
-    solver_opts: Optional[dict] = {"options1": 1, "options5": 1},
+    solver_opts: dict = {"options1": 1, "options5": 1},
 ) -> Violations:
     """Default solver options:
     `options1=1` Use tap adjustment option setting
@@ -95,10 +156,17 @@ def check_violations(
         log.log(LOG_LEVEL, "Case not solved!")
         return v
     log.info(f"\nCHECKING VIOLATIONS")
-    if overvoltage_buses_ids := get_overvoltage_buses_ids(max_bus_voltage_pu):
+    buses: Buses = Buses()
+    if overvoltage_buses_indexes := buses.get_overvoltage_indexes(max_bus_voltage_pu):
         v |= Violations.BUS_OVERVOLTAGE
         log.log(LOG_LEVEL, f"Overvoltage buses ({max_bus_voltage_pu=}):")
-        print_buses(overvoltage_buses_ids)
+        buses.log(LOG_LEVEL, overvoltage_buses_indexes)
+        ViolationsStats.append_violations(
+            Violations.BUS_OVERVOLTAGE,
+            max_bus_voltage_pu,
+            overvoltage_buses_indexes,
+            buses.get_voltage_pu(overvoltage_buses_indexes),
+        )
     if undervoltage_buses_ids := get_undervoltage_buses_ids(min_bus_voltage_pu):
         v |= Violations.BUS_UNDERVOLTAGE
         log.log(LOG_LEVEL, f"Undervoltage buses ({min_bus_voltage_pu=}):")
@@ -134,7 +202,7 @@ def check_violations(
 
 def run_solver(
     use_full_newton_raphson: bool,
-    solver_opts: Optional[dict] = {"options1": 1, "options5": 1},
+    solver_opts: dict = {"options1": 1, "options5": 1},
 ) -> None:
     """Default solver options:
     `options1=1` Use tap adjustment option setting
