@@ -176,7 +176,7 @@ class CapacityAnalyser:
         if actual_gen_mva != 0 and load_available_mva != 0j:
             temp_gen: TemporaryBusMachine = TemporaryBusMachine(bus)
             with temp_gen:
-                gen_lf: LimitingFactor
+                gen_lf: Optional[LimitingFactor]
                 gen_available_mva, gen_lf = self.max_power_available_mva(
                     temp_gen, self._upper_gen_limit_mva
                 )
@@ -340,7 +340,7 @@ def buses_headroom(
     gen_power_factor: float = 0.9,
     selected_buses_ids: Optional[Collection[int]] = None,
     solver_tolerance_p_mw: float = 5.0,
-    solver_opts: Optional[dict] = {"options1": 1, "options5": 1},
+    solver_opts: dict = {"options1": 1, "options5": 1},
     max_iterations: int = 10,
     normal_limits: Optional[ViolationsLimits] = None,
     contingency_limits: Optional[ViolationsLimits] = None,
