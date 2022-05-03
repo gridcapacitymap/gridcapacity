@@ -13,7 +13,7 @@ class CheckViolations(unittest.TestCase):
 
     def test_not_converged(self):
         wf.open_case("savnw.sav")
-        wf.branch_chng_3(154, 3008, "1", realar1=10.0)
+        wf.branch_chng_3(154, 3008, realar1=10.0)
         self.assertEqual(Violations.NOT_CONVERGED, check_violations())
 
     def test_bus_overvoltage(self):
@@ -34,8 +34,8 @@ class CheckViolations(unittest.TestCase):
 
     def test_branch_loading(self):
         wf.open_case("savnw.sav")
-        wf.branch_chng_3(152, 3004, "1", st=0)
-        wf.branch_chng_3(153, 3006, "1", st=0)
+        wf.branch_chng_3(152, 3004, st=0)
+        wf.branch_chng_3(153, 3006, st=0)
         self.assertEqual(
             Violations.BRANCH_LOADING,
             check_violations(max_trafo_loading_pct=115.0, max_branch_loading_pct=115.0),
@@ -53,7 +53,7 @@ class CheckViolations(unittest.TestCase):
 
     def test_swing_bus_loading(self):
         wf.open_case("savnw.sav")
-        wf.load_data_6(3011, "1", realar1=1000.0)
+        wf.load_data_6(3011, realar1=1000.0)
         self.assertEqual(
             Violations.SWING_BUS_LOADING, check_violations(max_trafo_loading_pct=110.0)
         )
