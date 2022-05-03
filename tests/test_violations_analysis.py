@@ -6,7 +6,7 @@ from pssetools.subsystem_data import get_overloaded_trafos_3w_ids
 from pssetools.violations_analysis import Violations, check_violations
 
 
-class CheckViolations(unittest.TestCase):
+class TestCheckViolations(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         pssetools.init_psse()
@@ -37,8 +37,7 @@ class CheckViolations(unittest.TestCase):
         wf.branch_chng_3(152, 3004, st=0)
         wf.branch_chng_3(153, 3006, st=0)
         self.assertEqual(
-            Violations.BRANCH_LOADING,
-            check_violations(max_trafo_loading_pct=115.0, max_branch_loading_pct=115.0),
+            Violations.BRANCH_LOADING, check_violations(max_trafo_loading_pct=115.0)
         )
 
     def test_2w_trafo_loading(self):
@@ -61,7 +60,7 @@ class CheckViolations(unittest.TestCase):
     def test_no_violations(self):
         wf.open_case("savnw.sav")
         self.assertEqual(
-            Violations.NO_VIOLATIONS, check_violations(max_trafo_loading_pct=110)
+            Violations.NO_VIOLATIONS, check_violations(max_trafo_loading_pct=110.0)
         )
 
 
