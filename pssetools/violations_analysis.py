@@ -14,7 +14,6 @@ from pssetools.subsystem_data import (
     get_overloaded_swing_buses_ids,
     get_overloaded_trafos_3w_ids,
     get_overloaded_trafos_ids,
-    get_undervoltage_buses_ids,
     print_branches,
     print_buses,
     print_swing_buses,
@@ -109,7 +108,10 @@ class ViolationsStats:
     def print(cls) -> None:
         for violation, limit_value_to_ss_violations in cls._violations_stats.items():
             subsystem: Buses
-            if violation == Violations.BUS_OVERVOLTAGE:
+            if (
+                violation == Violations.BUS_OVERVOLTAGE
+                or violation == Violations.BUS_UNDERVOLTAGE
+            ):
                 subsystem = Buses()
             else:
                 raise RuntimeError(f"Unknown {violation=}")
@@ -168,10 +170,16 @@ def check_violations(
             overvoltage_buses_indexes,
             buses.get_voltage_pu(overvoltage_buses_indexes),
         )
-    if undervoltage_buses_ids := get_undervoltage_buses_ids(min_bus_voltage_pu):
+    if undervoltage_buses_indexes := buses.get_undervoltage_indexes(min_bus_voltage_pu):
         v |= Violations.BUS_UNDERVOLTAGE
         log.log(LOG_LEVEL, f"Undervoltage buses ({min_bus_voltage_pu=}):")
-        print_buses(undervoltage_buses_ids)
+        buses.log(LOG_LEVEL, undervoltage_buses_indexes)
+        ViolationsStats.append_violations(
+            Violations.BUS_UNDERVOLTAGE,
+            min_bus_voltage_pu,
+            undervoltage_buses_indexes,
+            buses.get_voltage_pu(undervoltage_buses_indexes),
+        )
     if overloaded_branches_ids := get_overloaded_branches_ids(max_branch_loading_pct):
         v |= Violations.BRANCH_LOADING
         log.log(LOG_LEVEL, f"Overloaded branches ({max_branch_loading_pct=}):")

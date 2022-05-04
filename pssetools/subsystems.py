@@ -134,6 +134,13 @@ class Buses(Sequence):
             if pu_voltage > max_bus_voltage
         )
 
+    def get_undervoltage_indexes(self, min_bus_voltage: float) -> tuple[int, ...]:
+        return tuple(
+            bus_id
+            for bus_id, pu_voltage in enumerate(self._raw_buses.pu)
+            if pu_voltage < min_bus_voltage
+        )
+
     def get_voltage_pu(
         self,
         selected_indexes: tuple[int, ...],
