@@ -56,6 +56,7 @@ class Violations(enum.Flag):
     BUS_UNDERVOLTAGE = enum.auto()
     BRANCH_LOADING = enum.auto()
     TRAFO_LOADING = enum.auto()
+    TRAFO_3W_LOADING = enum.auto()
     SWING_BUS_LOADING = enum.auto()
 
 
@@ -182,7 +183,7 @@ def check_violations(
         )
         print_trafos(overloaded_trafos_ids)
     if overloaded_trafos_3w_ids := get_overloaded_trafos_3w_ids(max_trafo_loading_pct):
-        v |= Violations.TRAFO_LOADING
+        v |= Violations.TRAFO_3W_LOADING
         log.log(
             LOG_LEVEL, f"Overloaded 3-winding transformers ({max_trafo_loading_pct=}):"
         )
