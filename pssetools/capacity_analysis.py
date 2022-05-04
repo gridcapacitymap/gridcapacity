@@ -49,7 +49,8 @@ class BusHeadroom:
     actual_gen_mva: complex
     load_avail_mva: complex
     gen_avail_mva: complex
-    lf: Optional[LimitingFactor]
+    load_lf: Optional[LimitingFactor]
+    gen_lf: Optional[LimitingFactor]
 
 
 class CapacityAnalyser:
@@ -165,23 +166,21 @@ class CapacityAnalyser:
         """Return bus actual load and max additional PQ power in MVA"""
         actual_load_mva: complex = self.bus_actual_load_mva(bus.number)
         actual_gen_mva: complex = self.bus_actual_gen_mva(bus.number)
-        limiting_factor: Optional[LimitingFactor]
+        load_lf: Optional[LimitingFactor]
         load_available_mva: complex
         temp_load: TemporaryBusLoad = TemporaryBusLoad(bus)
         with temp_load:
-            load_available_mva, limiting_factor = self.max_power_available_mva(
+            load_available_mva, load_lf = self.max_power_available_mva(
                 temp_load, self._upper_load_limit_mva
             )
         gen_available_mva: complex = 0j
+        gen_lf: Optional[LimitingFactor] = None
         if actual_gen_mva != 0 and load_available_mva != 0j:
             temp_gen: TemporaryBusMachine = TemporaryBusMachine(bus)
             with temp_gen:
-                gen_lf: Optional[LimitingFactor]
                 gen_available_mva, gen_lf = self.max_power_available_mva(
                     temp_gen, self._upper_gen_limit_mva
                 )
-                if gen_available_mva == 0j:
-                    limiting_factor = gen_lf
         progress.postfix[0]["bus_number"] = bus.number
         progress.postfix[0]["power_flows"] = PowerFlows.count
         progress.update()
@@ -191,7 +190,8 @@ class CapacityAnalyser:
             actual_gen_mva=actual_gen_mva,
             load_avail_mva=load_available_mva,
             gen_avail_mva=gen_available_mva,
-            lf=limiting_factor,
+            load_lf=load_lf,
+            gen_lf=gen_lf,
         )
 
     def bus_actual_load_mva(self, bus_number: int) -> complex:

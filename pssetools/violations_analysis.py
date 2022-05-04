@@ -109,13 +109,13 @@ class ViolationsStats:
         for violation, limit_value_to_ss_violations in cls._violations_stats.items():
             subsystem: Buses
             if violation == Violations.BUS_OVERVOLTAGE:
-                subsystem: Buses = Buses()
+                subsystem = Buses()
             else:
                 raise RuntimeError(f"Unknown {violation=}")
 
             for limit, ss_violations in sorted(
                 limit_value_to_ss_violations.items(),
-                key=lambda items: items[1],
+                key=lambda items: items[0],
                 reverse=True,
             ):
                 print(f"{violation} {limit=}")
