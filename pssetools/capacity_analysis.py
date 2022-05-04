@@ -173,6 +173,12 @@ class CapacityAnalyser:
             load_available_mva, load_lf = self.max_power_available_mva(
                 temp_load, self._upper_load_limit_mva
             )
+        if (
+            load_available_mva == 0j
+            and load_lf is not None
+            and load_lf.v == Violations.NOT_CONVERGED
+        ):
+            wf.open_case(self._case_name)
         gen_available_mva: complex = 0j
         gen_lf: Optional[LimitingFactor] = None
         if actual_gen_mva != 0 and load_available_mva != 0j:
@@ -181,6 +187,12 @@ class CapacityAnalyser:
                 gen_available_mva, gen_lf = self.max_power_available_mva(
                     temp_gen, self._upper_gen_limit_mva
                 )
+            if (
+                gen_available_mva == 0j
+                and gen_lf is not None
+                and gen_lf.v == Violations.NOT_CONVERGED
+            ):
+                wf.open_case(self._case_name)
         progress.postfix[0]["bus_number"] = bus.number
         progress.postfix[0]["power_flows"] = PowerFlows.count
         progress.update()
