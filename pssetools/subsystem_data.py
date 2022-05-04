@@ -138,7 +138,7 @@ def print_branches(
         "rate1",
         "pctRate1",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_branch_field(field_name) for field_name in branch_fields
     )
@@ -161,7 +161,7 @@ def print_buses(
         "nVLmHi",
         "nVLmLo",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_bus_field(field_name) for field_name in bus_fields
     )
@@ -181,7 +181,7 @@ def print_loads(
         "id",
         "mvaAct",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_load_field(field_name) for field_name in load_fields
     )
@@ -201,7 +201,7 @@ def print_swing_buses(
         "mva",
         "pqGen",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_plant_bus_field(field_name) for field_name in plant_bus_fields
     )
@@ -227,7 +227,7 @@ def print_trafos(
         "rate1",
         "pctRate1",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_trafo_field(field_name) for field_name in trafo_fields
     )
@@ -254,7 +254,7 @@ def print_trafos_3w(
         "rate1",
         "pctRate1",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_trafo_3w_field(field_name) for field_name in trafo_3w_fields
     )

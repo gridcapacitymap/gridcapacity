@@ -88,7 +88,7 @@ class ViolationsStats:
         cls._violations_stats = defaultdict(limit_value_to_subsystem)
 
     @classmethod
-    def is_empty(cls):
+    def is_empty(cls) -> bool:
         return len(cls._violations_stats.keys()) == 0
 
     @classmethod
@@ -98,7 +98,7 @@ class ViolationsStats:
         limit_value: float,
         subsystem_indexes: Collection[int],
         violated_values: Collection[float],
-    ):
+    ) -> None:
         for subsystem_index, violated_value in zip(subsystem_indexes, violated_values):
             cls._violations_stats[violation][limit_value][subsystem_index].append(
                 violated_value

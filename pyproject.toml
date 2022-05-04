@@ -4,6 +4,7 @@ plugins = [
     "pydantic.mypy"
 ]
 
+disallow_untyped_defs = true
 follow_imports = "silent"
 no_silence_site_packages = true
 

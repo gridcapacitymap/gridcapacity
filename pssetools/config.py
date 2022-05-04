@@ -36,9 +36,14 @@ class ConfigModel(BaseModel):  # , extra=Extra.forbid):
 
 
 def load_config_model(config_file_name: str) -> ConfigModel:
+    """
+    :param config_file_name: an absolute path or a path relative to this repository root
+    :return: parsed config model
+    """
+    probably_absolute_path: Path = Path(config_file_name)
     config_file_path: Path = (
-        Path(config_file_name)
-        if Path(config_file_name).is_absolute()
+        probably_absolute_path
+        if probably_absolute_path.is_absolute()
         else Path(__name__).absolute().parents[1] / config_file_name
     )
     return ConfigModel(**json.load(open(config_file_path, encoding="utf-8")))

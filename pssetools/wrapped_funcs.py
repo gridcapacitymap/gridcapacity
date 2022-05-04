@@ -4,7 +4,7 @@ import logging
 import os
 from functools import wraps
 from pathlib import Path
-from typing import Callable, Final, Optional
+from typing import Any, Callable, Final, Optional
 
 import psspy
 
@@ -15,7 +15,7 @@ def process_psse_api_error_code(func: Callable) -> Callable:
     """An exception describing the error that is raised if PSSE API returns non-zero error code"""
 
     @wraps(func)
-    def wrapper(*args, **kwargs) -> Optional[list]:
+    def wrapper(*args: Any, **kwargs: Any) -> Optional[list]:
         api_name: str = func.__name__
         api_func: Callable = getattr(psspy, api_name)
         api_return_value = api_func(*args, **kwargs)
@@ -390,8 +390,8 @@ error_messages_by_api: Final[dict[str, dict[int, str]]] = {
 
 
 @functools.cache
-def _get_case_path(case_name):
-    probable_case_path = Path(case_name)
+def _get_case_path(case_name: str) -> Path:
+    probable_case_path: Path = Path(case_name)
     case_path = (
         probable_case_path
         if probable_case_path.is_absolute()
@@ -402,19 +402,19 @@ def _get_case_path(case_name):
     return case_path
 
 
-def _get_example_case_path(case_path):
+def _get_example_case_path(case_path: Path) -> Path:
     """Get example case filepath from the case filename.
 
     The `EXAMPLE` directory is retrieved based on the current `psspy` module location."""
-    psspy_path = Path(psspy.__file__)
+    psspy_path: Path = Path(psspy.__file__)
     psse_path = psspy_path.parents[1]
     examples_path = psse_path / "EXAMPLE"
     case_path = examples_path / case_path
     return case_path
 
 
-def open_case(case_name: str):
-    case_path = _get_case_path(case_name)
+def open_case(case_name: str) -> None:
+    case_path: Path = _get_case_path(case_name)
     if case_path.suffix == ".sav":
         case(str(case_path))
     elif case_path.suffix == ".raw":

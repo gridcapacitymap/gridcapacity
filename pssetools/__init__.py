@@ -20,7 +20,7 @@ from pssetools.config import ConfigModel, load_config_model
 from pssetools.violations_analysis import ViolationsLimits, ViolationsStats
 
 
-def init_psse():
+def init_psse() -> None:
     try:
         redirect.py2psse()
     except redirect.RedirectError:

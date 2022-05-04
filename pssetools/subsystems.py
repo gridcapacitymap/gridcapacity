@@ -3,7 +3,8 @@ import logging
 from collections.abc import Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Iterator, Optional, Union, overload
+from types import TracebackType
+from typing import Iterator, Optional, Type, Union, overload
 
 import psspy
 
@@ -53,7 +54,7 @@ class Branches(Sequence):
     def __getitem__(self, idx: slice) -> tuple[Branch, ...]:
         ...
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: Union[int, slice]) -> Union[Branch, tuple[Branch, ...]]:
         if isinstance(idx, int):
             return Branch(
                 self._raw_branches.from_number[idx],
@@ -90,7 +91,7 @@ class Branches(Sequence):
         self,
         level: int,
         selected_indexes: Optional[tuple[int, ...]] = None,
-    ):
+    ) -> None:
         if not log.isEnabledFor(level):
             return
         branch_fields: tuple[str, ...] = tuple(
@@ -164,7 +165,7 @@ class Buses(Sequence):
     def __getitem__(self, idx: slice) -> tuple[Bus, ...]:
         ...
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: Union[int, slice]) -> Union[Bus, tuple[Bus, ...]]:
         if isinstance(idx, int):
             return Bus(
                 self._raw_buses.number[idx],
@@ -208,7 +209,7 @@ class Buses(Sequence):
         self,
         level: int,
         selected_indexes: Optional[tuple[int, ...]] = None,
-    ):
+    ) -> None:
         if not log.isEnabledFor(level):
             return
         bus_fields: tuple[str, ...] = tuple((*dataclasses.asdict(self[0]).keys(), "pu"))
@@ -305,12 +306,17 @@ class TemporaryBusLoad:
         self._bus: Bus = bus
         self._context_manager_is_active: bool = False
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         # Create load
         wf.load_data_6(self._bus.number, self.TEMP_LOAD_ID)
         self._context_manager_is_active = True
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         # Delete load
         wf.purgload(self._bus.number, self.TEMP_LOAD_ID)
         self._context_manager_is_active = False
@@ -338,7 +344,12 @@ class TemporaryBusMachine:
         wf.machine_data_4(self._bus.number, self.TEMP_MACHINE_ID)
         self._context_manager_is_active = True
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         # Delete machine
         wf.purgmac(self._bus.number, self.TEMP_MACHINE_ID)
         self._context_manager_is_active = False
