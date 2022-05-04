@@ -16,6 +16,7 @@ import redirect
 
 from pssetools import wrapped_funcs as wf
 from pssetools.capacity_analysis import buses_headroom
+from pssetools.config import ConfigModel, load_config_model
 from pssetools.violations_analysis import ViolationsLimits, ViolationsStats
 
 
@@ -34,35 +35,20 @@ def init_psse():
         wf.report_output(no_output)
 
 
-def run_check():
+def build_headroom() -> None:
     logging_level: int = (
         logging.WARNING if not os.environ.get("PSSE_TOOLS_VERBOSE") else logging.DEBUG
     )
     logging.basicConfig(level=logging_level)
     init_psse()
-    case_name: str = sys.argv[1] if len(sys.argv) == 2 else "savnw.sav"
-
-    normal_limits: ViolationsLimits = ViolationsLimits(
-        max_bus_voltage_pu=1.1,
-        min_bus_voltage_pu=0.9,
-        max_branch_loading_pct=100.0,
-        max_trafo_loading_pct=110.0,
-        max_swing_bus_power_mva=1000.0,
-    )
-    contingency_limits: ViolationsLimits = ViolationsLimits(
-        max_bus_voltage_pu=1.12,
-        min_bus_voltage_pu=0.88,
-        max_branch_loading_pct=120.0,
-        max_trafo_loading_pct=120.0,
-        max_swing_bus_power_mva=1000.0,
-    )
-    headroom = buses_headroom(
-        case_name,
-        upper_load_limit_p_mw=100.0,
-        upper_gen_limit_p_mw=80.0,
-        normal_limits=normal_limits,
-        contingency_limits=contingency_limits,
-    )
+    if len(sys.argv) != 2:
+        raise RuntimeError(
+            f"Config file name should be specified "
+            f"as program argument. Got {sys.argv}"
+        )
+    config_file_name: str = sys.argv[1]
+    config_model: ConfigModel = load_config_model(config_file_name)
+    headroom = buses_headroom(**config_model.dict(exclude_unset=True))
     if len(headroom):
         print("Available additional capacity:")
         for bus_headroom in headroom:
@@ -73,4 +59,4 @@ def run_check():
 
 
 if __name__ == "__main__":
-    run_check()
+    build_headroom()

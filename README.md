@@ -1,6 +1,7 @@
 # High level tools to work with PSS®E #
 
-The PSS®E has a Python API to perform sample activities. This project provides the tools to automate the complex PSSE®E workflows.
+The PSS®E has a Python API to perform sample activities. This project provides the tools to automate the complex PSSE®E
+workflows.
 
 ## Running code #
 
@@ -13,12 +14,32 @@ Requirements:
 # Install project dependencies
 pipenv install --skip-lock
 # Run the simulation
-pipenv run python -m pssetools [case_name.sav]
+pipenv run python -m pssetools sample_config.json
 ```
 
-The `savnw.sav` will be used if the case name is omitted. The case name is a file name from the PSS®E `EXAMPLE` directory or an absolute file path.
+The config file name, `sample_config.json` in this example, is the required argument. Its path should be an absolute
+path or a path relative to this repository root. The config file is described in the next section.
+
+## Configuration file #
+
+All the configuration options are described as a `ConfigModel` class found in the [config.py](./pssetools/config.py)
+file.
+
+There are 3 required options:
+
+```json
+{
+    "case_name": "savnw.sav",
+    "upper_load_limit_p_mw": 100.0,
+    "upper_gen_limit_p_mw": 80.0
+}
+```
+
+The `case_name` is a file name from the PSS®E `EXAMPLE` directory or an absolute file path.
 
 ## Environment variables #
+
+There are debugging features that could be enabled using the environment variables.
 
 | ENV                                       | Description              |
 |-------------------------------------------|:-------------------------|
