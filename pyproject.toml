@@ -1,5 +1,10 @@
 # https://mypy.readthedocs.io/en/latest/config_file.html#example-pyproject-toml
 [tool.mypy]
+plugins = [
+    "pydantic.mypy"
+]
+
+follow_imports = "silent"
 no_silence_site_packages = true
 
 [[tool.mypy.overrides]]

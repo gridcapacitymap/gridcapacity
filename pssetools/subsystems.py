@@ -32,26 +32,83 @@ class RawBranches:
     from_number: list[int]
     to_number: list[int]
     branch_id: list[str]
+    pct_rate1: list[float]
 
 
-class Branches:
+class Branches(Sequence):
     def __init__(self) -> None:
+        self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._raw_branches: RawBranches = RawBranches(
             wf.abrnint(string="fromNumber")[0],
             wf.abrnint(string="toNumber")[0],
             wf.abrnchar(string="id")[0],
+            wf.abrnreal(string="pctRate1")[0],
         )
 
-    def __iter__(self) -> Iterator[Branch]:
-        for branch_idx in range(len(self)):
-            yield Branch(
-                self._raw_branches.from_number[branch_idx],
-                self._raw_branches.to_number[branch_idx],
-                self._raw_branches.branch_id[branch_idx],
+    @overload
+    def __getitem__(self, idx: int) -> Branch:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> tuple[Branch, ...]:
+        ...
+
+    def __getitem__(self, idx):
+        if isinstance(idx, int):
+            return Branch(
+                self._raw_branches.from_number[idx],
+                self._raw_branches.to_number[idx],
+                self._raw_branches.branch_id[idx],
+            )
+        elif isinstance(idx, slice):
+            return tuple(
+                Branch(*args)
+                for args in zip(
+                    self._raw_branches.from_number[idx],
+                    self._raw_branches.to_number[idx],
+                    self._raw_branches.branch_id[idx],
+                )
             )
 
     def __len__(self) -> int:
         return len(self._raw_branches.from_number)
+
+    def get_overloaded_indexes(self, max_branch_loading_pct: float) -> tuple[int, ...]:
+        return tuple(
+            branch_id
+            for branch_id, pct_rate1 in enumerate(self._raw_branches.pct_rate1)
+            if pct_rate1 > max_branch_loading_pct
+        )
+
+    def get_loading_pct(
+        self,
+        selected_indexes: tuple[int, ...],
+    ) -> tuple[float, ...]:
+        return tuple(self._raw_branches.pct_rate1[idx] for idx in selected_indexes)
+
+    def log(
+        self,
+        level: int,
+        selected_indexes: Optional[tuple[int, ...]] = None,
+    ):
+        if not log.isEnabledFor(level):
+            return
+        branch_fields: tuple[str, ...] = tuple(
+            (*dataclasses.asdict(self[0]).keys(), "pctRate1")
+        )
+        self._log.log(level, branch_fields)
+        for idx, branch in enumerate(self):
+            if selected_indexes is None or idx in selected_indexes:
+                self._log.log(
+                    level,
+                    tuple(
+                        (
+                            *dataclasses.astuple(branch),
+                            self._raw_branches.pct_rate1[idx],
+                        )
+                    ),
+                )
+        self._log.log(level, branch_fields)
 
 
 @contextmanager
@@ -160,10 +217,7 @@ class Buses(Sequence):
             if selected_indexes is None or idx in selected_indexes:
                 self._log.log(
                     level,
-                    tuple(
-                        val
-                        for val in (*dataclasses.astuple(bus), self._raw_buses.pu[idx])
-                    ),
+                    tuple((*dataclasses.astuple(bus), self._raw_buses.pu[idx])),
                 )
         self._log.log(level, bus_fields)
 

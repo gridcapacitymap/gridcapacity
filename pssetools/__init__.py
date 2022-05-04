@@ -54,7 +54,8 @@ def build_headroom() -> None:
         for bus_headroom in headroom:
             print(bus_headroom)
         if not ViolationsStats.is_empty():
-            print(f"\n{'VIOLATIONS STATS':^80}")
+            print()
+            print(" VIOLATIONS STATS ".center(80, "="))
             ViolationsStats.print()
 
 

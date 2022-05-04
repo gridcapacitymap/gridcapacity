@@ -4,7 +4,7 @@ import os
 from collections import defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, Union
 
 import psspy
 
@@ -20,7 +20,7 @@ from pssetools.subsystem_data import (
     print_trafos,
     print_trafos_3w,
 )
-from pssetools.subsystems import Buses
+from pssetools.subsystems import Branches, Buses
 from pssetools.wrapped_funcs import PsseApiCallError
 
 log = logging.getLogger(__name__)
@@ -107,12 +107,14 @@ class ViolationsStats:
     @classmethod
     def print(cls) -> None:
         for violation, limit_value_to_ss_violations in cls._violations_stats.items():
-            subsystem: Buses
+            subsystem: Union[Buses, Branches]
             if (
                 violation == Violations.BUS_OVERVOLTAGE
                 or violation == Violations.BUS_UNDERVOLTAGE
             ):
                 subsystem = Buses()
+            elif violation == Violations.BRANCH_LOADING:
+                subsystem = Branches()
             else:
                 raise RuntimeError(f"Unknown {violation=}")
 
@@ -121,7 +123,7 @@ class ViolationsStats:
                 key=lambda items: items[0],
                 reverse=True,
             ):
-                print(f"{violation} {limit=}")
+                print(f" {violation} {limit=} ".center(80, "-"))
                 for ss_idx, violated_values in sorted(
                     ss_violations.items(), key=lambda items: max(items[1]), reverse=True
                 ):
@@ -180,10 +182,19 @@ def check_violations(
             undervoltage_buses_indexes,
             buses.get_voltage_pu(undervoltage_buses_indexes),
         )
-    if overloaded_branches_ids := get_overloaded_branches_ids(max_branch_loading_pct):
+    branches: Branches = Branches()
+    if overloaded_branches_indexes := branches.get_overloaded_indexes(
+        max_branch_loading_pct
+    ):
         v |= Violations.BRANCH_LOADING
         log.log(LOG_LEVEL, f"Overloaded branches ({max_branch_loading_pct=}):")
-        print_branches(overloaded_branches_ids)
+        branches.log(LOG_LEVEL, overloaded_branches_indexes)
+        ViolationsStats.append_violations(
+            Violations.BRANCH_LOADING,
+            max_branch_loading_pct,
+            overloaded_branches_indexes,
+            branches.get_loading_pct(overloaded_branches_indexes),
+        )
     if overloaded_trafos_ids := get_overloaded_trafos_ids(max_trafo_loading_pct):
         v |= Violations.TRAFO_LOADING
         log.log(
