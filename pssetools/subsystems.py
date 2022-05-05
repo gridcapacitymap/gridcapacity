@@ -305,10 +305,15 @@ class TemporaryBusLoad:
     def __init__(self, bus: Bus) -> None:
         self._bus: Bus = bus
         self._context_manager_is_active: bool = False
+        self._load_mva: complex
 
     def __enter__(self) -> None:
         # Create load
-        wf.load_data_6(self._bus.number, self.TEMP_LOAD_ID)
+        wf.load_data_6(
+            self._bus.number,
+            self.TEMP_LOAD_ID,
+            realar=[self._load_mva.real, self._load_mva.imag],
+        )
         self._context_manager_is_active = True
 
     def __exit__(
@@ -321,15 +326,9 @@ class TemporaryBusLoad:
         wf.purgload(self._bus.number, self.TEMP_LOAD_ID)
         self._context_manager_is_active = False
 
-    def __call__(self, new_load: complex) -> None:
-        if not self._context_manager_is_active:
-            raise RuntimeError(
-                "Load modification without context manager is prohibited. "
-                "Use `with TemporaryBusLoad(bus) as temp_load:`."
-            )
-        wf.load_chng_6(
-            self._bus.number, self.TEMP_LOAD_ID, realar=[new_load.real, new_load.imag]
-        )
+    def __call__(self, load_mva: complex) -> "TemporaryBusLoad":
+        self._load_mva = load_mva
+        return self
 
 
 class TemporaryBusMachine:
@@ -338,10 +337,15 @@ class TemporaryBusMachine:
     def __init__(self, bus: Bus) -> None:
         self._bus: Bus = bus
         self._context_manager_is_active: bool = False
+        self._gen_mva: complex
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         # Create machine
-        wf.machine_data_4(self._bus.number, self.TEMP_MACHINE_ID)
+        wf.machine_data_4(
+            self._bus.number,
+            self.TEMP_MACHINE_ID,
+            realar=[self._gen_mva.real, self._gen_mva.imag],
+        )
         self._context_manager_is_active = True
 
     def __exit__(
@@ -354,15 +358,9 @@ class TemporaryBusMachine:
         wf.purgmac(self._bus.number, self.TEMP_MACHINE_ID)
         self._context_manager_is_active = False
 
-    def __call__(self, gen_mva: complex) -> None:
-        if not self._context_manager_is_active:
-            raise RuntimeError(
-                "Machine modification without context manager is prohibited. "
-                "Use `with TemporaryBusMachine(bus) as temp_gen:`."
-            )
-        wf.machine_chng_4(
-            self._bus.number, self.TEMP_MACHINE_ID, realar=[gen_mva.real, gen_mva.imag]
-        )
+    def __call__(self, gen_mva: complex) -> "TemporaryBusMachine":
+        self._gen_mva = gen_mva
+        return self
 
 
 TemporaryBusSubsystem = Union[TemporaryBusLoad, TemporaryBusMachine]

@@ -116,16 +116,19 @@ class CapacityAnalyser:
 
     def fdns_is_applicable(self) -> bool:
         """Fixed slope Decoupled Newton-Raphson Solver (FDNS) is applicable"""
-        wf.open_case(self._case_name)
+        self.reload_case()
         run_solver(use_full_newton_raphson=False, solver_opts=self._solver_opts)
         is_applicable: Final[bool] = True if wf.is_solved() else False
         if not is_applicable:
             # Reload the case and run power flow to get solution convergence
             # after failed FDNS
-            wf.open_case(self._case_name)
+            self.reload_case()
             run_solver(use_full_newton_raphson=True, solver_opts=self._solver_opts)
         log.info(f"Case solved")
         return is_applicable
+
+    def reload_case(self) -> None:
+        wf.open_case(self._case_name)
 
     def check_base_case_violations(self) -> None:
         """Raise `RuntimeError` if base case has violations"""
@@ -141,7 +144,7 @@ class CapacityAnalyser:
             return contingency_scenario
         contingency_scenario = self.get_contingency_scenario()
         # Reopen file to fix potential solver problems after building contingency scenario
-        wf.open_case(self._case_name)
+        self.reload_case()
         return contingency_scenario
 
     def buses_headroom(self) -> tuple[BusHeadroom, ...]:
@@ -169,30 +172,28 @@ class CapacityAnalyser:
         load_lf: Optional[LimitingFactor]
         load_available_mva: complex
         temp_load: TemporaryBusLoad = TemporaryBusLoad(bus)
-        with temp_load:
-            load_available_mva, load_lf = self.max_power_available_mva(
-                temp_load, self._upper_load_limit_mva
-            )
+        load_available_mva, load_lf = self.max_power_available_mva(
+            temp_load, self._upper_load_limit_mva
+        )
         if (
             load_available_mva == 0j
             and load_lf is not None
             and load_lf.v == Violations.NOT_CONVERGED
         ):
-            wf.open_case(self._case_name)
+            self.reload_case()
         gen_available_mva: complex = 0j
         gen_lf: Optional[LimitingFactor] = None
         if actual_gen_mva != 0 and load_available_mva != 0j:
             temp_gen: TemporaryBusMachine = TemporaryBusMachine(bus)
-            with temp_gen:
-                gen_available_mva, gen_lf = self.max_power_available_mva(
-                    temp_gen, self._upper_gen_limit_mva
-                )
+            gen_available_mva, gen_lf = self.max_power_available_mva(
+                temp_gen, self._upper_gen_limit_mva
+            )
             if (
                 gen_available_mva == 0j
                 and gen_lf is not None
                 and gen_lf.v == Violations.NOT_CONVERGED
             ):
-                wf.open_case(self._case_name)
+                self.reload_case()
         progress.postfix[0]["bus_number"] = bus.number
         progress.postfix[0]["power_flows"] = PowerFlows.count
         progress.update()
@@ -246,21 +247,23 @@ class CapacityAnalyser:
         is_feasible: bool
         limiting_factor: Optional[LimitingFactor]
         # If upper limit is available, return it immediately
-        temp_subsystem(upper_limit_mva)
-        is_feasible, limiting_factor = self.feasibility_check()
+        with temp_subsystem(upper_limit_mva):
+            is_feasible, limiting_factor = self.feasibility_check()
         if is_feasible:
             return upper_limit_mva, limiting_factor
+        self.reload_case()
         # First iteration was initial upper limit check. Subtract it.
         for i in range(self._max_iterations - 1):
             middle_mva: complex = (lower_limit_mva + upper_limit_mva) / 2
-            temp_subsystem(middle_mva)
-            is_feasible, limiting_factor = self.feasibility_check()
+            with temp_subsystem(middle_mva):
+                is_feasible, limiting_factor = self.feasibility_check()
             if is_feasible:
                 # Middle point is feasible: headroom is above
                 lower_limit_mva = middle_mva
             else:
                 # Middle point is NOT feasible: headroom is below
                 upper_limit_mva = middle_mva
+                self.reload_case()
             if (
                 upper_limit_mva.real - lower_limit_mva.real
                 < self._solver_tolerance_p_mw
