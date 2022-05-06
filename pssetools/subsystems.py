@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Iterator, Optional, Type, Union, overload
+from typing import Iterator, Optional, Union, overload
 
 import psspy
 
@@ -318,7 +318,7 @@ class TemporaryBusLoad:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> None:
@@ -350,7 +350,7 @@ class TemporaryBusMachine:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> None:

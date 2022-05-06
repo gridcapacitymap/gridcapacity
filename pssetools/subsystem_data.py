@@ -3,7 +3,8 @@
 """
 import logging
 import os
-from typing import Callable, Final, Optional, Union
+from collections.abc import Callable
+from typing import Final, Optional, Union
 
 from pssetools import wrapped_funcs as wf
 

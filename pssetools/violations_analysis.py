@@ -2,7 +2,7 @@ import enum
 import logging
 import os
 from collections import defaultdict
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from typing import Final, Union
 
@@ -119,18 +119,27 @@ class ViolationsStats:
                 subsystem = Trafos()
             else:
                 raise RuntimeError(f"Unknown {violation=}")
-
+            sort_values_descending: bool
+            collection_reducer: Callable[[Collection[float]], float]
+            if violation != Violations.BUS_UNDERVOLTAGE:
+                sort_values_descending = True
+                collection_reducer = max
+            else:
+                sort_values_descending = False
+                collection_reducer = min
             for limit, ss_violations in sorted(
                 limit_value_to_ss_violations.items(),
                 key=lambda items: items[0],
-                reverse=True,
+                reverse=sort_values_descending,
             ):
                 print(f" {violation} {limit=} ".center(80, "-"))
                 for ss_idx, violated_values in sorted(
-                    ss_violations.items(), key=lambda items: max(items[1]), reverse=True
+                    ss_violations.items(),
+                    key=lambda items: collection_reducer(items[1]),
+                    reverse=sort_values_descending,
                 ):
                     print(
-                        f"{subsystem[ss_idx]}: {tuple(sorted(violated_values, reverse=True))}"
+                        f"{subsystem[ss_idx]}: {tuple(sorted(violated_values, reverse=sort_values_descending))}"
                     )
 
 
