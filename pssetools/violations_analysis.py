@@ -4,23 +4,16 @@ import os
 from collections import defaultdict
 from collections.abc import Callable, Collection
 from dataclasses import dataclass
-from typing import Final, Union
-
-import psspy
+from typing import Final
 
 from pssetools import wrapped_funcs as wf
 from pssetools.subsystem_data import (
-    get_overloaded_branches_ids,
     get_overloaded_swing_buses_ids,
     get_overloaded_trafos_3w_ids,
-    get_overloaded_trafos_ids,
-    print_branches,
-    print_buses,
     print_swing_buses,
-    print_trafos,
     print_trafos_3w,
 )
-from pssetools.subsystems import Branches, Buses, Trafos
+from pssetools.subsystems import Branches, Buses, Subsystems, Trafos
 from pssetools.wrapped_funcs import PsseApiCallError
 
 log = logging.getLogger(__name__)
@@ -95,28 +88,35 @@ class ViolationsStats:
     def append_violations(
         cls,
         violation: Violations,
-        limit_value: float,
-        subsystem_indexes: Collection[int],
-        violated_values: Collection[float],
+        limit: float,
+        subsystems: Subsystems,
+        subsystem_indexes: tuple[int, ...],
     ) -> None:
+        log.log(LOG_LEVEL, f"{violation} {limit=} ")
+        subsystems.log(LOG_LEVEL, subsystem_indexes)
+        violated_values: tuple[float, ...] = (
+            subsystems.get_voltage_pu(subsystem_indexes)
+            if isinstance(subsystems, Buses)
+            else subsystems.get_loading_pct(subsystem_indexes)
+        )
         for subsystem_index, violated_value in zip(subsystem_indexes, violated_values):
-            cls._violations_stats[violation][limit_value][subsystem_index].append(
+            cls._violations_stats[violation][limit][subsystem_index].append(
                 violated_value
             )
 
     @classmethod
     def print(cls) -> None:
         for violation, limit_value_to_ss_violations in cls._violations_stats.items():
-            subsystem: Union[Buses, Branches, Trafos]
+            subsystems: Subsystems
             if (
                 violation == Violations.BUS_OVERVOLTAGE
                 or violation == Violations.BUS_UNDERVOLTAGE
             ):
-                subsystem = Buses()
+                subsystems = Buses()
             elif violation == Violations.BRANCH_LOADING:
-                subsystem = Branches()
+                subsystems = Branches()
             elif violation == Violations.TRAFO_LOADING:
-                subsystem = Trafos()
+                subsystems = Trafos()
             else:
                 raise RuntimeError(f"Unknown {violation=}")
             sort_values_descending: bool
@@ -139,7 +139,7 @@ class ViolationsStats:
                     reverse=sort_values_descending,
                 ):
                     print(
-                        f"{subsystem[ss_idx]}: {tuple(sorted(violated_values, reverse=sort_values_descending))}"
+                        f"{subsystems[ss_idx]}: {tuple(sorted(violated_values, reverse=sort_values_descending))}"
                     )
 
 
@@ -175,51 +175,41 @@ def check_violations(
     buses: Buses = Buses()
     if overvoltage_buses_indexes := buses.get_overvoltage_indexes(max_bus_voltage_pu):
         v |= Violations.BUS_OVERVOLTAGE
-        log.log(LOG_LEVEL, f"Overvoltage buses ({max_bus_voltage_pu=}):")
-        buses.log(LOG_LEVEL, overvoltage_buses_indexes)
         ViolationsStats.append_violations(
             Violations.BUS_OVERVOLTAGE,
             max_bus_voltage_pu,
+            buses,
             overvoltage_buses_indexes,
-            buses.get_voltage_pu(overvoltage_buses_indexes),
         )
     if undervoltage_buses_indexes := buses.get_undervoltage_indexes(min_bus_voltage_pu):
         v |= Violations.BUS_UNDERVOLTAGE
-        log.log(LOG_LEVEL, f"Undervoltage buses ({min_bus_voltage_pu=}):")
-        buses.log(LOG_LEVEL, undervoltage_buses_indexes)
         ViolationsStats.append_violations(
             Violations.BUS_UNDERVOLTAGE,
             min_bus_voltage_pu,
+            buses,
             undervoltage_buses_indexes,
-            buses.get_voltage_pu(undervoltage_buses_indexes),
         )
     branches: Branches = Branches()
     if overloaded_branches_indexes := branches.get_overloaded_indexes(
         max_branch_loading_pct
     ):
         v |= Violations.BRANCH_LOADING
-        log.log(LOG_LEVEL, f"Overloaded branches ({max_branch_loading_pct=}):")
-        branches.log(LOG_LEVEL, overloaded_branches_indexes)
         ViolationsStats.append_violations(
             Violations.BRANCH_LOADING,
             max_branch_loading_pct,
+            branches,
             overloaded_branches_indexes,
-            branches.get_loading_pct(overloaded_branches_indexes),
         )
     trafos: Trafos = Trafos()
     if overloaded_trafos_indexes := trafos.get_overloaded_indexes(
         max_trafo_loading_pct
     ):
         v |= Violations.TRAFO_LOADING
-        log.log(
-            LOG_LEVEL, f"Overloaded 2-winding transformers ({max_trafo_loading_pct=}):"
-        )
-        trafos.log(LOG_LEVEL, overloaded_trafos_indexes)
         ViolationsStats.append_violations(
             Violations.TRAFO_LOADING,
             max_trafo_loading_pct,
+            trafos,
             overloaded_trafos_indexes,
-            trafos.get_loading_pct(overloaded_trafos_indexes),
         )
     if overloaded_trafos_3w_ids := get_overloaded_trafos_3w_ids(max_trafo_loading_pct):
         v |= Violations.TRAFO_3W_LOADING

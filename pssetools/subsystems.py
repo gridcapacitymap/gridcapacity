@@ -9,7 +9,6 @@ from typing import Iterator, Optional, Union, overload
 import psspy
 
 from pssetools import wrapped_funcs as wf
-from pssetools.wrapped_funcs import PsseApiCallError
 
 log = logging.getLogger(__name__)
 
@@ -484,3 +483,6 @@ def disable_trafo(trafo: Trafo) -> Iterator[bool]:
             wf.two_winding_chng_6(
                 trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=1
             )
+
+
+Subsystems = Union[Buses, Branches, Trafos]
