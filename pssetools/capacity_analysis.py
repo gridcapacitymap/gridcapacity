@@ -35,6 +35,7 @@ from pssetools.violations_analysis import (
     PowerFlows,
     Violations,
     ViolationsLimits,
+    ViolationsStats,
     check_violations,
     run_solver,
 )
@@ -158,6 +159,7 @@ class CapacityAnalyser:
             postfix=[{}],
         ) as progress:
             PowerFlows.reset_count()
+            ViolationsStats.reset()
             return tuple(
                 self.bus_headroom(bus, progress)
                 for bus in buses
