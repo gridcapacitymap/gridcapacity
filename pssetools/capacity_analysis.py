@@ -298,6 +298,26 @@ class CapacityAnalyser:
             )
         return violations
 
+    def check_contingency_limits_violations(self) -> Violations:
+        violations: Violations
+        if self._contingency_limits is None:
+            violations = check_violations(
+                max_bus_voltage_pu=1.12,
+                min_bus_voltage_pu=0.88,
+                max_branch_loading_pct=120.0,
+                max_trafo_loading_pct=120.0,
+                max_swing_bus_power_mva=1000.0,
+                use_full_newton_raphson=self._use_full_newton_raphson,
+                solver_opts=self._solver_opts,
+            )
+        else:
+            violations = check_violations(
+                **dataclasses.asdict(self._contingency_limits),
+                use_full_newton_raphson=self._use_full_newton_raphson,
+                solver_opts=self._solver_opts,
+            )
+        return violations
+
     def contingency_check(self) -> LimitingFactor:
         limiting_factor: LimitingFactor
         if self._contingency_limits is None:
@@ -331,7 +351,7 @@ class CapacityAnalyser:
         if branch.is_enabled():
             with disable_branch(branch) as is_disabled:
                 if is_disabled:
-                    violations: Violations = self.check_violations()
+                    violations: Violations = self.check_contingency_limits_violations()
                     return violations == Violations.NO_VIOLATIONS
         return False
 
@@ -342,7 +362,7 @@ class CapacityAnalyser:
         if trafo.is_enabled():
             with disable_trafo(trafo) as is_disabled:
                 if is_disabled:
-                    violations: Violations = self.check_violations()
+                    violations: Violations = self.check_contingency_limits_violations()
                     return violations == Violations.NO_VIOLATIONS
         return False
 
