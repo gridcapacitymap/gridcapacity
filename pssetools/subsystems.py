@@ -387,26 +387,83 @@ class RawTrafos:
     from_number: list[int]
     to_number: list[int]
     trafo_id: list[str]
+    pct_rate1: list[float]
 
 
-class Trafos:
+class Trafos(Sequence):
     def __init__(self) -> None:
+        self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._raw_trafos: RawTrafos = RawTrafos(
             wf.atrnint(string="fromNumber")[0],
             wf.atrnint(string="toNumber")[0],
             wf.atrnchar(string="id")[0],
+            wf.atrnreal(string="pctRate1")[0],
         )
 
-    def __iter__(self) -> Iterator[Trafo]:
-        for trafo_idx in range(len(self)):
-            yield Trafo(
-                self._raw_trafos.from_number[trafo_idx],
-                self._raw_trafos.to_number[trafo_idx],
-                self._raw_trafos.trafo_id[trafo_idx],
+    @overload
+    def __getitem__(self, idx: int) -> Trafo:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> tuple[Trafo, ...]:
+        ...
+
+    def __getitem__(self, idx: Union[int, slice]) -> Union[Trafo, tuple[Trafo, ...]]:
+        if isinstance(idx, int):
+            return Trafo(
+                self._raw_trafos.from_number[idx],
+                self._raw_trafos.to_number[idx],
+                self._raw_trafos.trafo_id[idx],
+            )
+        elif isinstance(idx, slice):
+            return tuple(
+                Trafo(*args)
+                for args in zip(
+                    self._raw_trafos.from_number[idx],
+                    self._raw_trafos.to_number[idx],
+                    self._raw_trafos.trafo_id[idx],
+                )
             )
 
     def __len__(self) -> int:
         return len(self._raw_trafos.from_number)
+
+    def get_overloaded_indexes(self, max_trafo_loading_pct: float) -> tuple[int, ...]:
+        return tuple(
+            trafo_id
+            for trafo_id, pct_rate1 in enumerate(self._raw_trafos.pct_rate1)
+            if pct_rate1 > max_trafo_loading_pct
+        )
+
+    def get_loading_pct(
+        self,
+        selected_indexes: tuple[int, ...],
+    ) -> tuple[float, ...]:
+        return tuple(self._raw_trafos.pct_rate1[idx] for idx in selected_indexes)
+
+    def log(
+        self,
+        level: int,
+        selected_indexes: Optional[tuple[int, ...]] = None,
+    ) -> None:
+        if not log.isEnabledFor(level):
+            return
+        trafo_fields: tuple[str, ...] = tuple(
+            (*dataclasses.asdict(self[0]).keys(), "pctRate1")
+        )
+        self._log.log(level, trafo_fields)
+        for idx, trafo in enumerate(self):
+            if selected_indexes is None or idx in selected_indexes:
+                self._log.log(
+                    level,
+                    tuple(
+                        (
+                            *dataclasses.astuple(trafo),
+                            self._raw_trafos.pct_rate1[idx],
+                        )
+                    ),
+                )
+        self._log.log(level, trafo_fields)
 
 
 @contextmanager

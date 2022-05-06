@@ -20,7 +20,7 @@ from pssetools.subsystem_data import (
     print_trafos,
     print_trafos_3w,
 )
-from pssetools.subsystems import Branches, Buses
+from pssetools.subsystems import Branches, Buses, Trafos
 from pssetools.wrapped_funcs import PsseApiCallError
 
 log = logging.getLogger(__name__)
@@ -107,7 +107,7 @@ class ViolationsStats:
     @classmethod
     def print(cls) -> None:
         for violation, limit_value_to_ss_violations in cls._violations_stats.items():
-            subsystem: Union[Buses, Branches]
+            subsystem: Union[Buses, Branches, Trafos]
             if (
                 violation == Violations.BUS_OVERVOLTAGE
                 or violation == Violations.BUS_UNDERVOLTAGE
@@ -115,6 +115,8 @@ class ViolationsStats:
                 subsystem = Buses()
             elif violation == Violations.BRANCH_LOADING:
                 subsystem = Branches()
+            elif violation == Violations.TRAFO_LOADING:
+                subsystem = Trafos()
             else:
                 raise RuntimeError(f"Unknown {violation=}")
 
@@ -195,12 +197,21 @@ def check_violations(
             overloaded_branches_indexes,
             branches.get_loading_pct(overloaded_branches_indexes),
         )
-    if overloaded_trafos_ids := get_overloaded_trafos_ids(max_trafo_loading_pct):
+    trafos: Trafos = Trafos()
+    if overloaded_trafos_indexes := trafos.get_overloaded_indexes(
+        max_trafo_loading_pct
+    ):
         v |= Violations.TRAFO_LOADING
         log.log(
             LOG_LEVEL, f"Overloaded 2-winding transformers ({max_trafo_loading_pct=}):"
         )
-        print_trafos(overloaded_trafos_ids)
+        trafos.log(LOG_LEVEL, overloaded_trafos_indexes)
+        ViolationsStats.append_violations(
+            Violations.TRAFO_LOADING,
+            max_trafo_loading_pct,
+            overloaded_trafos_indexes,
+            trafos.get_loading_pct(overloaded_trafos_indexes),
+        )
     if overloaded_trafos_3w_ids := get_overloaded_trafos_3w_ids(max_trafo_loading_pct):
         v |= Violations.TRAFO_3W_LOADING
         log.log(
