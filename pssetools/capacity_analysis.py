@@ -301,24 +301,33 @@ class CapacityAnalyser:
         return violations
 
     def check_contingency_limits_violations(self) -> Violations:
-        violations: Violations
+        contingency_limits: ViolationsLimits
         if self._contingency_limits is None:
-            violations = check_violations(
-                max_bus_voltage_pu=1.12,
-                min_bus_voltage_pu=0.88,
-                max_branch_loading_pct=120.0,
-                max_trafo_loading_pct=120.0,
-                max_swing_bus_power_mva=1000.0,
-                use_full_newton_raphson=self._use_full_newton_raphson,
-                solver_opts=self._solver_opts,
+            if not all(
+                get_contingency_limiting_factor.__annotations__[var_name] == var_type
+                for var_name, var_type in ViolationsLimits.__annotations__.items()
+            ):
+                raise RuntimeError(
+                    f"{ViolationsLimits.__annotations__} are different from corresponding "
+                    f"{get_contingency_limiting_factor.__annotations__=}"
+                )
+            if (
+                contingency_limiting_factor_defaults := get_contingency_limiting_factor.__defaults__
+            ) is None:
+                raise RuntimeError(
+                    f"No defaults for `get_contingency_limiting_factor()`"
+                )
+            violation_limits_count: int = len(ViolationsLimits.__annotations__)
+            contingency_limits = ViolationsLimits(
+                *contingency_limiting_factor_defaults[:violation_limits_count]
             )
         else:
-            violations = check_violations(
-                **dataclasses.asdict(self._contingency_limits),
-                use_full_newton_raphson=self._use_full_newton_raphson,
-                solver_opts=self._solver_opts,
-            )
-        return violations
+            contingency_limits = self._contingency_limits
+        return check_violations(
+            **dataclasses.asdict(contingency_limits),
+            use_full_newton_raphson=self._use_full_newton_raphson,
+            solver_opts=self._solver_opts,
+        )
 
     def contingency_check(self) -> LimitingFactor:
         limiting_factor: LimitingFactor
@@ -330,8 +339,8 @@ class CapacityAnalyser:
         else:
             limiting_factor = get_contingency_limiting_factor(
                 contingency_scenario=self._contingency_scenario,
-                **dataclasses.asdict(self._contingency_limits),
                 use_full_newton_raphson=self._use_full_newton_raphson,
+                **dataclasses.asdict(self._contingency_limits),
             )
         return limiting_factor
 
