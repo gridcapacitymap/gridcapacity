@@ -45,12 +45,11 @@ class TestCheckViolations(unittest.TestCase):
 
     def test_3w_trafo_loading(self) -> None:
         wf.open_case("iec60909_testnetwork_50Hz.sav")
-        wf.three_wnd_imped_chng_4(1, 2, 8, "T3")
         self.assertEqual(
             Violations.TRAFO_3W_LOADING,
             check_violations(
                 use_full_newton_raphson=True,
-                min_bus_voltage_pu=0.00000001,
+                min_bus_voltage_pu=10e-9,
                 max_trafo_loading_pct=1170.0,
             ),
         )

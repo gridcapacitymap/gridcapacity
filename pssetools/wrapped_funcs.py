@@ -334,11 +334,6 @@ def is_solved() -> bool:
 
 
 @process_psse_api_error_code
-def three_wnd_imped_chng_4() -> None:
-    pass
-
-
-@process_psse_api_error_code
 def two_winding_chng_6() -> None:
     pass
 
