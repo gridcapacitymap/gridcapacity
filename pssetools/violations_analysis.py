@@ -13,7 +13,7 @@ from pssetools.subsystem_data import (
     print_swing_buses,
     print_trafos_3w,
 )
-from pssetools.subsystems import Branches, Buses, Subsystems, Trafos
+from pssetools.subsystems import Branches, Buses, Subsystems, Trafos, Trafos3w
 from pssetools.wrapped_funcs import PsseApiCallError
 
 log = logging.getLogger(__name__)
@@ -117,6 +117,8 @@ class ViolationsStats:
                 subsystems = Branches()
             elif violation == Violations.TRAFO_LOADING:
                 subsystems = Trafos()
+            elif violation == Violations.TRAFO_3W_LOADING:
+                subsystems = Trafos3w()
             else:
                 raise RuntimeError(f"Unknown {violation=}")
             sort_values_descending: bool
@@ -211,12 +213,17 @@ def check_violations(
             trafos,
             overloaded_trafos_indexes,
         )
-    if overloaded_trafos_3w_ids := get_overloaded_trafos_3w_ids(max_trafo_loading_pct):
+    trafos3w: Trafos3w = Trafos3w()
+    if overloaded_trafos3w_indexes := trafos3w.get_overloaded_indexes(
+        max_trafo_loading_pct
+    ):
         v |= Violations.TRAFO_3W_LOADING
-        log.log(
-            LOG_LEVEL, f"Overloaded 3-winding transformers ({max_trafo_loading_pct=}):"
+        ViolationsStats.append_violations(
+            Violations.TRAFO_3W_LOADING,
+            max_trafo_loading_pct,
+            trafos3w,
+            overloaded_trafos3w_indexes,
         )
-        print_trafos_3w(overloaded_trafos_3w_ids)
     if overloaded_swing_buses_ids := get_overloaded_swing_buses_ids(
         max_swing_bus_power_mva
     ):

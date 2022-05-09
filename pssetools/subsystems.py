@@ -485,4 +485,110 @@ def disable_trafo(trafo: Trafo) -> Iterator[bool]:
             )
 
 
-Subsystems = Union[Buses, Branches, Trafos]
+@dataclass(frozen=True)
+class Trafo3w:
+    wind1_number: int
+    wind2_number: int
+    wind3_number: int
+    trafo_id: str
+
+    def is_enabled(self) -> bool:
+        """Return `True` if is enabled"""
+        # Trafo status is available through the branches `brnint` API only.
+        status: int = wf.brnint(
+            self.from_number, self.to_number, self.trafo_id, "STATUS"
+        )
+        return status != 0
+
+
+@dataclass
+class RawTrafos3w:
+    wind1_number: list[int]
+    wind2_number: list[int]
+    wind3_number: list[int]
+    trafo_id: list[str]
+    pct_rate1: list[float]
+
+
+class Trafos3w(Sequence):
+    def __init__(self) -> None:
+        self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._raw_trafos: RawTrafos3w = RawTrafos3w(
+            wf.awndint(string="wind1Number")[0],
+            wf.awndint(string="wind2Number")[0],
+            wf.awndint(string="wind3Number")[0],
+            wf.awndchar(string="id")[0],
+            wf.awndreal(string="pctRate1")[0],
+        )
+
+    @overload
+    def __getitem__(self, idx: int) -> Trafo3w:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> tuple[Trafo3w, ...]:
+        ...
+
+    def __getitem__(
+        self, idx: Union[int, slice]
+    ) -> Union[Trafo3w, tuple[Trafo3w, ...]]:
+        if isinstance(idx, int):
+            return Trafo3w(
+                self._raw_trafos.wind1_number[idx],
+                self._raw_trafos.wind2_number[idx],
+                self._raw_trafos.wind3_number[idx],
+                self._raw_trafos.trafo_id[idx],
+            )
+        elif isinstance(idx, slice):
+            return tuple(
+                Trafo3w(*args)
+                for args in zip(
+                    self._raw_trafos.wind1_number[idx],
+                    self._raw_trafos.wind2_number[idx],
+                    self._raw_trafos.wind3_number[idx],
+                    self._raw_trafos.trafo_id[idx],
+                )
+            )
+
+    def __len__(self) -> int:
+        return len(self._raw_trafos.wind1_number)
+
+    def get_overloaded_indexes(self, max_trafo_loading_pct: float) -> tuple[int, ...]:
+        return tuple(
+            trafo_id
+            for trafo_id, pct_rate1 in enumerate(self._raw_trafos.pct_rate1)
+            if pct_rate1 > max_trafo_loading_pct
+        )
+
+    def get_loading_pct(
+        self,
+        selected_indexes: tuple[int, ...],
+    ) -> tuple[float, ...]:
+        return tuple(self._raw_trafos.pct_rate1[idx] for idx in selected_indexes)
+
+    def log(
+        self,
+        level: int,
+        selected_indexes: Optional[tuple[int, ...]] = None,
+    ) -> None:
+        if not log.isEnabledFor(level):
+            return
+        trafo_fields: tuple[str, ...] = tuple(
+            (*dataclasses.asdict(self[0]).keys(), "pctRate1")
+        )
+        self._log.log(level, trafo_fields)
+        for idx, trafo in enumerate(self):
+            if selected_indexes is None or idx in selected_indexes:
+                self._log.log(
+                    level,
+                    tuple(
+                        (
+                            *dataclasses.astuple(trafo),
+                            self._raw_trafos.pct_rate1[idx],
+                        )
+                    ),
+                )
+        self._log.log(level, trafo_fields)
+
+
+Subsystems = Union[Buses, Branches, Trafos, Trafos3w]
