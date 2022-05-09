@@ -1,9 +1,10 @@
 import errno
+import functools
 import logging
 import os
 from functools import wraps
 from pathlib import Path
-from typing import Callable, Final, Optional
+from typing import Any, Callable, Final, Optional
 
 import psspy
 
@@ -14,7 +15,7 @@ def process_psse_api_error_code(func: Callable) -> Callable:
     """An exception describing the error that is raised if PSSE API returns non-zero error code"""
 
     @wraps(func)
-    def wrapper(*args, **kwargs) -> Optional[list]:
+    def wrapper(*args: Any, **kwargs: Any) -> Optional[list]:
         api_name: str = func.__name__
         api_func: Callable = getattr(psspy, api_name)
         api_return_value = api_func(*args, **kwargs)
@@ -155,6 +156,31 @@ def aloadtypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
+def amachchar() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
+def amachcplx() -> list[list[complex]]:
+    pass
+
+
+@process_psse_api_error_code
+def amachint() -> list[list[int]]:
+    pass
+
+
+@process_psse_api_error_code
+def amachreal() -> list[list[float]]:
+    pass
+
+
+@process_psse_api_error_code
+def amachtypes() -> list[list[str]]:
+    pass
+
+
+@process_psse_api_error_code
 def atrnchar() -> list[list[str]]:
     pass
 
@@ -210,6 +236,16 @@ def branch_chng_3() -> None:
 
 
 @process_psse_api_error_code
+def brnint() -> int:
+    pass
+
+
+@process_psse_api_error_code
+def bus_chng_4() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def case() -> None:
     pass
 
@@ -235,6 +271,16 @@ def load_chng_6() -> None:
 
 
 @process_psse_api_error_code
+def machine_data_4() -> None:
+    pass
+
+
+@process_psse_api_error_code
+def machine_chng_4() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def progress_output() -> None:
     pass
 
@@ -246,6 +292,11 @@ def prompt_output() -> None:
 
 @process_psse_api_error_code
 def purgload() -> None:
+    pass
+
+
+@process_psse_api_error_code
+def purgmac() -> None:
     pass
 
 
@@ -265,6 +316,11 @@ def report_output() -> None:
 
 
 @process_psse_api_error_code
+def rsol() -> None:
+    pass
+
+
+@process_psse_api_error_code
 def solved() -> None:
     pass
 
@@ -275,6 +331,11 @@ def is_solved() -> bool:
     except PsseApiCallError:
         return False
     return True
+
+
+@process_psse_api_error_code
+def two_winding_chng_6() -> None:
+    pass
 
 
 class PsseApiCallError(Exception):
@@ -328,9 +389,10 @@ error_messages_by_api: Final[dict[str, dict[int, str]]] = {
 }
 
 
-def _get_case_path(case_name):
-    probable_case_path = Path(case_name)
-    case_path = case_path = (
+@functools.cache
+def _get_case_path(case_name: str) -> Path:
+    probable_case_path: Path = Path(case_name)
+    case_path = (
         probable_case_path
         if probable_case_path.is_absolute()
         else _get_example_case_path(probable_case_path)
@@ -340,19 +402,19 @@ def _get_case_path(case_name):
     return case_path
 
 
-def _get_example_case_path(case_path):
+def _get_example_case_path(case_path: Path) -> Path:
     """Get example case filepath from the case filename.
 
     The `EXAMPLE` directory is retrieved based on the current `psspy` module location."""
-    psspy_path = Path(psspy.__file__)
+    psspy_path: Path = Path(psspy.__file__)
     psse_path = psspy_path.parents[1]
     examples_path = psse_path / "EXAMPLE"
     case_path = examples_path / case_path
     return case_path
 
 
-def open_case(case_name: str):
-    case_path = _get_case_path(case_name)
+def open_case(case_name: str) -> None:
+    case_path: Path = _get_case_path(case_name)
     if case_path.suffix == ".sav":
         case(str(case_path))
     elif case_path.suffix == ".raw":

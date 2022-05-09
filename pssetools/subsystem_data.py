@@ -2,11 +2,18 @@
 "Subsystem Data Retrieval" of the PSSE 35 API.
 """
 import logging
-from typing import Callable, Final, Optional, Union
+import os
+from collections.abc import Callable
+from typing import Final, Optional, Union
 
 from pssetools import wrapped_funcs as wf
 
 log = logging.getLogger(__name__)
+LOG_LEVEL: Final[int] = (
+    logging.INFO
+    if not os.getenv("PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS")
+    else logging.WARNING
+)
 field_type2func_suffix: Final[dict[str, str]] = {
     "I": "int",
     "R": "real",
@@ -70,13 +77,13 @@ def get_overloaded_branches_ids(max_branch_loading_pct: float) -> tuple[int, ...
     return ids
 
 
-def get_overloaded_swing_buses_ids(max_swing_bus_power_mw: float) -> tuple[int, ...]:
+def get_overloaded_swing_buses_ids(max_swing_bus_power_mva: float) -> tuple[int, ...]:
     ids: tuple[int, ...] = tuple(
         bus_id
         for bus_id, (bus_type, mva) in enumerate(
             zip(wf.agenbusint(string="type")[0], wf.agenbusreal(string="mva")[0])
         )
-        if bus_type == SWING_BUS and mva > max_swing_bus_power_mw
+        if bus_type == SWING_BUS and mva > max_swing_bus_power_mva
     )
     return ids
 
@@ -132,16 +139,16 @@ def print_branches(
         "rate1",
         "pctRate1",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_branch_field(field_name) for field_name in branch_fields
     )
 
-    log.info(branch_fields)
+    log.log(LOG_LEVEL, branch_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(branch_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, branch_fields)
 
 
 def print_buses(
@@ -155,16 +162,16 @@ def print_buses(
         "nVLmHi",
         "nVLmLo",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_bus_field(field_name) for field_name in bus_fields
     )
 
-    log.info(bus_fields)
+    log.log(LOG_LEVEL, bus_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(bus_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, bus_fields)
 
 
 def print_loads(
@@ -175,16 +182,16 @@ def print_loads(
         "id",
         "mvaAct",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_load_field(field_name) for field_name in load_fields
     )
 
-    log.info(load_fields)
+    log.log(LOG_LEVEL, load_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(load_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, load_fields)
 
 
 def print_swing_buses(
@@ -195,17 +202,17 @@ def print_swing_buses(
         "mva",
         "pqGen",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_plant_bus_field(field_name) for field_name in plant_bus_fields
     )
     buses_types: list[int] = wf.agenbusint(string="type")[0]
 
-    log.info(plant_bus_fields)
+    log.log(LOG_LEVEL, plant_bus_fields)
     for row, bus_type in zip(range(len(values[0])), buses_types):
         if bus_type == SWING_BUS and (selected_ids is None or row in selected_ids):
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(plant_bus_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, plant_bus_fields)
 
 
 def print_trafos(
@@ -221,16 +228,16 @@ def print_trafos(
         "rate1",
         "pctRate1",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_trafo_field(field_name) for field_name in trafo_fields
     )
 
-    log.info(trafo_fields)
+    log.log(LOG_LEVEL, trafo_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(trafo_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, trafo_fields)
 
 
 def print_trafos_3w(
@@ -248,13 +255,13 @@ def print_trafos_3w(
         "rate1",
         "pctRate1",
     ),
-):
+) -> None:
     values: tuple[list[FieldType], ...] = tuple(
         get_trafo_3w_field(field_name) for field_name in trafo_3w_fields
     )
 
-    log.info(trafo_3w_fields)
+    log.log(LOG_LEVEL, trafo_3w_fields)
     for row in range(len(values[0])):
         if selected_ids is None or row in selected_ids:
-            log.info(tuple(values[col][row] for col in range(len(values))))
-    log.info(trafo_3w_fields)
+            log.log(LOG_LEVEL, tuple(values[col][row] for col in range(len(values))))
+    log.log(LOG_LEVEL, trafo_3w_fields)

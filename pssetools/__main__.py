@@ -1,4 +1,4 @@
-from pssetools import run_check
+from pssetools import build_headroom
 
 if __name__ == "__main__":
-    run_check()
+    build_headroom()
