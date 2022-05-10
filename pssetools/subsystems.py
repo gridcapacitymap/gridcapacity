@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 class Branch:
     from_number: int
     to_number: int
-    branch_id: str
+    branch_id: str = "1"
 
     def is_enabled(self) -> bool:
         """Return `True` if is enabled"""
@@ -464,7 +464,7 @@ class SwingBuses(Sequence):
 class Trafo:
     from_number: int
     to_number: int
-    trafo_id: str
+    trafo_id: str = "1"
 
     def is_enabled(self) -> bool:
         """Return `True` if is enabled"""
