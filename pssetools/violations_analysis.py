@@ -7,13 +7,14 @@ from dataclasses import dataclass
 from typing import Final
 
 from pssetools import wrapped_funcs as wf
-from pssetools.subsystem_data import (
-    get_overloaded_swing_buses_ids,
-    get_overloaded_trafos_3w_ids,
-    print_swing_buses,
-    print_trafos_3w,
+from pssetools.subsystems import (
+    Branches,
+    Buses,
+    Subsystems,
+    SwingBuses,
+    Trafos,
+    Trafos3w,
 )
-from pssetools.subsystems import Branches, Buses, Subsystems, Trafos, Trafos3w
 from pssetools.wrapped_funcs import PsseApiCallError
 
 log = logging.getLogger(__name__)
@@ -94,11 +95,13 @@ class ViolationsStats:
     ) -> None:
         log.log(LOG_LEVEL, f"{violation} {limit=} ")
         subsystems.log(LOG_LEVEL, subsystem_indexes)
-        violated_values: tuple[float, ...] = (
-            subsystems.get_voltage_pu(subsystem_indexes)
-            if isinstance(subsystems, Buses)
-            else subsystems.get_loading_pct(subsystem_indexes)
-        )
+        violated_values: tuple[float, ...]
+        if isinstance(subsystems, Buses):
+            violated_values = subsystems.get_voltage_pu(subsystem_indexes)
+        elif isinstance(subsystems, SwingBuses):
+            violated_values = subsystems.get_power_mva(subsystem_indexes)
+        else:
+            violated_values = subsystems.get_loading_pct(subsystem_indexes)
         for subsystem_index, violated_value in zip(subsystem_indexes, violated_values):
             cls._violations_stats[violation][limit][subsystem_index].append(
                 violated_value
@@ -119,6 +122,8 @@ class ViolationsStats:
                 subsystems = Trafos()
             elif violation == Violations.TRAFO_3W_LOADING:
                 subsystems = Trafos3w()
+            elif violation == Violations.SWING_BUS_LOADING:
+                subsystems = SwingBuses()
             else:
                 raise RuntimeError(f"Unknown {violation=}")
             sort_values_descending: bool
@@ -224,16 +229,17 @@ def check_violations(
             trafos3w,
             overloaded_trafos3w_indexes,
         )
-    if overloaded_swing_buses_ids := get_overloaded_swing_buses_ids(
+    swing_buses: SwingBuses = SwingBuses()
+    if overloaded_swing_buses_indexes := swing_buses.get_overloaded_indexes(
         max_swing_bus_power_mva
     ):
         v |= Violations.SWING_BUS_LOADING
-        log.log(LOG_LEVEL, f"Overloaded swing buses ({max_swing_bus_power_mva=}):")
-        print_swing_buses(overloaded_swing_buses_ids)
-    log.log(
-        logging.INFO if v == Violations.NO_VIOLATIONS else LOG_LEVEL,
-        f"Detected violations: {v}\n",
-    )
+        ViolationsStats.append_violations(
+            Violations.SWING_BUS_LOADING,
+            max_swing_bus_power_mva,
+            swing_buses,
+            overloaded_swing_buses_indexes,
+        )
     return v
 
 

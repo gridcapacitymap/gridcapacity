@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Iterator, Optional, Union, overload
+from typing import Final, Iterator, Optional, Union, overload
 
 import psspy
 
@@ -75,8 +75,8 @@ class Branches(Sequence):
 
     def get_overloaded_indexes(self, max_branch_loading_pct: float) -> tuple[int, ...]:
         return tuple(
-            branch_id
-            for branch_id, pct_rate1 in enumerate(self._raw_branches.pct_rate1)
+            branch_idx
+            for branch_idx, pct_rate1 in enumerate(self._raw_branches.pct_rate1)
             if pct_rate1 > max_branch_loading_pct
         )
 
@@ -366,6 +366,101 @@ TemporaryBusSubsystem = Union[TemporaryBusLoad, TemporaryBusMachine]
 
 
 @dataclass(frozen=True)
+class SwingBus:
+    number: int
+    ex_name: str
+
+
+@dataclass
+class RawSwingBuses:
+    number: list[int]
+    ex_name: list[str]
+    mva: list[float]
+
+
+class SwingBuses(Sequence):
+    def __init__(self) -> None:
+        self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        # PSSE returns all buses, not only swing buses
+        # Filter out all buses except swing buses (`type==3`)
+        swing_bus_type: Final[int] = 3
+        self._raw_buses: RawSwingBuses = RawSwingBuses(
+            *zip(
+                *(
+                    (number, ex_name, mva)
+                    for number, ex_name, mva, bus_type in zip(
+                        wf.agenbusint(string="number")[0],
+                        wf.agenbuschar(string="exName")[0],
+                        wf.agenbusreal(string="mva")[0],
+                        wf.agenbusint(string="type")[0],
+                    )
+                    if bus_type == swing_bus_type
+                )
+            )
+        )
+
+    @overload
+    def __getitem__(self, idx: int) -> SwingBus:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> tuple[SwingBus, ...]:
+        ...
+
+    def __getitem__(
+        self, idx: Union[int, slice]
+    ) -> Union[SwingBus, tuple[SwingBus, ...]]:
+        if isinstance(idx, int):
+            return SwingBus(
+                self._raw_buses.number[idx],
+                self._raw_buses.ex_name[idx],
+            )
+        elif isinstance(idx, slice):
+            return tuple(
+                SwingBus(*args)
+                for args in zip(
+                    self._raw_buses.number[idx],
+                    self._raw_buses.ex_name[idx],
+                )
+            )
+
+    def __len__(self) -> int:
+        return len(self._raw_buses.number)
+
+    def get_overloaded_indexes(self, max_swing_bus_power_mva: float) -> tuple[int, ...]:
+        return tuple(
+            bus_idx
+            for bus_idx, power_mva in enumerate(self._raw_buses.mva)
+            if power_mva > max_swing_bus_power_mva
+        )
+
+    def get_power_mva(
+        self,
+        selected_indexes: tuple[int, ...],
+    ) -> tuple[float, ...]:
+        return tuple(self._raw_buses.mva[idx] for idx in selected_indexes)
+
+    def log(
+        self,
+        level: int,
+        selected_indexes: Optional[tuple[int, ...]] = None,
+    ) -> None:
+        if not log.isEnabledFor(level):
+            return
+        bus_fields: tuple[str, ...] = tuple(
+            (*dataclasses.asdict(self[0]).keys(), "mva")
+        )
+        self._log.log(level, bus_fields)
+        for idx, bus in enumerate(self):
+            if selected_indexes is None or idx in selected_indexes:
+                self._log.log(
+                    level,
+                    tuple((*dataclasses.astuple(bus), self._raw_buses.mva[idx])),
+                )
+        self._log.log(level, bus_fields)
+
+
+@dataclass(frozen=True)
 class Trafo:
     from_number: int
     to_number: int
@@ -429,8 +524,8 @@ class Trafos(Sequence):
 
     def get_overloaded_indexes(self, max_trafo_loading_pct: float) -> tuple[int, ...]:
         return tuple(
-            trafo_id
-            for trafo_id, pct_rate1 in enumerate(self._raw_trafos.pct_rate1)
+            trafo_idx
+            for trafo_idx, pct_rate1 in enumerate(self._raw_trafos.pct_rate1)
             if pct_rate1 > max_trafo_loading_pct
         )
 
@@ -496,7 +591,7 @@ class Trafo3w:
         """Return `True` if is enabled"""
         # Trafo status is available through the branches `brnint` API only.
         status: int = wf.brnint(
-            self.from_number, self.to_number, self.trafo_id, "STATUS"
+            self.wind1_number, self.wind2_number, self.trafo_id, "STATUS"
         )
         return status != 0
 
@@ -555,8 +650,8 @@ class Trafos3w(Sequence):
 
     def get_overloaded_indexes(self, max_trafo_loading_pct: float) -> tuple[int, ...]:
         return tuple(
-            trafo_id
-            for trafo_id, pct_rate1 in enumerate(self._raw_trafos.pct_rate1)
+            trafo_idx
+            for trafo_idx, pct_rate1 in enumerate(self._raw_trafos.pct_rate1)
             if pct_rate1 > max_trafo_loading_pct
         )
 
@@ -591,4 +686,4 @@ class Trafos3w(Sequence):
         self._log.log(level, trafo_fields)
 
 
-Subsystems = Union[Buses, Branches, Trafos, Trafos3w]
+Subsystems = Union[Buses, Branches, SwingBuses, Trafos, Trafos3w]
