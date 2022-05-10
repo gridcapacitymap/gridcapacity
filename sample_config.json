@@ -2,11 +2,41 @@
     "case_name": "savnw.sav",
     "upper_load_limit_p_mw": 100.0,
     "upper_gen_limit_p_mw": 80.0,
+    "load_power_factor":  0.9,
+    "gen_power_factor":  0.9,
+    "selected_buses_ids":  [101, 102, 151, 152, 153, 154],
+    "solver_tolerance_p_mw":  5.0,
+    "solver_opts":  {"options1": 1, "options5": 1},
+    "max_iterations":  10,
     "normal_limits": {
         "max_bus_voltage_pu": 1.1,
         "min_bus_voltage_pu": 0.9,
         "max_branch_loading_pct": 100.0,
         "max_trafo_loading_pct": 110.0,
         "max_swing_bus_power_mva": 1000.0
-    }
+    },
+    "contingency_limits": {
+        "max_bus_voltage_pu":  1.12,
+        "min_bus_voltage_pu":  0.88,
+        "max_branch_loading_pct":  120.0,
+        "max_trafo_loading_pct":  120.0,
+        "max_swing_bus_power_mva": 1000.0
+    },
+    "contingency_scenario": [
+        [
+            [151, 152, "2"],
+            [151, 201],
+            [152, 202],
+            [152, 3004],
+            [153, 154],
+            [153, 3006],
+            [154, 203],
+            [154, 3008]
+        ],
+        [
+            [3001, 3002],
+            [3004, 3005]
+        ]
+    ],
+    "use_full_newton_raphson": false
 }
