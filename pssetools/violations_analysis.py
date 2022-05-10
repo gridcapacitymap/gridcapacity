@@ -110,22 +110,7 @@ class ViolationsStats:
     @classmethod
     def print(cls) -> None:
         for violation, limit_value_to_ss_violations in cls._violations_stats.items():
-            subsystems: Subsystems
-            if (
-                violation == Violations.BUS_OVERVOLTAGE
-                or violation == Violations.BUS_UNDERVOLTAGE
-            ):
-                subsystems = Buses()
-            elif violation == Violations.BRANCH_LOADING:
-                subsystems = Branches()
-            elif violation == Violations.TRAFO_LOADING:
-                subsystems = Trafos()
-            elif violation == Violations.TRAFO_3W_LOADING:
-                subsystems = Trafos3w()
-            elif violation == Violations.SWING_BUS_LOADING:
-                subsystems = SwingBuses()
-            else:
-                raise RuntimeError(f"Unknown {violation=}")
+            subsystems: Subsystems = cls.get_subsystems_for_violation(violation)
             sort_values_descending: bool
             collection_reducer: Callable[[Collection[float]], float]
             if violation != Violations.BUS_UNDERVOLTAGE:
@@ -148,6 +133,26 @@ class ViolationsStats:
                     print(
                         f"{subsystems[ss_idx]}: {tuple(sorted(violated_values, reverse=sort_values_descending))}"
                     )
+
+    @classmethod
+    def get_subsystems_for_violation(cls, violation: Violations) -> Subsystems:
+        subsystems: Subsystems
+        if (
+            violation == Violations.BUS_OVERVOLTAGE
+            or violation == Violations.BUS_UNDERVOLTAGE
+        ):
+            subsystems = Buses()
+        elif violation == Violations.BRANCH_LOADING:
+            subsystems = Branches()
+        elif violation == Violations.TRAFO_LOADING:
+            subsystems = Trafos()
+        elif violation == Violations.TRAFO_3W_LOADING:
+            subsystems = Trafos3w()
+        elif violation == Violations.SWING_BUS_LOADING:
+            subsystems = SwingBuses()
+        else:
+            raise RuntimeError(f"Unknown {violation=}")
+        return subsystems
 
 
 class SolutionConvergenceIndicator(enum.IntFlag):

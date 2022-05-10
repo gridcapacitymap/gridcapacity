@@ -255,7 +255,7 @@ class CapacityAnalyser:
             return upper_limit_mva, limiting_factor
         self.reload_case()
         # First iteration was initial upper limit check. Subtract it.
-        for i in range(self._max_iterations - 1):
+        for _ in range(self._max_iterations - 1):
             middle_mva: complex = (lower_limit_mva + upper_limit_mva) / 2
             with temp_subsystem(middle_mva):
                 is_feasible, limiting_factor = self.feasibility_check()
