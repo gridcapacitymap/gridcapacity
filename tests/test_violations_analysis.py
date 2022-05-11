@@ -12,8 +12,6 @@ class TestCheckViolations(unittest.TestCase):
     def setUpClass(cls) -> None:
         pssetools.init_psse()
 
-    DEFAULT_CASE = "savnw.sav"
-
     def test_not_converged(self) -> None:
         wf.open_case(DEFAULT_CASE)
         wf.branch_chng_3(154, 3008, realar1=10.0)
