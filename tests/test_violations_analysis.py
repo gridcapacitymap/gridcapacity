@@ -4,7 +4,7 @@ import pssetools
 from pssetools import wrapped_funcs as wf
 from pssetools.violations_analysis import Violations, check_violations
 
-from .__init__ import DEFAULT_CASE
+from . import DEFAULT_CASE
 
 
 class TestCheckViolations(unittest.TestCase):
