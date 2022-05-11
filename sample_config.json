@@ -22,8 +22,8 @@
         "max_trafo_loading_pct":  120.0,
         "max_swing_bus_power_mva": 1000.0
     },
-    "contingency_scenario": [
-        [
+    "contingency_scenario": {
+        "branches": [
             [151, 152, "2"],
             [151, 201],
             [152, 202],
@@ -33,10 +33,10 @@
             [154, 203],
             [154, 3008]
         ],
-        [
+        "trafos": [
             [3001, 3002],
             [3004, 3005]
         ]
-    ],
+    },
     "use_full_newton_raphson": false
 }
