@@ -4,6 +4,8 @@ import pssetools
 from pssetools import wrapped_funcs as wf
 from pssetools.violations_analysis import Violations, check_violations
 
+from . import DEFAULT_CASE
+
 
 class TestCheckViolations(unittest.TestCase):
     @classmethod
@@ -11,12 +13,12 @@ class TestCheckViolations(unittest.TestCase):
         pssetools.init_psse()
 
     def test_not_converged(self) -> None:
-        wf.open_case("savnw.sav")
+        wf.open_case(DEFAULT_CASE)
         wf.branch_chng_3(154, 3008, realar1=10.0)
         self.assertEqual(Violations.NOT_CONVERGED, check_violations())
 
     def test_bus_overvoltage(self) -> None:
-        wf.open_case("savnw.sav")
+        wf.open_case(DEFAULT_CASE)
         self.assertEqual(
             Violations.BUS_OVERVOLTAGE,
             check_violations(max_trafo_loading_pct=110.0, max_bus_voltage_pu=0.9),
@@ -32,7 +34,7 @@ class TestCheckViolations(unittest.TestCase):
         )
 
     def test_branch_loading(self) -> None:
-        wf.open_case("savnw.sav")
+        wf.open_case(DEFAULT_CASE)
         wf.branch_chng_3(152, 3004, st=0)
         wf.branch_chng_3(153, 3006, st=0)
         self.assertEqual(
@@ -40,7 +42,7 @@ class TestCheckViolations(unittest.TestCase):
         )
 
     def test_2w_trafo_loading(self) -> None:
-        wf.open_case("savnw.sav")
+        wf.open_case(DEFAULT_CASE)
         self.assertEqual(Violations.TRAFO_LOADING, check_violations())
 
     def test_3w_trafo_loading(self) -> None:
@@ -55,14 +57,14 @@ class TestCheckViolations(unittest.TestCase):
         )
 
     def test_swing_bus_loading(self) -> None:
-        wf.open_case("savnw.sav")
+        wf.open_case(DEFAULT_CASE)
         wf.load_data_6(3011, realar1=1000.0)
         self.assertEqual(
             Violations.SWING_BUS_LOADING, check_violations(max_trafo_loading_pct=110.0)
         )
 
     def test_no_violations(self) -> None:
-        wf.open_case("savnw.sav")
+        wf.open_case(DEFAULT_CASE)
         self.assertEqual(
             Violations.NO_VIOLATIONS, check_violations(max_trafo_loading_pct=110.0)
         )
