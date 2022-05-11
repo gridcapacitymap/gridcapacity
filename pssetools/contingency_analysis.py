@@ -90,6 +90,8 @@ def get_contingency_scenario(
     solver_opts: dict,
     contingency_limits: Optional[ViolationsLimits] = get_default_contingency_limits(),
 ) -> ContingencyScenario:
+    contingency_limits = contingency_limits or get_default_contingency_limits()
+
     def check_contingency_limits_violations() -> Violations:
         return check_violations(
             **dataclasses.asdict(contingency_limits),
