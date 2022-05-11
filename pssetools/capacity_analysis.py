@@ -13,10 +13,9 @@ from pssetools.contingency_analysis import (
     ContingencyScenario,
     LimitingFactor,
     get_contingency_limiting_factor,
+    get_contingency_scenario,
 )
 from pssetools.subsystems import (
-    Branch,
-    Branches,
     Bus,
     Buses,
     Load,
@@ -26,10 +25,6 @@ from pssetools.subsystems import (
     TemporaryBusLoad,
     TemporaryBusMachine,
     TemporaryBusSubsystem,
-    Trafo,
-    Trafos,
-    disable_branch,
-    disable_trafo,
 )
 from pssetools.violations_analysis import (
     PowerFlows,
@@ -143,7 +138,11 @@ class CapacityAnalyser:
         """Returns new contingency scenario if none is provided"""
         if contingency_scenario is not None:
             return contingency_scenario
-        contingency_scenario = self.get_contingency_scenario()
+        contingency_scenario = get_contingency_scenario(
+            use_full_newton_raphson=self._use_full_newton_raphson,
+            solver_opts=self._solver_opts,
+            contingency_limits=self._contingency_limits,
+        )
         # Reopen file to fix potential solver problems after building contingency scenario
         self.reload_case()
         return contingency_scenario
@@ -255,7 +254,7 @@ class CapacityAnalyser:
             return upper_limit_mva, limiting_factor
         self.reload_case()
         # First iteration was initial upper limit check. Subtract it.
-        for i in range(self._max_iterations - 1):
+        for _ in range(self._max_iterations - 1):
             middle_mva: complex = (lower_limit_mva + upper_limit_mva) / 2
             with temp_subsystem(middle_mva):
                 is_feasible, limiting_factor = self.feasibility_check()
@@ -300,35 +299,6 @@ class CapacityAnalyser:
             )
         return violations
 
-    def check_contingency_limits_violations(self) -> Violations:
-        contingency_limits: ViolationsLimits
-        if self._contingency_limits is None:
-            if not all(
-                get_contingency_limiting_factor.__annotations__[var_name] == var_type
-                for var_name, var_type in ViolationsLimits.__annotations__.items()
-            ):
-                raise RuntimeError(
-                    f"{ViolationsLimits.__annotations__} are different from corresponding "
-                    f"{get_contingency_limiting_factor.__annotations__=}"
-                )
-            if (
-                contingency_limiting_factor_defaults := get_contingency_limiting_factor.__defaults__
-            ) is None:
-                raise RuntimeError(
-                    f"No defaults for `get_contingency_limiting_factor()`"
-                )
-            violation_limits_count: int = len(ViolationsLimits.__annotations__)
-            contingency_limits = ViolationsLimits(
-                *contingency_limiting_factor_defaults[:violation_limits_count]
-            )
-        else:
-            contingency_limits = self._contingency_limits
-        return check_violations(
-            **dataclasses.asdict(contingency_limits),
-            use_full_newton_raphson=self._use_full_newton_raphson,
-            solver_opts=self._solver_opts,
-        )
-
     def contingency_check(self) -> LimitingFactor:
         limiting_factor: LimitingFactor
         if self._contingency_limits is None:
@@ -343,39 +313,6 @@ class CapacityAnalyser:
                 **dataclasses.asdict(self._contingency_limits),
             )
         return limiting_factor
-
-    def get_contingency_scenario(
-        self,
-    ) -> ContingencyScenario:
-        not_critical_branches: tuple[Branch, ...] = tuple(
-            branch for branch in Branches() if self.branch_is_not_critical(branch)
-        )
-        not_critical_trafos: tuple[Trafo, ...] = tuple(
-            trafo for trafo in Trafos() if self.trafo_is_not_critical(trafo)
-        )
-        return ContingencyScenario(not_critical_branches, not_critical_trafos)
-
-    def branch_is_not_critical(
-        self,
-        branch: Branch,
-    ) -> bool:
-        if branch.is_enabled():
-            with disable_branch(branch) as is_disabled:
-                if is_disabled:
-                    violations: Violations = self.check_contingency_limits_violations()
-                    return violations == Violations.NO_VIOLATIONS
-        return False
-
-    def trafo_is_not_critical(
-        self,
-        trafo: Trafo,
-    ) -> bool:
-        if trafo.is_enabled():
-            with disable_trafo(trafo) as is_disabled:
-                if is_disabled:
-                    violations: Violations = self.check_contingency_limits_violations()
-                    return violations == Violations.NO_VIOLATIONS
-        return False
 
 
 def buses_headroom(
