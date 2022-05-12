@@ -17,6 +17,7 @@ import redirect
 from pssetools import wrapped_funcs as wf
 from pssetools.capacity_analysis import buses_headroom
 from pssetools.config import ConfigModel, load_config_model
+from pssetools.output import write_output
 from pssetools.violations_analysis import ViolationsLimits, ViolationsStats
 
 
@@ -44,12 +45,13 @@ def build_headroom() -> None:
     if len(sys.argv) != 2:
         raise RuntimeError(
             f"Config file name should be specified "
-            f"as program argument. Got {sys.argv}"
+            f"as a program argument. Got {sys.argv}"
         )
     config_file_name: str = sys.argv[1]
     config_model: ConfigModel = load_config_model(config_file_name)
     headroom = buses_headroom(**config_model.dict(exclude_unset=True))
     if len(headroom):
+        write_output(config_model.case_name, headroom)
         print("Available additional capacity:")
         for bus_headroom in headroom:
             print(bus_headroom)
@@ -57,6 +59,10 @@ def build_headroom() -> None:
             print()
             print(" VIOLATIONS STATS ".center(80, "="))
             ViolationsStats.print()
+        else:
+            print("No violations detected")
+    else:
+        print("No headroom found")
 
 
 if __name__ == "__main__":

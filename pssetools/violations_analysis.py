@@ -82,6 +82,10 @@ class ViolationsStats:
         cls._violations_stats = defaultdict(limit_value_to_subsystem)
 
     @classmethod
+    def asdict(cls) -> dict:
+        return cls._violations_stats
+
+    @classmethod
     def is_empty(cls) -> bool:
         return len(cls._violations_stats.keys()) == 0
 
