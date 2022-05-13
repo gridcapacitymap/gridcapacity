@@ -30,24 +30,17 @@ class LimitingFactor:
 
 def get_contingency_limiting_factor(
     contingency_scenario: ContingencyScenario,
-    max_bus_voltage_pu: float = 1.12,
-    min_bus_voltage_pu: float = 0.88,
-    max_branch_loading_pct: float = 120.0,
-    max_trafo_loading_pct: float = 120.0,
-    max_swing_bus_power_mva: float = 1000.0,
-    branch_rate: str = "Rate2",
-    trafo_rate: str = "Rate1",
+    contingency_limits: Optional[ViolationsLimits] = ViolationsLimits(
+        max_bus_voltage_pu=1.12,
+        min_bus_voltage_pu=0.88,
+        max_branch_loading_pct=120.0,
+        max_trafo_loading_pct=120.0,
+        max_swing_bus_power_mva=1000.0,
+        branch_rate="Rate2",
+        trafo_rate="Rate1",
+    ),
     use_full_newton_raphson: bool = False,
 ) -> LimitingFactor:
-    contingency_limits: ViolationsLimits = ViolationsLimits(
-        max_bus_voltage_pu=max_bus_voltage_pu,
-        min_bus_voltage_pu=min_bus_voltage_pu,
-        max_branch_loading_pct=max_branch_loading_pct,
-        max_trafo_loading_pct=max_trafo_loading_pct,
-        max_swing_bus_power_mva=max_swing_bus_power_mva,
-        branch_rate=branch_rate,
-        trafo_rate=trafo_rate,
-    )
     violations: Violations = Violations.NO_VIOLATIONS
     for branch in contingency_scenario.branches:
         if branch.is_enabled():
@@ -71,22 +64,21 @@ def get_contingency_limiting_factor(
 
 
 def get_default_contingency_limits() -> ViolationsLimits:
-    if not all(
-        get_contingency_limiting_factor.__annotations__[var_name] == var_type
-        for var_name, var_type in ViolationsLimits.__annotations__.items()
+    if (
+        tuple(get_contingency_limiting_factor.__annotations__.keys())[1]
+        != "contingency_limits"
     ):
         raise RuntimeError(
-            f"{ViolationsLimits.__annotations__=} are different from corresponding "
-            f"{get_contingency_limiting_factor.__annotations__=}"
+            f"`get_contingency_limiting_factor()` 2-nd arg should be `contingency_limits`"
         )
     if (
         contingency_limiting_factor_defaults := get_contingency_limiting_factor.__defaults__
     ) is None:
         raise RuntimeError(f"No defaults for `get_contingency_limiting_factor()`")
-    violation_limits_count: int = len(ViolationsLimits.__annotations__)
-    return ViolationsLimits(
-        *contingency_limiting_factor_defaults[:violation_limits_count]
-    )
+    # The first `get_contingency_limiting_factor()` argument, `contingency_scenario`,
+    # doesn't have a default value,
+    # so the `defaults[0]` are defaults for the second argument.
+    return contingency_limiting_factor_defaults[0]
 
 
 def get_contingency_scenario(

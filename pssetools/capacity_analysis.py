@@ -313,7 +313,7 @@ class CapacityAnalyser:
             limiting_factor = get_contingency_limiting_factor(
                 contingency_scenario=self._contingency_scenario,
                 use_full_newton_raphson=self._use_full_newton_raphson,
-                **dataclasses.asdict(self._contingency_limits),
+                contingency_limits=self._contingency_limits,
             )
         return limiting_factor
 
