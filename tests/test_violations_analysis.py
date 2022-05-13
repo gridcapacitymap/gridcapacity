@@ -3,8 +3,7 @@ import unittest
 import pssetools
 from pssetools import wrapped_funcs as wf
 from pssetools.violations_analysis import Violations, check_violations
-
-from . import DEFAULT_CASE
+from tests import DEFAULT_CASE
 
 
 class TestCheckViolations(unittest.TestCase):

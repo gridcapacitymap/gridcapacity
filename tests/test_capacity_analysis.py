@@ -3,8 +3,7 @@ import unittest
 import pssetools
 from pssetools.capacity_analysis import buses_headroom
 from pssetools.violations_analysis import ViolationsLimits
-
-from . import DEFAULT_CASE
+from tests import DEFAULT_CASE
 
 
 class TestCheckCapacity(unittest.TestCase):
