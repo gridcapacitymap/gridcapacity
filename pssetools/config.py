@@ -24,6 +24,8 @@ class ConfigModel(BaseModel):
         max_branch_loading_pct=100.0,
         max_trafo_loading_pct=100.0,
         max_swing_bus_power_mva=1000.0,
+        branch_rate="Rate1",
+        trafo_rate="Rate1",
     )
     contingency_limits: Optional[ViolationsLimits] = ViolationsLimits(
         max_bus_voltage_pu=1.12,
@@ -31,6 +33,8 @@ class ConfigModel(BaseModel):
         max_branch_loading_pct=120.0,
         max_trafo_loading_pct=120.0,
         max_swing_bus_power_mva=1000.0,
+        branch_rate="Rate2",
+        trafo_rate="Rate1",
     )
     contingency_scenario: Optional[ContingencyScenario]
 

@@ -60,6 +60,8 @@ class ViolationsLimits:
     max_branch_loading_pct: float
     max_trafo_loading_pct: float
     max_swing_bus_power_mva: float
+    branch_rate: str
+    trafo_rate: str
 
 
 SubsystemIdxToViolationValues = dict[int, list[float]]
@@ -173,6 +175,8 @@ def check_violations(
     max_branch_loading_pct: float = 100.0,
     max_trafo_loading_pct: float = 100.0,
     max_swing_bus_power_mva: float = 1000.0,
+    branch_rate: str = "Rate1",
+    trafo_rate: str = "Rate1",
     use_full_newton_raphson: bool = False,
     solver_opts: dict = {"options1": 1, "options5": 1},
 ) -> Violations:
@@ -204,7 +208,7 @@ def check_violations(
             buses,
             undervoltage_buses_indexes,
         )
-    branches: Branches = Branches()
+    branches: Branches = Branches(branch_rate)
     if overloaded_branches_indexes := branches.get_overloaded_indexes(
         max_branch_loading_pct
     ):
@@ -215,7 +219,7 @@ def check_violations(
             branches,
             overloaded_branches_indexes,
         )
-    trafos: Trafos = Trafos()
+    trafos: Trafos = Trafos(trafo_rate)
     if overloaded_trafos_indexes := trafos.get_overloaded_indexes(
         max_trafo_loading_pct
     ):
@@ -226,7 +230,7 @@ def check_violations(
             trafos,
             overloaded_trafos_indexes,
         )
-    trafos3w: Trafos3w = Trafos3w()
+    trafos3w: Trafos3w = Trafos3w(trafo_rate)
     if overloaded_trafos3w_indexes := trafos3w.get_overloaded_indexes(
         max_trafo_loading_pct
     ):

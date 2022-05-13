@@ -35,6 +35,8 @@ def get_contingency_limiting_factor(
     max_branch_loading_pct: float = 120.0,
     max_trafo_loading_pct: float = 120.0,
     max_swing_bus_power_mva: float = 1000.0,
+    branch_rate: str = "Rate2",
+    trafo_rate: str = "Rate1",
     use_full_newton_raphson: bool = False,
 ) -> LimitingFactor:
     contingency_limits: ViolationsLimits = ViolationsLimits(
@@ -43,6 +45,8 @@ def get_contingency_limiting_factor(
         max_branch_loading_pct=max_branch_loading_pct,
         max_trafo_loading_pct=max_trafo_loading_pct,
         max_swing_bus_power_mva=max_swing_bus_power_mva,
+        branch_rate=branch_rate,
+        trafo_rate=trafo_rate,
     )
     violations: Violations = Violations.NO_VIOLATIONS
     for branch in contingency_scenario.branches:
