@@ -60,6 +60,8 @@ class ViolationsLimits:
     max_branch_loading_pct: float
     max_trafo_loading_pct: float
     max_swing_bus_power_mva: float
+    branch_rate: str
+    trafo_rate: str
 
 
 SubsystemIdxToViolationValues = dict[int, list[float]]
@@ -80,6 +82,10 @@ class ViolationsStats:
     @classmethod
     def reset(cls) -> None:
         cls._violations_stats = defaultdict(limit_value_to_subsystem)
+
+    @classmethod
+    def asdict(cls) -> dict:
+        return cls._violations_stats
 
     @classmethod
     def is_empty(cls) -> bool:
@@ -108,28 +114,29 @@ class ViolationsStats:
             )
 
     @classmethod
-    def print(cls) -> None:
-        def get_subsystems_for_violation(violation: Violations) -> Subsystems:
-            subsystems: Subsystems
-            if (
-                violation == Violations.BUS_OVERVOLTAGE
-                or violation == Violations.BUS_UNDERVOLTAGE
-            ):
-                subsystems = Buses()
-            elif violation == Violations.BRANCH_LOADING:
-                subsystems = Branches()
-            elif violation == Violations.TRAFO_LOADING:
-                subsystems = Trafos()
-            elif violation == Violations.TRAFO_3W_LOADING:
-                subsystems = Trafos3w()
-            elif violation == Violations.SWING_BUS_LOADING:
-                subsystems = SwingBuses()
-            else:
-                raise RuntimeError(f"Unknown {violation=}")
-            return subsystems
+    def _get_subsystems_for_violation(cls, violation: Violations) -> Subsystems:
+        subsystems: Subsystems
+        if (
+            violation == Violations.BUS_OVERVOLTAGE
+            or violation == Violations.BUS_UNDERVOLTAGE
+        ):
+            subsystems = Buses()
+        elif violation == Violations.BRANCH_LOADING:
+            subsystems = Branches()
+        elif violation == Violations.TRAFO_LOADING:
+            subsystems = Trafos()
+        elif violation == Violations.TRAFO_3W_LOADING:
+            subsystems = Trafos3w()
+        elif violation == Violations.SWING_BUS_LOADING:
+            subsystems = SwingBuses()
+        else:
+            raise RuntimeError(f"Unknown {violation=}")
+        return subsystems
 
+    @classmethod
+    def print(cls) -> None:
         for violation, limit_value_to_ss_violations in cls._violations_stats.items():
-            subsystems: Subsystems = get_subsystems_for_violation(violation)
+            subsystems: Subsystems = cls._get_subsystems_for_violation(violation)
             sort_values_descending: bool
             collection_reducer: Callable[[Collection[float]], float]
             if violation != Violations.BUS_UNDERVOLTAGE:
@@ -169,6 +176,8 @@ def check_violations(
     max_branch_loading_pct: float = 100.0,
     max_trafo_loading_pct: float = 100.0,
     max_swing_bus_power_mva: float = 1000.0,
+    branch_rate: str = "Rate1",
+    trafo_rate: str = "Rate1",
     use_full_newton_raphson: bool = False,
     solver_opts: dict = {"options1": 1, "options5": 1},
 ) -> Violations:
@@ -200,7 +209,7 @@ def check_violations(
             buses,
             undervoltage_buses_indexes,
         )
-    branches: Branches = Branches()
+    branches: Branches = Branches(branch_rate)
     if overloaded_branches_indexes := branches.get_overloaded_indexes(
         max_branch_loading_pct
     ):
@@ -211,7 +220,7 @@ def check_violations(
             branches,
             overloaded_branches_indexes,
         )
-    trafos: Trafos = Trafos()
+    trafos: Trafos = Trafos(trafo_rate)
     if overloaded_trafos_indexes := trafos.get_overloaded_indexes(
         max_trafo_loading_pct
     ):
@@ -222,7 +231,7 @@ def check_violations(
             trafos,
             overloaded_trafos_indexes,
         )
-    trafos3w: Trafos3w = Trafos3w()
+    trafos3w: Trafos3w = Trafos3w(trafo_rate)
     if overloaded_trafos3w_indexes := trafos3w.get_overloaded_indexes(
         max_trafo_loading_pct
     ):

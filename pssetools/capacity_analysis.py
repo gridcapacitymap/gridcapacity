@@ -49,6 +49,9 @@ class BusHeadroom:
     gen_lf: Optional[LimitingFactor]
 
 
+Headroom = tuple[BusHeadroom, ...]
+
+
 class CapacityAnalyser:
     """This class is made to simplify arguments passing
     between the capacity analysis steps:
@@ -147,7 +150,7 @@ class CapacityAnalyser:
         self.reload_case()
         return contingency_scenario
 
-    def buses_headroom(self) -> tuple[BusHeadroom, ...]:
+    def buses_headroom(self) -> Headroom:
         """Return actual load and max additional PQ power in MVA for each bus"""
         buses: Buses = Buses()
         print("Analysing headroom")
@@ -310,7 +313,7 @@ class CapacityAnalyser:
             limiting_factor = get_contingency_limiting_factor(
                 contingency_scenario=self._contingency_scenario,
                 use_full_newton_raphson=self._use_full_newton_raphson,
-                **dataclasses.asdict(self._contingency_limits),
+                contingency_limits=self._contingency_limits,
             )
         return limiting_factor
 
@@ -328,7 +331,7 @@ def buses_headroom(
     normal_limits: Optional[ViolationsLimits] = None,
     contingency_limits: Optional[ViolationsLimits] = None,
     contingency_scenario: Optional[ContingencyScenario] = None,
-) -> tuple[BusHeadroom, ...]:
+) -> Headroom:
     """Return actual load and max additional PQ power in MVA for each bus
 
     Default solver options:

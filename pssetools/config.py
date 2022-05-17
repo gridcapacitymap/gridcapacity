@@ -2,13 +2,13 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, Extra, NonNegativeFloat, NonNegativeInt, PositiveInt
+from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, PositiveInt
 
 from pssetools.contingency_analysis import ContingencyScenario
 from pssetools.violations_analysis import ViolationsLimits
 
 
-class ConfigModel(BaseModel):  # , extra=Extra.forbid):
+class ConfigModel(BaseModel):
     case_name: str
     upper_load_limit_p_mw: NonNegativeFloat
     upper_gen_limit_p_mw: NonNegativeFloat
@@ -24,6 +24,8 @@ class ConfigModel(BaseModel):  # , extra=Extra.forbid):
         max_branch_loading_pct=100.0,
         max_trafo_loading_pct=100.0,
         max_swing_bus_power_mva=1000.0,
+        branch_rate="Rate1",
+        trafo_rate="Rate1",
     )
     contingency_limits: Optional[ViolationsLimits] = ViolationsLimits(
         max_bus_voltage_pu=1.12,
@@ -31,6 +33,8 @@ class ConfigModel(BaseModel):  # , extra=Extra.forbid):
         max_branch_loading_pct=120.0,
         max_trafo_loading_pct=120.0,
         max_swing_bus_power_mva=1000.0,
+        branch_rate="Rate2",
+        trafo_rate="Rate1",
     )
     contingency_scenario: Optional[ContingencyScenario]
 
@@ -46,4 +50,4 @@ def load_config_model(config_file_name: str) -> ConfigModel:
         if probably_absolute_path.is_absolute()
         else Path(__name__).absolute().parents[1] / config_file_name
     )
-    return ConfigModel(**json.load(open(config_file_path, encoding="utf-8")))
+    return ConfigModel(**json.load(config_file_path.open(encoding="utf-8")))

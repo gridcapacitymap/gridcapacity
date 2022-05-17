@@ -32,17 +32,18 @@ class RawBranches:
     from_number: list[int]
     to_number: list[int]
     branch_id: list[str]
-    pct_rate1: list[float]
+    pct_rate: list[float]
 
 
 class Branches(Sequence):
-    def __init__(self) -> None:
+    def __init__(self, rate: str = "Rate1") -> None:
         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._rate: str = rate
         self._raw_branches: RawBranches = RawBranches(
             wf.abrnint(string="fromNumber")[0],
             wf.abrnint(string="toNumber")[0],
             wf.abrnchar(string="id")[0],
-            wf.abrnreal(string="pctRate1")[0],
+            wf.abrnreal(string=f"pct{self._rate}")[0],
         )
 
     @overload
@@ -76,15 +77,15 @@ class Branches(Sequence):
     def get_overloaded_indexes(self, max_branch_loading_pct: float) -> tuple[int, ...]:
         return tuple(
             branch_idx
-            for branch_idx, pct_rate1 in enumerate(self._raw_branches.pct_rate1)
-            if pct_rate1 > max_branch_loading_pct
+            for branch_idx, pct_rate in enumerate(self._raw_branches.pct_rate)
+            if pct_rate > max_branch_loading_pct
         )
 
     def get_loading_pct(
         self,
         selected_indexes: tuple[int, ...],
     ) -> tuple[float, ...]:
-        return tuple(self._raw_branches.pct_rate1[idx] for idx in selected_indexes)
+        return tuple(self._raw_branches.pct_rate[idx] for idx in selected_indexes)
 
     def log(
         self,
@@ -94,7 +95,7 @@ class Branches(Sequence):
         if not log.isEnabledFor(level):
             return
         branch_fields: tuple[str, ...] = tuple(
-            (*dataclasses.asdict(self[0]).keys(), "pctRate1")
+            (*dataclasses.asdict(self[0]).keys(), f"pct{self._rate}")
         )
         self._log.log(level, branch_fields)
         for idx, branch in enumerate(self):
@@ -104,7 +105,7 @@ class Branches(Sequence):
                     tuple(
                         (
                             *dataclasses.astuple(branch),
-                            self._raw_branches.pct_rate1[idx],
+                            self._raw_branches.pct_rate[idx],
                         )
                     ),
                 )
@@ -481,17 +482,18 @@ class RawTrafos:
     from_number: list[int]
     to_number: list[int]
     trafo_id: list[str]
-    pct_rate1: list[float]
+    pct_rate: list[float]
 
 
 class Trafos(Sequence):
-    def __init__(self) -> None:
+    def __init__(self, rate: str = "Rate1") -> None:
         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._rate: str = rate
         self._raw_trafos: RawTrafos = RawTrafos(
             wf.atrnint(string="fromNumber")[0],
             wf.atrnint(string="toNumber")[0],
             wf.atrnchar(string="id")[0],
-            wf.atrnreal(string="pctRate1")[0],
+            wf.atrnreal(string=f"pct{self._rate}")[0],
         )
 
     @overload
@@ -525,15 +527,15 @@ class Trafos(Sequence):
     def get_overloaded_indexes(self, max_trafo_loading_pct: float) -> tuple[int, ...]:
         return tuple(
             trafo_idx
-            for trafo_idx, pct_rate1 in enumerate(self._raw_trafos.pct_rate1)
-            if pct_rate1 > max_trafo_loading_pct
+            for trafo_idx, pct_rate in enumerate(self._raw_trafos.pct_rate)
+            if pct_rate > max_trafo_loading_pct
         )
 
     def get_loading_pct(
         self,
         selected_indexes: tuple[int, ...],
     ) -> tuple[float, ...]:
-        return tuple(self._raw_trafos.pct_rate1[idx] for idx in selected_indexes)
+        return tuple(self._raw_trafos.pct_rate[idx] for idx in selected_indexes)
 
     def log(
         self,
@@ -543,7 +545,7 @@ class Trafos(Sequence):
         if not log.isEnabledFor(level):
             return
         trafo_fields: tuple[str, ...] = tuple(
-            (*dataclasses.asdict(self[0]).keys(), "pctRate1")
+            (*dataclasses.asdict(self[0]).keys(), f"pct{self._rate}")
         )
         self._log.log(level, trafo_fields)
         for idx, trafo in enumerate(self):
@@ -553,7 +555,7 @@ class Trafos(Sequence):
                     tuple(
                         (
                             *dataclasses.astuple(trafo),
-                            self._raw_trafos.pct_rate1[idx],
+                            self._raw_trafos.pct_rate[idx],
                         )
                     ),
                 )
@@ -602,18 +604,19 @@ class RawTrafos3w:
     wind2_number: list[int]
     wind3_number: list[int]
     trafo_id: list[str]
-    pct_rate1: list[float]
+    pct_rate: list[float]
 
 
 class Trafos3w(Sequence):
-    def __init__(self) -> None:
+    def __init__(self, rate: str = "Rate1") -> None:
         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._rate: str = rate
         self._raw_trafos: RawTrafos3w = RawTrafos3w(
             wf.awndint(string="wind1Number")[0],
             wf.awndint(string="wind2Number")[0],
             wf.awndint(string="wind3Number")[0],
             wf.awndchar(string="id")[0],
-            wf.awndreal(string="pctRate1")[0],
+            wf.awndreal(string=f"pct{self._rate}")[0],
         )
 
     @overload
@@ -651,15 +654,15 @@ class Trafos3w(Sequence):
     def get_overloaded_indexes(self, max_trafo_loading_pct: float) -> tuple[int, ...]:
         return tuple(
             trafo_idx
-            for trafo_idx, pct_rate1 in enumerate(self._raw_trafos.pct_rate1)
-            if pct_rate1 > max_trafo_loading_pct
+            for trafo_idx, pct_rate in enumerate(self._raw_trafos.pct_rate)
+            if pct_rate > max_trafo_loading_pct
         )
 
     def get_loading_pct(
         self,
         selected_indexes: tuple[int, ...],
     ) -> tuple[float, ...]:
-        return tuple(self._raw_trafos.pct_rate1[idx] for idx in selected_indexes)
+        return tuple(self._raw_trafos.pct_rate[idx] for idx in selected_indexes)
 
     def log(
         self,
@@ -669,7 +672,7 @@ class Trafos3w(Sequence):
         if not log.isEnabledFor(level):
             return
         trafo_fields: tuple[str, ...] = tuple(
-            (*dataclasses.asdict(self[0]).keys(), "pctRate1")
+            (*dataclasses.asdict(self[0]).keys(), f"pct{self._rate}")
         )
         self._log.log(level, trafo_fields)
         for idx, trafo in enumerate(self):
@@ -679,7 +682,7 @@ class Trafos3w(Sequence):
                     tuple(
                         (
                             *dataclasses.astuple(trafo),
-                            self._raw_trafos.pct_rate1[idx],
+                            self._raw_trafos.pct_rate[idx],
                         )
                     ),
                 )
