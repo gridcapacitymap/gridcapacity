@@ -57,26 +57,31 @@ class TestCheckCapacity(unittest.TestCase):
             ),
         )
 
-    loads = [0, 65.625 + 31.783638129984077j, 100 + 48.432210483785255j]
-    gens = [0, 25 + 12.108052620946314j, 52.5 + 25.42691050398726j]
+    def test_loads_avail_mva(self) -> None:
+        loads = [
+            0,
+            65.625 + 31.783638129984077j,
+            100 + 48.432210483785255j,
+        ]  # zero, average and high load_avail_mva values
+        loads_headroom = [
+            self.headroom[5].load_avail_mva,
+            self.headroom[3].load_avail_mva,
+            self.headroom[0].load_avail_mva,
+        ]
+        self.assertEqual(loads, loads_headroom)
 
-    def test_load_average(self) -> None:
-        self.assertEqual(self.loads[1], self.headroom[3].load_avail_mva)
-
-    def test_load_high(self) -> None:
-        self.assertEqual(self.loads[2], self.headroom[0].load_avail_mva)
-
-    def test_load_zero(self) -> None:
-        self.assertEqual(self.loads[0], self.headroom[5].load_avail_mva)
-
-    def test_gen_average(self) -> None:
-        self.assertEqual(self.gens[1], self.headroom[12].gen_avail_mva)
-
-    def test_gen_high(self) -> None:
-        self.assertEqual(self.gens[2], self.headroom[21].gen_avail_mva)
-
-    def test_gen_zero(self) -> None:
-        self.assertEqual(self.gens[0], self.headroom[3].gen_avail_mva)
+    def test_gens_avail_mva(self) -> None:
+        gens = [
+            0,
+            25 + 12.108052620946314j,
+            52.5 + 25.42691050398726j,
+        ]  # zero, average and high gen_avail_mva values
+        gens_headroom = [
+            self.headroom[3].gen_avail_mva,
+            self.headroom[12].gen_avail_mva,
+            self.headroom[21].gen_avail_mva,
+        ]
+        self.assertEqual(gens, gens_headroom)
 
     def test_runtime_error(self) -> None:
         with self.assertRaises(
