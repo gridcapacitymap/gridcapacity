@@ -330,6 +330,14 @@ class TemporaryBusLoad:
         self._load_mva = load_mva
         return self
 
+    @property
+    def bus(self) -> Bus:
+        return self._bus
+
+    @property
+    def load_mva(self) -> complex:
+        return self._load_mva
+
 
 class TemporaryBusMachine:
     TEMP_MACHINE_ID: str = "Tm"
@@ -361,6 +369,14 @@ class TemporaryBusMachine:
     def __call__(self, gen_mva: complex) -> "TemporaryBusMachine":
         self._gen_mva = gen_mva
         return self
+
+    @property
+    def bus(self) -> Bus:
+        return self._bus
+
+    @property
+    def gen_mva(self) -> complex:
+        return self._gen_mva
 
 
 TemporaryBusSubsystem = Union[TemporaryBusLoad, TemporaryBusMachine]

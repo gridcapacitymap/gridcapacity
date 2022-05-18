@@ -5,6 +5,7 @@ from typing import Optional, Union
 from pssetools.subsystems import (
     Branch,
     Branches,
+    Bus,
     Trafo,
     Trafos,
     disable_branch,
