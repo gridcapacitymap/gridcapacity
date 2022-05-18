@@ -43,12 +43,12 @@ def write_output(case_name: str, headroom: Headroom) -> None:
             "contingency_stats": tuple(
                 {
                     "contingency": contingency,
-                    "violations_by_bus": tuple(
-                        {"b": bus, "vv": violations}
-                        for bus, violations in bus_to_contingency_violation.items()
+                    "bus_contingency_conditions": tuple(
+                        {"b": bus, "cc": contingency_condition}
+                        for bus, contingency_condition in bus_to_contingency_conditions.items()
                     ),
                 }
-                for contingency, bus_to_contingency_violation in CapacityAnalysisStats.contingencies_dict().items()
+                for contingency, bus_to_contingency_conditions in CapacityAnalysisStats.contingencies_dict().items()
             )
         },
         contingency_stats_output.open("w", encoding="utf-8"),
@@ -59,9 +59,9 @@ def write_output(case_name: str, headroom: Headroom) -> None:
             "feasibility_stats": tuple(
                 {
                     "bus": bus,
-                    "violations": violations,
+                    "unfeasible_conditions": unfeasible_conditions,
                 }
-                for bus, violations in CapacityAnalysisStats.feasibility_dict().items()
+                for bus, unfeasible_conditions in CapacityAnalysisStats.feasibility_dict().items()
             )
         },
         feasibility_stats_output.open("w", encoding="utf-8"),

@@ -56,20 +56,20 @@ Headroom = tuple[BusHeadroom, ...]
 
 
 @dataclass(frozen=True)
-class ContingencyViolationInfo:
+class ContingencyCondition:
     power_mva: complex
     v: Violations
 
 
-BusToContingencyViolationInfo = dict[Bus, list[ContingencyViolationInfo]]
+BusToContingencyConditions = dict[Bus, list[ContingencyCondition]]
 
 
-def bus_to_contingency_violation_info() -> BusToContingencyViolationInfo:
+def bus_to_contingency_conditions() -> BusToContingencyConditions:
     return defaultdict(list)
 
 
 @dataclass(frozen=True)
-class BusViolationInfo:
+class UnfeasibleCondition:
     power_mva: complex
     lf: LimitingFactor
 
@@ -343,10 +343,10 @@ class CapacityAnalyser:
 
 
 class CapacityAnalysisStats:
-    _feasibility_stats: dict[Bus, list[BusViolationInfo]] = defaultdict(list)
+    _feasibility_stats: dict[Bus, list[UnfeasibleCondition]] = defaultdict(list)
     _contingency_stats: dict[
-        LimitingSubsystem, BusToContingencyViolationInfo
-    ] = defaultdict(bus_to_contingency_violation_info)
+        LimitingSubsystem, BusToContingencyConditions
+    ] = defaultdict(bus_to_contingency_conditions)
 
     @classmethod
     def update(
@@ -366,11 +366,11 @@ class CapacityAnalysisStats:
                     f"expected `TemporaryBusLoad` or `TemporaryBusMachine`"
                 )
             cls._feasibility_stats[temp_subsystem.bus].append(
-                BusViolationInfo(power_mva=power_mva, lf=limiting_factor)
+                UnfeasibleCondition(power_mva=power_mva, lf=limiting_factor)
             )
             if (subsystem := limiting_factor.ss) is not None:
                 cls._contingency_stats[subsystem][temp_subsystem.bus].append(
-                    ContingencyViolationInfo(
+                    ContingencyCondition(
                         power_mva=power_mva,
                         v=limiting_factor.v,
                     )
@@ -389,23 +389,24 @@ class CapacityAnalysisStats:
         if len(cls._feasibility_stats.keys()):
             print()
             print(" FEASIBILITY STATS ".center(80, "="))
-            for bus, bus_violations in cls._feasibility_stats.items():
-                print(f"{bus=}[{len(bus_violations)}]:")
-                pprint(bus_violations)
+            for bus, unfeasible_conditions in cls._feasibility_stats.items():
+                print(f"{bus}[{len(unfeasible_conditions)}]:")
+                pprint(unfeasible_conditions)
         if len(cls._contingency_stats.keys()):
             print()
             print(" CONTINGENCIES STATS ".center(80, "="))
-            for contingency, violations_by_bus in sorted(
+            for contingency, bus_to_contingency_conditions in sorted(
                 cls._contingency_stats.items(),
                 key=lambda items: sum(
-                    len(violations) for violations in items[1].values()
+                    len(contingency_conditions)
+                    for contingency_conditions in items[1].values()
                 ),
                 reverse=True,
             ):
                 print(
-                    f"{contingency=}[{sum(len(violations) for violations in violations_by_bus.values())}]:"
+                    f"{contingency=}[{sum(len(violations) for violations in bus_to_contingency_conditions.values())}]:"
                 )
-                pprint(violations_by_bus)
+                pprint(dict(bus_to_contingency_conditions))
 
 
 def buses_headroom(
