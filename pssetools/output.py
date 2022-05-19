@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from pssetools import CapacityAnalysisStats
 from pssetools.capacity_analysis import Headroom
 from pssetools.violations_analysis import Violations, ViolationsStats
 
@@ -17,22 +18,53 @@ def write_output(case_name: str, headroom: Headroom) -> None:
     violation_stats_output: Path = output_folder / (
         output_file_prefix + "_violation_stats.json"
     )
+    contingency_stats_output: Path = output_folder / (
+        output_file_prefix + "_contingency_stats.json"
+    )
+    feasibility_stats_output: Path = output_folder / (
+        output_file_prefix + "_feasibility_stats.json"
+    )
     json_dump_kwargs: dict = {
         "indent": 2,
         "default": json_encode_helper,
     }
     json.dump(
-        {
-            "headroom": tuple(
-                dataclasses.asdict(bus_headroom) for bus_headroom in headroom
-            )
-        },
+        {"headroom": headroom},
         headroom_output.open("w", encoding="utf-8"),
         **json_dump_kwargs,
     )
     json.dump(
         {str(k): v for k, v in ViolationsStats.asdict().items()},
         violation_stats_output.open("w", encoding="utf-8"),
+        **json_dump_kwargs,
+    )
+    json.dump(
+        {
+            "contingency_stats": tuple(
+                {
+                    "contingency": contingency,
+                    "bus_contingency_conditions": tuple(
+                        {"b": bus, "cc": contingency_condition}
+                        for bus, contingency_condition in bus_to_contingency_conditions.items()
+                    ),
+                }
+                for contingency, bus_to_contingency_conditions in CapacityAnalysisStats.contingencies_dict().items()
+            )
+        },
+        contingency_stats_output.open("w", encoding="utf-8"),
+        **json_dump_kwargs,
+    )
+    json.dump(
+        {
+            "feasibility_stats": tuple(
+                {
+                    "bus": bus,
+                    "unfeasible_conditions": unfeasible_conditions,
+                }
+                for bus, unfeasible_conditions in CapacityAnalysisStats.feasibility_dict().items()
+            )
+        },
+        feasibility_stats_output.open("w", encoding="utf-8"),
         **json_dump_kwargs,
     )
     print(f'Output was written to "{headroom_output}" and "{violation_stats_output}"')
@@ -43,5 +75,7 @@ def json_encode_helper(obj: Any) -> Any:
         return [obj.real, obj.imag]
     elif isinstance(obj, Violations):
         return str(obj)
+    elif dataclasses.is_dataclass(obj):
+        return dataclasses.asdict(obj)
     else:
         raise TypeError(f"{obj=} is not serializable")

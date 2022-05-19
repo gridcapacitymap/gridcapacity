@@ -15,7 +15,7 @@ import psspy
 import redirect
 
 from pssetools import wrapped_funcs as wf
-from pssetools.capacity_analysis import buses_headroom
+from pssetools.capacity_analysis import CapacityAnalysisStats, buses_headroom
 from pssetools.config import ConfigModel, load_config_model
 from pssetools.output import write_output
 from pssetools.violations_analysis import ViolationsLimits, ViolationsStats
@@ -52,7 +52,9 @@ def build_headroom() -> None:
     headroom = buses_headroom(**config_model.dict(exclude_unset=True))
     if len(headroom):
         write_output(config_model.case_name, headroom)
-        print("Available additional capacity:")
+        CapacityAnalysisStats.print()
+        print()
+        print(" HEADROOM ".center(80, "="))
         for bus_headroom in headroom:
             print(bus_headroom)
         if not ViolationsStats.is_empty():
