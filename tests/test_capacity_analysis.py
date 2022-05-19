@@ -60,30 +60,28 @@ class TestCheckCapacity(unittest.TestCase):
         )
 
     def test_loads_avail_mva(self) -> None:
-        loads = [
-            0,
-            65.625 + 31.783638129984077j,
-            100 + 48.432210483785255j,
-        ]  # zero, average and high load_avail_mva values
-        loads_headroom = [
-            self.headroom[5].load_avail_mva,
-            self.headroom[3].load_avail_mva,
-            self.headroom[0].load_avail_mva,
-        ]
-        self.assertEqual(loads, loads_headroom)
+        for (
+            bus_idx,
+            load_avail_mva,
+        ) in (  # pairs of bus indexes with zero, average and high load_avail_mva values
+            (5, 0),
+            (3, 65.625 + 31.783638129984077j),
+            (0, 100 + 48.432210483785255j),
+        ):
+            with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
+                self.assertEqual(load_avail_mva, self.headroom[bus_idx].load_avail_mva)
 
     def test_gens_avail_mva(self) -> None:
-        gens = [
-            0,
-            25 + 12.108052620946314j,
-            52.5 + 25.42691050398726j,
-        ]  # zero, average and high gen_avail_mva values
-        gens_headroom = [
-            self.headroom[3].gen_avail_mva,
-            self.headroom[12].gen_avail_mva,
-            self.headroom[21].gen_avail_mva,
-        ]
-        self.assertEqual(gens, gens_headroom)
+        for (
+            bus_idx,
+            gen_avail_mva,
+        ) in (  # pairs of bus indexes with zero, average and high gen_avail_mva values
+            (3, 0),
+            (12, 25 + 12.108052620946314j),
+            (21, 52.5 + 25.42691050398726j),
+        ):
+            with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
+                self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)
 
     def test_runtime_error(self) -> None:
         with self.assertRaises(
