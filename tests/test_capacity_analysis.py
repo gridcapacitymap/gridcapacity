@@ -16,7 +16,7 @@ limitations under the License.
 import unittest
 
 import pssetools
-from pssetools.capacity_analysis import buses_headroom
+from pssetools.capacity_analysis import Headroom, buses_headroom
 from pssetools.contingency_analysis import ContingencyScenario
 from pssetools.subsystems import Branch, Trafo
 from pssetools.violations_analysis import ViolationsLimits
@@ -24,6 +24,8 @@ from tests import DEFAULT_CASE
 
 
 class TestCheckCapacity(unittest.TestCase):
+    headroom: Headroom
+
     @classmethod
     def setUpClass(cls) -> None:
         pssetools.init_psse()
@@ -44,13 +46,13 @@ class TestCheckCapacity(unittest.TestCase):
                 branches=tuple(
                     Branch(*args)
                     for args in (
-                        [151, 201],
-                        [152, 202],
-                        [152, 3004],
-                        [153, 154],
-                        [153, 3006],
-                        [154, 203],
-                        [154, 3008],
+                        (151, 201),
+                        (152, 202),
+                        (152, 3004),
+                        (153, 154),
+                        (153, 3006),
+                        (154, 203),
+                        (154, 3008),
                     )
                 ),
                 trafos=(Trafo(3001, 3002), Trafo(3004, 3005)),
