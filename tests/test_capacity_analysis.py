@@ -60,10 +60,8 @@ class TestCheckCapacity(unittest.TestCase):
         )
 
     def test_loads_avail_mva(self) -> None:
-        for (
-            bus_idx,
-            load_avail_mva,
-        ) in (  # pairs of bus indexes with zero, average and high load_avail_mva values
+        # pairs of bus indexes with zero, average and high load_avail_mva values
+        for (bus_idx, load_avail_mva,) in (
             (5, 0),
             (3, 65.625 + 31.783638129984077j),
             (0, 100 + 48.432210483785255j),
