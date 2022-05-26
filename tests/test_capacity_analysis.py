@@ -70,10 +70,8 @@ class TestCheckCapacity(unittest.TestCase):
                 self.assertEqual(load_avail_mva, self.headroom[bus_idx].load_avail_mva)
 
     def test_gens_avail_mva(self) -> None:
-        for (
-            bus_idx,
-            gen_avail_mva,
-        ) in (  # pairs of bus indexes with zero, average and high gen_avail_mva values
+        # pairs of bus indexes with zero, average and high gen_avail_mva values
+        for (bus_idx, gen_avail_mva,) in (
             (3, 0),
             (12, 25 + 12.108052620946314j),
             (21, 52.5 + 25.42691050398726j),
@@ -82,9 +80,8 @@ class TestCheckCapacity(unittest.TestCase):
                 self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)
 
     def test_runtime_error(self) -> None:
-        with self.assertRaises(
-            RuntimeError
-        ):  # expecting RuntimeError Violations.TRAFO_LOADING
+        # expecting RuntimeError Violations.TRAFO_LOADING
+        with self.assertRaises(RuntimeError):
             buses_headroom(
                 case_name=DEFAULT_CASE,
                 upper_load_limit_p_mw=100.0,
