@@ -25,6 +25,7 @@ class TestCheckViolations(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         pssetools.init_psse()
+        ViolationsStats.reset()
 
     def test_not_converged(self) -> None:
         wf.open_case(DEFAULT_CASE)
