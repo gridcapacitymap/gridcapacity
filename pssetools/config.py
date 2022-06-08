@@ -30,7 +30,7 @@ class ConfigModel(BaseModel):
     load_power_factor: Optional[NonNegativeFloat] = 0.9
     gen_power_factor: Optional[NonNegativeFloat] = 0.9
     selected_buses_ids: Optional[list[NonNegativeInt]]
-    solver_tolerance_p_mw: Optional[NonNegativeFloat] = 5.0
+    headroom_tolerance_p_mw: Optional[NonNegativeFloat] = 5.0
     solver_opts: Optional[dict] = {"options1": 1, "options5": 1}
     max_iterations: Optional[PositiveInt] = 10
     normal_limits: Optional[ViolationsLimits] = ViolationsLimits(
@@ -63,6 +63,6 @@ def load_config_model(config_file_name: str) -> ConfigModel:
     config_file_path: Path = (
         probably_absolute_path
         if probably_absolute_path.is_absolute()
-        else Path(__name__).absolute().parents[1] / config_file_name
+        else Path(__file__).absolute().parents[1] / config_file_name
     )
     return ConfigModel(**json.load(config_file_path.open(encoding="utf-8")))

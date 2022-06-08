@@ -26,7 +26,7 @@ from pssetools.violations_analysis import Violations, ViolationsStats
 def write_output(case_name: str, headroom: Headroom) -> None:
     case_path: Path = Path(case_name)
     output_folder: Path = (
-        case_path if case_path.is_absolute() else Path(__name__).absolute().parents[1]
+        case_path if case_path.is_absolute() else Path(__file__).absolute().parents[1]
     )
     output_file_prefix: str = case_name.removesuffix(case_path.suffix)
     headroom_output: Path = output_folder / (output_file_prefix + "_headroom.json")
@@ -82,7 +82,7 @@ def write_output(case_name: str, headroom: Headroom) -> None:
         feasibility_stats_output.open("w", encoding="utf-8"),
         **json_dump_kwargs,
     )
-    print(f'Output was written to "{headroom_output}" and "{violation_stats_output}"')
+    print(f'Headroom was written to "{headroom_output}"')
 
 
 def json_encode_helper(obj: Any) -> Any:
