@@ -18,8 +18,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pssetools import CapacityAnalysisStats
-from pssetools.capacity_analysis import Headroom
+from pssetools.capacity_analysis import CapacityAnalysisStats, Headroom
 from pssetools.violations_analysis import Violations, ViolationsStats
 
 

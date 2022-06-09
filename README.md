@@ -52,15 +52,16 @@ The `case_name` is a file name from the PSS®E `EXAMPLE` directory or an absolut
 
 There are debugging features that could be enabled using the environment variables.
 
-| ENV                                       | Description              |
-|-------------------------------------------|:-------------------------|
-| `PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS` | Enable violations output |
-| `PSSE_TOOLS_VERBOSE`                      | Enable verbose output    |
+| ENV                                          | Description                 |
+|----------------------------------------------|:----------------------------|
+| `GRID_CAPACITY_PANDAPOWER_BACKEND`           | Force PandaPower on Windows |
+| `GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS` | Enable violations output    |
+| `GRID_CAPACITY_VERBOSE`                      | Enable verbose output       |
 
 To start the project with verbose output enabled, run:
 
 ```powershell
-$env:PSSE_TOOLS_VERBOSE = ’1’
+$env:GRID_CAPACITY_VERBOSE = ’1’
 pipenv run python -m pssetools sample_config.json
 ```
 

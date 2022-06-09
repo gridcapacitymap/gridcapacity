@@ -18,6 +18,8 @@ import os
 import sys
 from typing import Final
 
+assert sys.platform == "win32"
+
 from pssetools.path_helper import get_psse35_paths
 
 psse35_paths = get_psse35_paths()
@@ -42,7 +44,7 @@ def init_psse() -> None:
     except redirect.RedirectError:
         pass
     psspy.psseinit()
-    if not os.environ.get("PSSE_TOOLS_VERBOSE"):
+    if not os.environ.get("GRID_CAPACITY_VERBOSE"):
         # Suppress all PSSE output
         no_output: Final[int] = 6
         wf.alert_output(no_output)
@@ -53,7 +55,9 @@ def init_psse() -> None:
 
 def build_headroom() -> None:
     logging_level: int = (
-        logging.WARNING if not os.environ.get("PSSE_TOOLS_VERBOSE") else logging.DEBUG
+        logging.WARNING
+        if not os.environ.get("GRID_CAPACITY_VERBOSE")
+        else logging.DEBUG
     )
     logging.basicConfig(level=logging_level)
     init_psse()

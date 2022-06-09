@@ -31,7 +31,7 @@ class ConfigModel(BaseModel):
     gen_power_factor: Optional[NonNegativeFloat] = 0.9
     selected_buses_ids: Optional[list[NonNegativeInt]]
     headroom_tolerance_p_mw: Optional[NonNegativeFloat] = 5.0
-    solver_opts: Optional[dict] = {"options1": 1, "options5": 1}
+    solver_opts: Optional[dict] = None
     max_iterations: Optional[PositiveInt] = 10
     normal_limits: Optional[ViolationsLimits] = ViolationsLimits(
         max_bus_voltage_pu=1.1,

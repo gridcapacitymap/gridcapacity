@@ -19,7 +19,7 @@ import os
 from collections import defaultdict
 from collections.abc import Callable, Collection
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, Optional
 
 from pssetools import wrapped_funcs as wf
 from pssetools.subsystems import (
@@ -35,7 +35,7 @@ from pssetools.wrapped_funcs import PsseApiCallError
 log = logging.getLogger(__name__)
 LOG_LEVEL: Final[int] = (
     logging.INFO
-    if not os.getenv("PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS")
+    if not os.getenv("GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS")
     else logging.WARNING
 )
 
@@ -187,12 +187,8 @@ def check_violations(
     branch_rate: str = "Rate1",
     trafo_rate: str = "Rate1",
     use_full_newton_raphson: bool = False,
-    solver_opts: dict = {"options1": 1, "options5": 1},
+    solver_opts: Optional[dict] = None,
 ) -> Violations:
-    """Default solver options:
-    `options1=1` Use tap adjustment option setting
-    `options5=1` Use switched shunt adjustment option setting
-    """
     run_solver(use_full_newton_raphson, solver_opts)
     v: Violations = Violations.NO_VIOLATIONS
     if not wf.is_solved():
@@ -266,17 +262,7 @@ def check_violations(
 
 def run_solver(
     use_full_newton_raphson: bool,
-    solver_opts: dict = {"options1": 1, "options5": 1},
+    solver_opts: Optional[dict] = None,
 ) -> None:
-    """Default solver options:
-    `options1=1` Use tap adjustment option setting
-    `options5=1` Use switched shunt adjustment option setting
-    """
-    try:
-        if not use_full_newton_raphson:
-            wf.fdns(**solver_opts)
-        else:
-            wf.fnsl(**solver_opts)
-    except PsseApiCallError as e:
-        log.log(LOG_LEVEL, e.args)
+    wf.run_solver(use_full_newton_raphson, solver_opts)
     PowerFlows.increment_count()

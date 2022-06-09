@@ -4,8 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+numba = "*"
+pandapower = "*"
 pydantic = "*"
-pywin32 = "*"
 tqdm = "*"
 
 [dev-packages]

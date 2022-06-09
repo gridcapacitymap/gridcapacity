@@ -98,7 +98,7 @@ def get_default_contingency_limits() -> ViolationsLimits:
 
 def get_contingency_scenario(
     use_full_newton_raphson: bool,
-    solver_opts: dict,
+    solver_opts: Optional[dict],
     contingency_limits: Optional[ViolationsLimits] = get_default_contingency_limits(),
 ) -> ContingencyScenario:
     contingency_limits = contingency_limits or get_default_contingency_limits()

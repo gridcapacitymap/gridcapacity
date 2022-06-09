@@ -13,7 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import sys
 import unittest
+
+assert sys.platform == "win32"
 
 import pssetools
 from pssetools import wrapped_funcs as wf

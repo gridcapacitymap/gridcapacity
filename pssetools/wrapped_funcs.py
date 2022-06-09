@@ -24,6 +24,11 @@ from typing import Any, Callable, Final, Optional
 import psspy
 
 log = logging.getLogger(__name__)
+LOG_LEVEL: Final[int] = (
+    logging.INFO
+    if not os.getenv("GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS")
+    else logging.WARNING
+)
 
 
 def process_psse_api_error_code(func: Callable) -> Callable:
@@ -435,3 +440,21 @@ def open_case(case_name: str) -> None:
     elif case_path.suffix == ".raw":
         read(0, str(case_path))
     log.info(f"Opened file '{case_path}'")
+
+
+def run_solver(
+    use_full_newton_raphson: bool,
+    solver_opts: Optional[dict] = None,
+) -> None:
+    """Default solver options:
+    `options1=1` Use tap adjustment option setting
+    `options5=1` Use switched shunt adjustment option setting
+    """
+    effective_solver_opts = solver_opts or {"options1": 1, "options5": 1}
+    try:
+        if not use_full_newton_raphson:
+            fdns(**effective_solver_opts)
+        else:
+            fnsl(**effective_solver_opts)
+    except PsseApiCallError as e:
+        log.log(LOG_LEVEL, e.args)

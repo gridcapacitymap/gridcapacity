@@ -25,7 +25,7 @@ from pssetools import wrapped_funcs as wf
 log = logging.getLogger(__name__)
 LOG_LEVEL: Final[int] = (
     logging.INFO
-    if not os.getenv("PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS")
+    if not os.getenv("GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS")
     else logging.WARNING
 )
 field_type2func_suffix: Final[dict[str, str]] = {

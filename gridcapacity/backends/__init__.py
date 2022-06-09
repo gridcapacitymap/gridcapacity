@@ -13,11 +13,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
 import sys
 
-assert sys.platform == "win32"
+if sys.platform == "win32" and not os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND"):
+    print("Importing PSSE")
+    from pssetools import init_psse, wrapped_funcs
 
-from pssetools import build_headroom
+    init_psse()
+else:
+    print("Importing pandapower")
+    from .pandapower import wrapped_funcs  # type: ignore[no-redef]
 
-if __name__ == "__main__":
-    build_headroom()
+__all__ = ["wrapped_funcs"]
