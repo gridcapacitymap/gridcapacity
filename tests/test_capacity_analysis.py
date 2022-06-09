@@ -16,7 +16,6 @@ limitations under the License.
 import unittest
 
 import pssetools
-import pssetools.capacity_analysis
 from pssetools.capacity_analysis import (
     CapacityAnalysisStats,
     Headroom,
