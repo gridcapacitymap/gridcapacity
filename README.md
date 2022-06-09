@@ -62,5 +62,5 @@ To start the project with verbose output enabled, run:
 
 ```powershell
 $env:PSSE_TOOLS_VERBOSE = ’1’
-pipenv run python -m pssetools
+pipenv run python -m pssetools sample_config.json
 ```

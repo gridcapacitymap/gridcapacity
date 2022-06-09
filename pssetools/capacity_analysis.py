@@ -106,7 +106,7 @@ class CapacityAnalyser:
         load_power_factor: float,
         gen_power_factor: float,
         selected_buses_ids: Optional[Collection[int]],
-        solver_tolerance_p_mw: float,
+        headroom_tolerance_p_mw: float,
         solver_opts: dict,
         max_iterations: int,
         normal_limits: Optional[ViolationsLimits],
@@ -127,7 +127,7 @@ class CapacityAnalyser:
             upper_gen_limit_p_mw + 1j * upper_gen_limit_q_mw
         )
         self._selected_buses_ids: Optional[Collection[int]] = selected_buses_ids
-        self._solver_tolerance_p_mw: Final[float] = solver_tolerance_p_mw
+        self._headroom_tolerance_p_mw: Final[float] = headroom_tolerance_p_mw
         self._solver_opts: dict = solver_opts
         self._max_iterations: Final[int] = max_iterations
         self._normal_limits: Final[Optional[ViolationsLimits]] = normal_limits
@@ -309,7 +309,7 @@ class CapacityAnalyser:
                 self.reload_case()
             if (
                 upper_limit_mva.real - lower_limit_mva.real
-                < self._solver_tolerance_p_mw
+                < self._headroom_tolerance_p_mw
             ):
                 break
         return lower_limit_mva, limiting_factor
@@ -431,7 +431,7 @@ def buses_headroom(
     load_power_factor: float = 0.9,
     gen_power_factor: float = 0.9,
     selected_buses_ids: Optional[Collection[int]] = None,
-    solver_tolerance_p_mw: float = 5.0,
+    headroom_tolerance_p_mw: float = 5.0,
     solver_opts: dict = {"options1": 1, "options5": 1},
     max_iterations: int = 10,
     normal_limits: Optional[ViolationsLimits] = None,
@@ -451,7 +451,7 @@ def buses_headroom(
         load_power_factor,
         gen_power_factor,
         selected_buses_ids,
-        solver_tolerance_p_mw,
+        headroom_tolerance_p_mw,
         solver_opts,
         max_iterations,
         normal_limits,

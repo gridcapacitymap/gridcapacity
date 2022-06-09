@@ -5,7 +5,7 @@
     "load_power_factor":  0.9,
     "gen_power_factor":  0.9,
     "selected_buses_ids":  [101, 102, 151, 152, 153, 154],
-    "solver_tolerance_p_mw":  5.0,
+    "headroom_tolerance_p_mw":  5.0,
     "solver_opts":  {"options1": 1, "options5": 1},
     "max_iterations":  10,
     "normal_limits": {
