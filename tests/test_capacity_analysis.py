@@ -16,14 +16,20 @@ limitations under the License.
 import unittest
 
 import pssetools
-from pssetools.capacity_analysis import Headroom, buses_headroom
-from pssetools.contingency_analysis import ContingencyScenario
-from pssetools.subsystems import Branch, Trafo
-from pssetools.violations_analysis import ViolationsLimits
+import pssetools.capacity_analysis
+from pssetools.capacity_analysis import (
+    CapacityAnalysisStats,
+    Headroom,
+    UnfeasibleCondition,
+    buses_headroom,
+)
+from pssetools.contingency_analysis import ContingencyScenario, LimitingFactor
+from pssetools.subsystems import Branch, Bus, Trafo
+from pssetools.violations_analysis import Violations, ViolationsLimits
 from tests import DEFAULT_CASE
 
 
-class TestCheckCapacity(unittest.TestCase):
+class TestCapacityAnalysis(unittest.TestCase):
     headroom: Headroom
 
     @classmethod
@@ -57,6 +63,31 @@ class TestCheckCapacity(unittest.TestCase):
                 ),
                 trafos=(Trafo(3001, 3002), Trafo(3004, 3005)),
             ),
+        )
+
+    def test_capacity_analysis_stats(self) -> None:
+        self.assertEqual(0, len(CapacityAnalysisStats.contingencies_dict()))
+        self.assertEqual(21, len(CapacityAnalysisStats.feasibility_dict()))
+        self.assertEqual(
+            [
+                UnfeasibleCondition(
+                    -80 - 38.74576838702821j,
+                    LimitingFactor(
+                        Violations.BUS_UNDERVOLTAGE | Violations.BUS_OVERVOLTAGE,
+                        ss=None,
+                    ),
+                ),
+                UnfeasibleCondition(
+                    -15 - 7.264831572567789j,
+                    LimitingFactor(
+                        Violations.BUS_UNDERVOLTAGE | Violations.BUS_OVERVOLTAGE,
+                        ss=None,
+                    ),
+                ),
+            ],
+            CapacityAnalysisStats.feasibility_dict()[
+                Bus(number=101, ex_name="NUC-A       21.600", type=2)
+            ][0:-1:3],
         )
 
     def test_loads_avail_mva(self) -> None:

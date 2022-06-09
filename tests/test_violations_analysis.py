@@ -21,7 +21,7 @@ from pssetools.violations_analysis import Violations, ViolationsStats, check_vio
 from tests import DEFAULT_CASE
 
 
-class TestCheckViolations(unittest.TestCase):
+class TestViolationsAnalysis(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         pssetools.init_psse()
