@@ -154,7 +154,7 @@ class CapacityAnalyser:
         """Fixed slope Decoupled Newton-Raphson Solver (FDNS) is applicable"""
         self.reload_case()
         run_solver(use_full_newton_raphson=False, solver_opts=self._solver_opts)
-        is_applicable: Final[bool] = True if wf.is_solved() else False
+        is_applicable: Final[bool] = True if wf.is_converged() else False
         if not is_applicable:
             # Reload the case and run power flow to get solution convergence
             # after failed FDNS

@@ -191,7 +191,7 @@ def check_violations(
 ) -> Violations:
     run_solver(use_full_newton_raphson, solver_opts)
     v: Violations = Violations.NO_VIOLATIONS
-    if not wf.is_solved():
+    if not wf.is_converged():
         v |= Violations.NOT_CONVERGED
         log.log(LOG_LEVEL, "Case not solved!")
         return v

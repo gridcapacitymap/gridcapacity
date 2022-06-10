@@ -345,7 +345,7 @@ def solved() -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
-def is_solved() -> bool:
+def is_converged() -> bool:
     try:
         solved()
     except PsseApiCallError:

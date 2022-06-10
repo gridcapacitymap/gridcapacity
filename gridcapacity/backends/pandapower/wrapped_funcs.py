@@ -33,6 +33,10 @@ LOG_LEVEL: Final[int] = (
 )
 
 
+def is_converged() -> bool:
+    return pp_backend.net.get("converged", False)
+
+
 @functools.cache
 def _get_case_path(case_name: str) -> Path:
     probable_case_path: Path = Path(case_name)

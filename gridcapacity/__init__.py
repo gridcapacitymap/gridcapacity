@@ -40,6 +40,7 @@ def build_headroom() -> None:
     config_file_name: str = sys.argv[1]
     wf.open_case(config_file_name)
     wf.run_solver(use_full_newton_raphson=False)
+    print(f"Case is solved: {wf.is_converged()}")
     # config_model: ConfigModel = load_config_model(config_file_name)
     # headroom = buses_headroom(**config_model.dict(exclude_unset=True))
     # if len(headroom):
