@@ -17,6 +17,11 @@ import dataclasses
 from dataclasses import dataclass
 from typing import Optional, Union
 
+from gridcapacity.violations_analysis import (
+    Violations,
+    ViolationsLimits,
+    check_violations,
+)
 from pssetools.subsystems import (
     Branch,
     Branches,
@@ -25,7 +30,6 @@ from pssetools.subsystems import (
     disable_branch,
     disable_trafo,
 )
-from pssetools.violations_analysis import Violations, ViolationsLimits, check_violations
 
 
 @dataclass

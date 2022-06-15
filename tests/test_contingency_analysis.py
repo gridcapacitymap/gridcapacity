@@ -1,6 +1,7 @@
 import unittest
 
 import pssetools
+from gridcapacity.violations_analysis import Violations, ViolationsLimits
 from pssetools import wrapped_funcs as wf
 from pssetools.contingency_analysis import (
     ContingencyScenario,
@@ -10,7 +11,6 @@ from pssetools.contingency_analysis import (
     get_default_contingency_limits,
 )
 from pssetools.subsystems import Branch
-from pssetools.violations_analysis import Violations, ViolationsLimits
 from tests import DEFAULT_CASE
 
 

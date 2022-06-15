@@ -18,6 +18,7 @@ import os
 import sys
 
 from gridcapacity.backends import wrapped_funcs as wf
+from gridcapacity.violations_analysis import check_violations
 
 # from pssetools.config import ConfigModel, load_config_model
 # from pssetools.capacity_analysis import CapacityAnalysisStats, buses_headroom
@@ -41,6 +42,8 @@ def build_headroom() -> None:
     wf.open_case(config_file_name)
     wf.run_solver(use_full_newton_raphson=False)
     print(f"Case is solved: {wf.is_converged()}")
+    v = check_violations()
+    print(f"{v=}")
     # config_model: ConfigModel = load_config_model(config_file_name)
     # headroom = buses_headroom(**config_model.dict(exclude_unset=True))
     # if len(headroom):

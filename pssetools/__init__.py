@@ -31,11 +31,11 @@ import psse35
 import psspy
 import redirect
 
+from gridcapacity.violations_analysis import ViolationsStats
 from pssetools import wrapped_funcs as wf
 from pssetools.capacity_analysis import CapacityAnalysisStats, buses_headroom
 from pssetools.config import ConfigModel, load_config_model
 from pssetools.output import write_output
-from pssetools.violations_analysis import ViolationsStats
 
 
 def init_psse() -> None:

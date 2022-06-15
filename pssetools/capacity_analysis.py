@@ -25,6 +25,14 @@ from typing import Final, Iterator, Optional
 
 from tqdm import tqdm
 
+from gridcapacity.violations_analysis import (
+    PowerFlows,
+    Violations,
+    ViolationsLimits,
+    ViolationsStats,
+    check_violations,
+    run_solver,
+)
 from pssetools import wrapped_funcs as wf
 from pssetools.contingency_analysis import (
     ContingencyScenario,
@@ -43,14 +51,6 @@ from pssetools.subsystems import (
     TemporaryBusLoad,
     TemporaryBusMachine,
     TemporaryBusSubsystem,
-)
-from pssetools.violations_analysis import (
-    PowerFlows,
-    Violations,
-    ViolationsLimits,
-    ViolationsStats,
-    check_violations,
-    run_solver,
 )
 
 log = logging.getLogger(__name__)

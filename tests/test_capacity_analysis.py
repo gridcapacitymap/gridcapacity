@@ -19,6 +19,7 @@ import unittest
 assert sys.platform == "win32"
 
 import pssetools
+from gridcapacity.violations_analysis import ViolationsLimits
 from pssetools.capacity_analysis import (
     CapacityAnalysisStats,
     Headroom,
@@ -27,7 +28,6 @@ from pssetools.capacity_analysis import (
 )
 from pssetools.contingency_analysis import ContingencyScenario, LimitingFactor
 from pssetools.subsystems import Branch, Bus, Trafo
-from pssetools.violations_analysis import Violations, ViolationsLimits
 from tests import DEFAULT_CASE
 
 

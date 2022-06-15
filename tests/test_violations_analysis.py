@@ -19,8 +19,12 @@ import unittest
 assert sys.platform == "win32"
 
 import pssetools
+from gridcapacity.violations_analysis import (
+    Violations,
+    ViolationsStats,
+    check_violations,
+)
 from pssetools import wrapped_funcs as wf
-from pssetools.violations_analysis import Violations, ViolationsStats, check_violations
 from tests import DEFAULT_CASE
 
 
