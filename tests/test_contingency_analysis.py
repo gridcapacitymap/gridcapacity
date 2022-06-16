@@ -1,7 +1,6 @@
 import unittest
 
 import pssetools
-import pssetools.contingency_analysis
 from pssetools import wrapped_funcs as wf
 from pssetools.contingency_analysis import (
     ContingencyScenario,

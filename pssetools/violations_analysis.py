@@ -112,18 +112,20 @@ class ViolationsStats:
         violation: Violations,
         limit: float,
         subsystems: Subsystems,
-        subsystem_indexes: tuple[int, ...],
+        violated_subsystem_indexes: tuple[int, ...],
     ) -> None:
         log.log(LOG_LEVEL, f"{violation} {limit=} ")
-        subsystems.log(LOG_LEVEL, subsystem_indexes)
+        subsystems.log(LOG_LEVEL, violated_subsystem_indexes)
         violated_values: tuple[float, ...]
         if isinstance(subsystems, Buses):
-            violated_values = subsystems.get_voltage_pu(subsystem_indexes)
+            violated_values = subsystems.get_voltage_pu(violated_subsystem_indexes)
         elif isinstance(subsystems, SwingBuses):
-            violated_values = subsystems.get_power_mva(subsystem_indexes)
+            violated_values = subsystems.get_power_mva(violated_subsystem_indexes)
         else:
-            violated_values = subsystems.get_loading_pct(subsystem_indexes)
-        for subsystem_index, violated_value in zip(subsystem_indexes, violated_values):
+            violated_values = subsystems.get_loading_pct(violated_subsystem_indexes)
+        for subsystem_index, violated_value in zip(
+            violated_subsystem_indexes, violated_values
+        ):
             cls._violations_stats[violation][limit][subsystem_index].append(
                 violated_value
             )
@@ -174,15 +176,6 @@ class ViolationsStats:
                     print(
                         f"{subsystems[ss_idx]}: {tuple(sorted(violated_values, reverse=sort_values_descending))}"
                     )
-
-
-class SolutionConvergenceIndicator(enum.IntFlag):
-    MET_CONVERGENCE_TOLERANCE = 0
-    ITERATION_LIMIT_EXCEEDED = 1
-    BLOWN_UP = 2
-    RSOL_CONVERGED_WITH_PHASE_SHIFT_LOCKED = 10
-    RSOL_CONVERGED_WITH_TOLN_INCREASED = 11
-    RSOL_CONVERGED_WITH_Y_LOAD_CONVERSION_DUE_TO_LOW_VOLTAGE = 12
 
 
 def check_violations(

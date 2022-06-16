@@ -319,7 +319,6 @@ class TemporaryBusLoad:
 
     def __init__(self, bus: Bus) -> None:
         self._bus: Bus = bus
-        self._context_manager_is_active: bool = False
         self._load_mva: complex
 
     def __enter__(self) -> None:
@@ -329,7 +328,6 @@ class TemporaryBusLoad:
             self.TEMP_LOAD_ID,
             realar=[self._load_mva.real, self._load_mva.imag],
         )
-        self._context_manager_is_active = True
 
     def __exit__(
         self,
@@ -339,7 +337,6 @@ class TemporaryBusLoad:
     ) -> None:
         # Delete load
         wf.purgload(self._bus.number, self.TEMP_LOAD_ID)
-        self._context_manager_is_active = False
 
     def __call__(self, load_mva: complex) -> "TemporaryBusLoad":
         self._load_mva = load_mva
@@ -359,7 +356,6 @@ class TemporaryBusMachine:
 
     def __init__(self, bus: Bus) -> None:
         self._bus: Bus = bus
-        self._context_manager_is_active: bool = False
         self._gen_mva: complex
 
     def __enter__(self) -> None:
@@ -369,7 +365,6 @@ class TemporaryBusMachine:
             self.TEMP_MACHINE_ID,
             realar=[self._gen_mva.real, self._gen_mva.imag],
         )
-        self._context_manager_is_active = True
 
     def __exit__(
         self,
@@ -379,7 +374,6 @@ class TemporaryBusMachine:
     ) -> None:
         # Delete machine
         wf.purgmac(self._bus.number, self.TEMP_MACHINE_ID)
-        self._context_manager_is_active = False
 
     def __call__(self, gen_mva: complex) -> "TemporaryBusMachine":
         self._gen_mva = gen_mva

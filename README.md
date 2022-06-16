@@ -14,7 +14,7 @@ workflows. They include
 
 Requirements:
 
-- Python ≥ 3.8
+- Python 3.9
 - [pipenv](https://pipenv.readthedocs.io/en/latest/) ≥ 2018.11.15
 
 ```powershell
@@ -57,10 +57,35 @@ There are debugging features that could be enabled using the environment variabl
 | `PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS` | Enable violations output |
 | `PSSE_TOOLS_VERBOSE`                      | Enable verbose output    |
 
-
 To start the project with verbose output enabled, run:
 
 ```powershell
 $env:PSSE_TOOLS_VERBOSE = ’1’
 pipenv run python -m pssetools sample_config.json
+```
+
+## Running tests #
+
+```powershell
+pipenv run python -m unittest
+```
+
+## Developer tools #
+
+To install developer tools, run:
+
+```powershell
+pipenv install --skip-lock --dev
+```
+
+Format code and check typing errors with
+
+```powershell
+pipenv run isort . ; black . ; mypy .
+```
+
+Check unused imports with
+
+```powershell
+pipenv run autoflake --remove-all-unused-imports -r .
 ```

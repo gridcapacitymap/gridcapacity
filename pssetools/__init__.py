@@ -23,9 +23,9 @@ from pssetools.path_helper import get_psse35_paths
 psse35_paths = get_psse35_paths()
 sys.path = psse35_paths + sys.path
 os.environ["PATH"] = os.pathsep.join((*psse35_paths, os.environ["PATH"]))
-import psse35
 
 # `psspy` should be imported only after importing `psse35`
+import psse35
 import psspy
 import redirect
 
@@ -33,7 +33,7 @@ from pssetools import wrapped_funcs as wf
 from pssetools.capacity_analysis import CapacityAnalysisStats, buses_headroom
 from pssetools.config import ConfigModel, load_config_model
 from pssetools.output import write_output
-from pssetools.violations_analysis import ViolationsLimits, ViolationsStats
+from pssetools.violations_analysis import ViolationsStats
 
 
 def init_psse() -> None:

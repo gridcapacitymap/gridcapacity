@@ -1,5 +1,12 @@
 __pycache__/
 
 /.idea/
+/.vscode/
+
+/config_*.json
+/*_contingency_stats.json
+/*_feasibility_stats.json
+/*_headroom.json
+/*_violation_stats.json
 
 *.pyc
