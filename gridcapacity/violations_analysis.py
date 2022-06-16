@@ -22,7 +22,8 @@ from dataclasses import dataclass
 from typing import Final, Optional
 
 from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.backends.subsystems import (  # Branches,; SwingBuses,; Trafos,; Trafos3w,
+from gridcapacity.backends.subsystems import (  # SwingBuses,; Trafos,; Trafos3w,
+    Branches,
     Buses,
     Subsystems,
 )
@@ -116,8 +117,8 @@ class ViolationsStats:
             violated_values = subsystems.get_voltage_pu(violated_subsystem_indexes)
         # elif isinstance(subsystems, SwingBuses):
         #     violated_values = subsystems.get_power_mva(violated_subsystem_indexes)
-        # else:
-        #     violated_values = subsystems.get_loading_pct(violated_subsystem_indexes)
+        else:
+            violated_values = subsystems.get_loading_pct(violated_subsystem_indexes)
         for subsystem_index, violated_value in zip(violated_subsystem_indexes, violated_values):
             cls._violations_stats[violation][limit][subsystem_index].append(
                 violated_value
@@ -131,8 +132,8 @@ class ViolationsStats:
             or violation == Violations.BUS_UNDERVOLTAGE
         ):
             subsystems = Buses()
-        # elif violation == Violations.BRANCH_LOADING:
-        #     subsystems = Branches()
+        elif violation == Violations.BRANCH_LOADING:
+            subsystems = Branches()
         # elif violation == Violations.TRAFO_LOADING:
         #     subsystems = Trafos()
         # elif violation == Violations.TRAFO_3W_LOADING:
@@ -206,17 +207,17 @@ def check_violations(
             buses,
             undervoltage_buses_indexes,
         )
-    # branches: Branches = Branches(branch_rate)
-    # if overloaded_branches_indexes := branches.get_overloaded_indexes(
-    #     max_branch_loading_pct
-    # ):
-    #     v |= Violations.BRANCH_LOADING
-    #     ViolationsStats.append_violations(
-    #         Violations.BRANCH_LOADING,
-    #         max_branch_loading_pct,
-    #         branches,
-    #         overloaded_branches_indexes,
-    #     )
+    branches: Branches = Branches(branch_rate)
+    if overloaded_branches_indexes := branches.get_overloaded_indexes(
+        max_branch_loading_pct
+    ):
+        v |= Violations.BRANCH_LOADING
+        ViolationsStats.append_violations(
+            Violations.BRANCH_LOADING,
+            max_branch_loading_pct,
+            branches,
+            overloaded_branches_indexes,
+        )
     # trafos: Trafos = Trafos(trafo_rate)
     # if overloaded_trafos_indexes := trafos.get_overloaded_indexes(
     #     max_trafo_loading_pct

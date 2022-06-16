@@ -25,6 +25,8 @@ from typing import Final, Iterator, Optional, Union, overload
 
 PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
 if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+    import psspy
+
     from pssetools import wrapped_funcs as wf
 else:
     import gridcapacity.backends.pandapower as pp_backend
@@ -32,123 +34,204 @@ else:
 log = logging.getLogger(__name__)
 
 
-# @dataclass(frozen=True)
-# class Branch:
-#     from_number: int
-#     to_number: int
-#     branch_id: str = "1"
-#
-#     def is_enabled(self) -> bool:
-#         """Return `True` if is enabled"""
-#         status: int = wf.brnint(
-#             self.from_number, self.to_number, self.branch_id, "STATUS"
-#         )
-#         return status != 0
-#
-#
-# @dataclass
-# class RawBranches:
-#     from_number: list[int]
-#     to_number: list[int]
-#     branch_id: list[str]
-#     pct_rate: list[float]
-#
-#
-# class Branches(Sequence):
-#     def __init__(self, rate: str = "Rate1") -> None:
-#         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-#         self._rate: str = rate
-#         self._raw_branches: RawBranches = RawBranches(
-#             wf.abrnint(string="fromNumber")[0],
-#             wf.abrnint(string="toNumber")[0],
-#             wf.abrnchar(string="id")[0],
-#             wf.abrnreal(string=f"pct{self._rate}")[0],
-#         )
-#
-#     @overload
-#     def __getitem__(self, idx: int) -> Branch:
-#         ...
-#
-#     @overload
-#     def __getitem__(self, idx: slice) -> tuple[Branch, ...]:
-#         ...
-#
-#     def __getitem__(self, idx: Union[int, slice]) -> Union[Branch, tuple[Branch, ...]]:
-#         if isinstance(idx, int):
-#             return Branch(
-#                 self._raw_branches.from_number[idx],
-#                 self._raw_branches.to_number[idx],
-#                 self._raw_branches.branch_id[idx],
-#             )
-#         elif isinstance(idx, slice):
-#             return tuple(
-#                 Branch(*args)
-#                 for args in zip(
-#                     self._raw_branches.from_number[idx],
-#                     self._raw_branches.to_number[idx],
-#                     self._raw_branches.branch_id[idx],
-#                 )
-#             )
-#
-#     def __len__(self) -> int:
-#         return len(self._raw_branches.from_number)
-#
-#     def get_overloaded_indexes(self, max_branch_loading_pct: float) -> tuple[int, ...]:
-#         return tuple(
-#             branch_idx
-#             for branch_idx, pct_rate in enumerate(self._raw_branches.pct_rate)
-#             if pct_rate > max_branch_loading_pct
-#         )
-#
-#     def get_loading_pct(
-#         self,
-#         selected_indexes: tuple[int, ...],
-#     ) -> tuple[float, ...]:
-#         return tuple(self._raw_branches.pct_rate[idx] for idx in selected_indexes)
-#
-#     def log(
-#         self,
-#         level: int,
-#         selected_indexes: Optional[tuple[int, ...]] = None,
-#     ) -> None:
-#         if not log.isEnabledFor(level):
-#             return
-#         branch_fields: tuple[str, ...] = tuple(
-#             (*dataclasses.asdict(self[0]).keys(), f"pct{self._rate}")
-#         )
-#         self._log.log(level, branch_fields)
-#         for idx, branch in enumerate(self):
-#             if selected_indexes is None or idx in selected_indexes:
-#                 self._log.log(
-#                     level,
-#                     tuple(
-#                         (
-#                             *dataclasses.astuple(branch),
-#                             self._raw_branches.pct_rate[idx],
-#                         )
-#                     ),
-#                 )
-#         self._log.log(level, branch_fields)
-#
-#
-# @contextmanager
-# def disable_branch(branch: Branch) -> Iterator[bool]:
-#     is_disabled: bool = False
-#     try:
-#         error_code: int = psspy.branch_chng_3(
-#             branch.from_number, branch.to_number, branch.branch_id, st=0
-#         )
-#         if error_code == 0:
-#             is_disabled = True
-#             yield is_disabled
-#         else:
-#             log.info(f"Failed disabling branch {branch=} {error_code=}")
-#             yield is_disabled
-#     finally:
-#         if is_disabled:
-#             wf.branch_chng_3(
-#                 branch.from_number, branch.to_number, branch.branch_id, st=1
-#             )
+@dataclass(frozen=True)
+class Branch:
+    from_number: int
+    to_number: int
+    branch_id: str = "1"
+
+    def is_enabled(self) -> bool:
+        """Return `True` if is enabled."""
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            status: int = wf.brnint(
+                self.from_number, self.to_number, self.branch_id, "STATUS"
+            )
+            return status != 0
+        else:
+            branch_idx: int = get_pp_branch_idx(self)
+            return pp_backend.net.line.in_service[branch_idx]
+
+
+def get_pp_branch_idx(branch: Branch) -> int:
+    """Returns index of a given branch of a PandaPower network."""
+    for idx in range(len(pp_backend.net.line)):
+        if (
+            pp_backend.net.line.from_bus[idx] == branch.from_number
+            and pp_backend.net.line.to_bus[idx] == branch.to_number
+        ):
+            return idx
+    raise KeyError(f"{branch=} not found!")
+
+
+@dataclass
+class PsseBranches:
+    from_number: list[int]
+    to_number: list[int]
+    branch_id: list[str]
+    pct_rate: list[float]
+
+
+class Branches(Sequence):
+    def __init__(self, rate: str = "Rate1") -> None:
+        self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._rate: str = rate
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            self._psse_branches: PsseBranches = PsseBranches(
+                wf.abrnint(string="fromNumber")[0],
+                wf.abrnint(string="toNumber")[0],
+                wf.abrnchar(string="id")[0],
+                wf.abrnreal(string=f"pct{self._rate}")[0],
+            )
+
+    @overload
+    def __getitem__(self, idx: int) -> Branch:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> tuple[Branch, ...]:
+        ...
+
+    def __getitem__(self, idx: Union[int, slice]) -> Union[Branch, tuple[Branch, ...]]:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            if isinstance(idx, int):
+                return Branch(
+                    self._psse_branches.from_number[idx],
+                    self._psse_branches.to_number[idx],
+                    self._psse_branches.branch_id[idx],
+                )
+            elif isinstance(idx, slice):
+                return tuple(
+                    Branch(*args)
+                    for args in zip(
+                        self._psse_branches.from_number[idx],
+                        self._psse_branches.to_number[idx],
+                        self._psse_branches.branch_id[idx],
+                    )
+                )
+        else:
+
+            def branch_from_pp(from_bus: int, to_bus: int, parallel: int) -> Branch:
+                """Make a branch from PandaPower fields.
+
+                The PandaPower `parallel` field is used in place of the PSSE branch ID field
+                because PSSE uses distinct branch IDs for parallel connections only.
+                """
+                return Branch(
+                    from_number=from_bus, to_number=to_bus, branch_id=str(parallel)
+                )
+
+            if isinstance(idx, int):
+                return branch_from_pp(
+                    pp_backend.net.line.from_bus[idx],
+                    pp_backend.net.line.to_bus[idx],
+                    pp_backend.net.line.parallel[idx],
+                )
+            elif isinstance(idx, slice):
+                return tuple(
+                    branch_from_pp(*args)
+                    for args in zip(
+                        pp_backend.net.line.from_bus[idx],
+                        pp_backend.net.line.to_bus[idx],
+                        pp_backend.net.line.parallel[idx],
+                    )
+                )
+
+    def __len__(self) -> int:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            return len(self._psse_branches.from_number)
+        else:
+            return len(pp_backend.net.line.from_bus)
+
+    def __iter__(self) -> Iterator[Branch]:
+        """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
+        for i in range(len(self)):
+            yield self[i]
+        return
+
+    def get_overloaded_indexes(self, max_branch_loading_pct: float) -> tuple[int, ...]:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            loadings_pct = self._psse_branches.pct_rate
+        else:
+            loadings_pct = pp_backend.net.res_line.loading_percent
+        return tuple(
+            branch_idx
+            for branch_idx, pct_rate in enumerate(loadings_pct)
+            if pct_rate > max_branch_loading_pct
+        )
+
+    def get_loading_pct(
+        self,
+        selected_indexes: tuple[int, ...],
+    ) -> tuple[float, ...]:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            return tuple(self._psse_branches.pct_rate[idx] for idx in selected_indexes)
+        else:
+            return tuple(
+                pp_backend.net.res_line.loading_percent[idx] for idx in selected_indexes
+            )
+
+    def log(
+        self,
+        level: int,
+        selected_indexes: Optional[tuple[int, ...]] = None,
+    ) -> None:
+        if not log.isEnabledFor(level):
+            return
+        branch_fields: tuple[str, ...] = tuple(
+            (*dataclasses.asdict(self[0]).keys(), f"pct{self._rate}")
+        )
+        self._log.log(level, branch_fields)
+        for idx, branch in enumerate(self):
+            if selected_indexes is None or idx in selected_indexes:
+                if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+                    loading_pct = self._psse_branches.pct_rate[idx]
+                else:
+                    loading_pct = pp_backend.net.res_line.loading_percent[idx]
+                self._log.log(
+                    level,
+                    tuple(
+                        (
+                            *dataclasses.astuple(branch),
+                            loading_pct,
+                        )
+                    ),
+                )
+        self._log.log(level, branch_fields)
+
+
+@contextmanager
+def disable_branch(branch: Branch) -> Iterator[bool]:
+    is_disabled: bool = False
+    if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+        try:
+            error_code: int = psspy.branch_chng_3(
+                branch.from_number, branch.to_number, branch.branch_id, st=0
+            )
+            if error_code == 0:
+                is_disabled = True
+                yield True
+            else:
+                log.info(f"Failed disabling branch {branch=} {error_code=}")
+                yield False
+        finally:
+            if is_disabled:
+                wf.branch_chng_3(
+                    branch.from_number, branch.to_number, branch.branch_id, st=1
+                )
+    else:
+        branch_idx: int
+        try:
+            branch_idx = get_pp_branch_idx(branch)
+            pp_backend.net.line.in_service[branch_idx] = False
+            is_disabled = True
+            yield True
+        except KeyError:
+            yield False
+        finally:
+            if is_disabled:
+                pp_backend.net.line.in_service[branch_idx] = True
+
+
 @dataclass(frozen=True)
 class Bus:
     number: int
@@ -776,4 +859,4 @@ class Buses(Sequence):
 #
 #
 # Subsystems = Union[Buses, Branches, SwingBuses, Trafos, Trafos3w]
-Subsystems = Buses
+Subsystems = Union[Buses, Branches]
