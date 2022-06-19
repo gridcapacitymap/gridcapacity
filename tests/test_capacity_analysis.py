@@ -19,7 +19,7 @@ import unittest
 assert sys.platform == "win32"
 
 import pssetools
-from gridcapacity.violations_analysis import ViolationsLimits
+from gridcapacity.violations_analysis import Violations, ViolationsLimits
 from pssetools.capacity_analysis import (
     CapacityAnalysisStats,
     Headroom,

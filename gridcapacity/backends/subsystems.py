@@ -140,7 +140,7 @@ class Branches(Sequence):
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return len(self._psse_branches.from_number)
         else:
-            return len(pp_backend.net.line.from_bus)
+            return len(pp_backend.net.line)
 
     def __iter__(self) -> Iterator[Branch]:
         """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
@@ -314,7 +314,7 @@ class Buses(Sequence):
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return len(self._psse_buses.number)
         else:
-            return len(pp_backend.net.bus.name)
+            return len(pp_backend.net.bus)
 
     def __iter__(self) -> Iterator[Bus]:
         """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
@@ -628,128 +628,209 @@ class Buses(Sequence):
 #                     tuple((*dataclasses.astuple(bus), self._raw_buses.mva[idx])),
 #                 )
 #         self._log.log(level, bus_fields)
-#
-#
-# @dataclass(frozen=True)
-# class Trafo:
-#     from_number: int
-#     to_number: int
-#     trafo_id: str = "1"
-#
-#     def is_enabled(self) -> bool:
-#         """Return `True` if is enabled"""
-#         # Trafo status is available through the branches `brnint` API only.
-#         # It isn't available through the trafos `xfrint` API.
-#         status: int = wf.brnint(
-#             self.from_number, self.to_number, self.trafo_id, "STATUS"
-#         )
-#         return status != 0
-#
-#
-# @dataclass
-# class RawTrafos:
-#     from_number: list[int]
-#     to_number: list[int]
-#     trafo_id: list[str]
-#     pct_rate: list[float]
-#
-#
-# class Trafos(Sequence):
-#     def __init__(self, rate: str = "Rate1") -> None:
-#         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-#         self._rate: str = rate
-#         self._raw_trafos: RawTrafos = RawTrafos(
-#             wf.atrnint(string="fromNumber")[0],
-#             wf.atrnint(string="toNumber")[0],
-#             wf.atrnchar(string="id")[0],
-#             wf.atrnreal(string=f"pct{self._rate}")[0],
-#         )
-#
-#     @overload
-#     def __getitem__(self, idx: int) -> Trafo:
-#         ...
-#
-#     @overload
-#     def __getitem__(self, idx: slice) -> tuple[Trafo, ...]:
-#         ...
-#
-#     def __getitem__(self, idx: Union[int, slice]) -> Union[Trafo, tuple[Trafo, ...]]:
-#         if isinstance(idx, int):
-#             return Trafo(
-#                 self._raw_trafos.from_number[idx],
-#                 self._raw_trafos.to_number[idx],
-#                 self._raw_trafos.trafo_id[idx],
-#             )
-#         elif isinstance(idx, slice):
-#             return tuple(
-#                 Trafo(*args)
-#                 for args in zip(
-#                     self._raw_trafos.from_number[idx],
-#                     self._raw_trafos.to_number[idx],
-#                     self._raw_trafos.trafo_id[idx],
-#                 )
-#             )
-#
-#     def __len__(self) -> int:
-#         return len(self._raw_trafos.from_number)
-#
-#     def get_overloaded_indexes(self, max_trafo_loading_pct: float) -> tuple[int, ...]:
-#         return tuple(
-#             trafo_idx
-#             for trafo_idx, pct_rate in enumerate(self._raw_trafos.pct_rate)
-#             if pct_rate > max_trafo_loading_pct
-#         )
-#
-#     def get_loading_pct(
-#         self,
-#         selected_indexes: tuple[int, ...],
-#     ) -> tuple[float, ...]:
-#         return tuple(self._raw_trafos.pct_rate[idx] for idx in selected_indexes)
-#
-#     def log(
-#         self,
-#         level: int,
-#         selected_indexes: Optional[tuple[int, ...]] = None,
-#     ) -> None:
-#         if not log.isEnabledFor(level):
-#             return
-#         trafo_fields: tuple[str, ...] = tuple(
-#             (*dataclasses.asdict(self[0]).keys(), f"pct{self._rate}")
-#         )
-#         self._log.log(level, trafo_fields)
-#         for idx, trafo in enumerate(self):
-#             if selected_indexes is None or idx in selected_indexes:
-#                 self._log.log(
-#                     level,
-#                     tuple(
-#                         (
-#                             *dataclasses.astuple(trafo),
-#                             self._raw_trafos.pct_rate[idx],
-#                         )
-#                     ),
-#                 )
-#         self._log.log(level, trafo_fields)
-#
-#
-# @contextmanager
-# def disable_trafo(trafo: Trafo) -> Iterator[bool]:
-#     is_disabled: bool = False
-#     try:
-#         error_code, _ = psspy.two_winding_chng_6(
-#             trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=0
-#         )
-#         if error_code == 0:
-#             is_disabled = True
-#             yield is_disabled
-#         else:
-#             log.info(f"Failed disabling trafo {trafo=} {error_code=}")
-#             yield is_disabled
-#     finally:
-#         if is_disabled:
-#             wf.two_winding_chng_6(
-#                 trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=1
-#             )
-#
+
+
+@dataclass(frozen=True)
+class Trafo:
+    from_number: int
+    to_number: int
+    trafo_id: str = "1"
+
+    def is_enabled(self) -> bool:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            """Return `True` if is enabled"""
+            # Trafo status is available through the branches `brnint` API only.
+            # It isn't available through the trafos `xfrint` API.
+            status: int = wf.brnint(
+                self.from_number, self.to_number, self.trafo_id, "STATUS"
+            )
+            return status != 0
+        else:
+            trafo_idx: int = get_pp_trafo_idx(self)
+            return pp_backend.net.trafo.in_service[trafo_idx]
+
+
+def get_pp_trafo_idx(trafo: Trafo) -> int:
+    """Returns index of a given transformer of a PandaPower network."""
+    for idx in range(len(pp_backend.net.trafo)):
+        if (
+            pp_backend.net.trafo.hv_bus[idx] == trafo.from_number
+            and pp_backend.net.trafo.lv_bus[idx] == trafo.to_number
+        ):
+            return idx
+    raise KeyError(f"{trafo=} not found!")
+
+
+@dataclass
+class PsseTrafos:
+    from_number: list[int]
+    to_number: list[int]
+    trafo_id: list[str]
+    pct_rate: list[float]
+
+
+class Trafos(Sequence):
+    def __init__(self, rate: str = "Rate1") -> None:
+        self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._rate: str = rate
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            self._raw_trafos: PsseTrafos = PsseTrafos(
+                wf.atrnint(string="fromNumber")[0],
+                wf.atrnint(string="toNumber")[0],
+                wf.atrnchar(string="id")[0],
+                wf.atrnreal(string=f"pct{self._rate}")[0],
+            )
+
+    @overload
+    def __getitem__(self, idx: int) -> Trafo:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> tuple[Trafo, ...]:
+        ...
+
+    def __getitem__(self, idx: Union[int, slice]) -> Union[Trafo, tuple[Trafo, ...]]:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            if isinstance(idx, int):
+                return Trafo(
+                    self._raw_trafos.from_number[idx],
+                    self._raw_trafos.to_number[idx],
+                    self._raw_trafos.trafo_id[idx],
+                )
+            elif isinstance(idx, slice):
+                return tuple(
+                    Trafo(*args)
+                    for args in zip(
+                        self._raw_trafos.from_number[idx],
+                        self._raw_trafos.to_number[idx],
+                        self._raw_trafos.trafo_id[idx],
+                    )
+                )
+        else:
+
+            def trafo_from_pp(hv_bus: int, lv_bus: int, parallel: int) -> Trafo:
+                """Make a transformer from PandaPower fields.
+
+                The PandaPower `parallel` field is used in place of the PSSE transformer ID field
+                because PSSE uses distinct transformer IDs for parallel connections only.
+                """
+                return Trafo(
+                    from_number=hv_bus, to_number=lv_bus, trafo_id=str(parallel)
+                )
+
+            if isinstance(idx, int):
+                return trafo_from_pp(
+                    pp_backend.net.trafo.hv_bus[idx],
+                    pp_backend.net.trafo.lv_bus[idx],
+                    pp_backend.net.trafo.parallel[idx],
+                )
+            elif isinstance(idx, slice):
+                return tuple(
+                    trafo_from_pp(*args)
+                    for args in zip(
+                        pp_backend.net.trafo.hv_bus[idx],
+                        pp_backend.net.trafo.lv_bus[idx],
+                        pp_backend.net.trafo.parallel[idx],
+                    )
+                )
+
+    def __len__(self) -> int:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            return len(self._raw_trafos.from_number)
+        else:
+            return len(pp_backend.net.trafo)
+
+    def __iter__(self) -> Iterator[Trafo]:
+        """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
+        for i in range(len(self)):
+            yield self[i]
+        return
+
+    def get_overloaded_indexes(self, max_trafo_loading_pct: float) -> tuple[int, ...]:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            loadings_pct = self._raw_trafos.pct_rate
+        else:
+            loadings_pct = pp_backend.net.res_trafo.loading_percent
+        return tuple(
+            trafo_idx
+            for trafo_idx, pct_rate in enumerate(loadings_pct)
+            if pct_rate > max_trafo_loading_pct
+        )
+
+    def get_loading_pct(
+        self,
+        selected_indexes: tuple[int, ...],
+    ) -> tuple[float, ...]:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            return tuple(self._raw_trafos.pct_rate[idx] for idx in selected_indexes)
+        else:
+            return tuple(
+                pp_backend.net.res_trafo.loading_percent[idx]
+                for idx in selected_indexes
+            )
+
+    def log(
+        self,
+        level: int,
+        selected_indexes: Optional[tuple[int, ...]] = None,
+    ) -> None:
+        if not log.isEnabledFor(level):
+            return
+        trafo_fields: tuple[str, ...] = tuple(
+            (*dataclasses.asdict(self[0]).keys(), f"pct{self._rate}")
+        )
+        self._log.log(level, trafo_fields)
+        for idx, trafo in enumerate(self):
+            if selected_indexes is None or idx in selected_indexes:
+                if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+                    loading_pct = self._raw_trafos.pct_rate[idx]
+                else:
+                    loading_pct = pp_backend.net.res_trafo.loading_percent[idx]
+                self._log.log(
+                    level,
+                    tuple(
+                        (
+                            *dataclasses.astuple(trafo),
+                            loading_pct,
+                        )
+                    ),
+                )
+        self._log.log(level, trafo_fields)
+
+
+@contextmanager
+def disable_trafo(trafo: Trafo) -> Iterator[bool]:
+    is_disabled: bool = False
+    if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+        try:
+            error_code, _ = psspy.two_winding_chng_6(
+                trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=0
+            )
+            if error_code == 0:
+                is_disabled = True
+                yield is_disabled
+            else:
+                log.info(f"Failed disabling trafo {trafo=} {error_code=}")
+                yield is_disabled
+        finally:
+            if is_disabled:
+                wf.two_winding_chng_6(
+                    trafo.from_number, trafo.to_number, trafo.trafo_id, intgar1=1
+                )
+    else:
+        trafo_idx: int
+        try:
+            trafo_idx = get_pp_trafo_idx(trafo)
+            pp_backend.net.trafo.in_service[trafo_idx] = False
+            is_disabled = True
+            yield True
+        except KeyError:
+            yield False
+        finally:
+            if is_disabled:
+                pp_backend.net.trafo.in_service[trafo_idx] = True
+
+
 #
 # @dataclass(frozen=True)
 # class Trafo3w:
@@ -859,4 +940,4 @@ class Buses(Sequence):
 #
 #
 # Subsystems = Union[Buses, Branches, SwingBuses, Trafos, Trafos3w]
-Subsystems = Union[Buses, Branches]
+Subsystems = Union[Buses, Branches, Trafos]

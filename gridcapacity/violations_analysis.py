@@ -22,10 +22,11 @@ from dataclasses import dataclass
 from typing import Final, Optional
 
 from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.backends.subsystems import (  # SwingBuses,; Trafos,; Trafos3w,
+from gridcapacity.backends.subsystems import (  # SwingBuses, Trafos3w,
     Branches,
     Buses,
     Subsystems,
+    Trafos,
 )
 
 log = logging.getLogger(__name__)
@@ -119,7 +120,9 @@ class ViolationsStats:
         #     violated_values = subsystems.get_power_mva(violated_subsystem_indexes)
         else:
             violated_values = subsystems.get_loading_pct(violated_subsystem_indexes)
-        for subsystem_index, violated_value in zip(violated_subsystem_indexes, violated_values):
+        for subsystem_index, violated_value in zip(
+            violated_subsystem_indexes, violated_values
+        ):
             cls._violations_stats[violation][limit][subsystem_index].append(
                 violated_value
             )
@@ -134,8 +137,8 @@ class ViolationsStats:
             subsystems = Buses()
         elif violation == Violations.BRANCH_LOADING:
             subsystems = Branches()
-        # elif violation == Violations.TRAFO_LOADING:
-        #     subsystems = Trafos()
+        elif violation == Violations.TRAFO_LOADING:
+            subsystems = Trafos()
         # elif violation == Violations.TRAFO_3W_LOADING:
         #     subsystems = Trafos3w()
         # elif violation == Violations.SWING_BUS_LOADING:
@@ -218,17 +221,17 @@ def check_violations(
             branches,
             overloaded_branches_indexes,
         )
-    # trafos: Trafos = Trafos(trafo_rate)
-    # if overloaded_trafos_indexes := trafos.get_overloaded_indexes(
-    #     max_trafo_loading_pct
-    # ):
-    #     v |= Violations.TRAFO_LOADING
-    #     ViolationsStats.append_violations(
-    #         Violations.TRAFO_LOADING,
-    #         max_trafo_loading_pct,
-    #         trafos,
-    #         overloaded_trafos_indexes,
-    #     )
+    trafos: Trafos = Trafos(trafo_rate)
+    if overloaded_trafos_indexes := trafos.get_overloaded_indexes(
+        max_trafo_loading_pct
+    ):
+        v |= Violations.TRAFO_LOADING
+        ViolationsStats.append_violations(
+            Violations.TRAFO_LOADING,
+            max_trafo_loading_pct,
+            trafos,
+            overloaded_trafos_indexes,
+        )
     # trafos3w: Trafos3w = Trafos3w(trafo_rate)
     # if overloaded_trafos3w_indexes := trafos3w.get_overloaded_indexes(
     #     max_trafo_loading_pct

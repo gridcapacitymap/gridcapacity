@@ -18,12 +18,11 @@ import os
 import sys
 
 from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.violations_analysis import check_violations
+from gridcapacity.violations_analysis import ViolationsStats, check_violations
 
 # from pssetools.config import ConfigModel, load_config_model
 # from pssetools.capacity_analysis import CapacityAnalysisStats, buses_headroom
 # from pssetools.output import write_output
-# from pssetools.violations_analysis import ViolationsLimits, ViolationsStats
 
 
 def build_headroom() -> None:
@@ -53,12 +52,12 @@ def build_headroom() -> None:
     #     print(" HEADROOM ".center(80, "="))
     #     for bus_headroom in headroom:
     #         print(bus_headroom)
-    #     if not ViolationsStats.is_empty():
-    #         print()
-    #         print(" VIOLATIONS STATS ".center(80, "="))
-    #         ViolationsStats.print()
-    #     else:
-    #         print("No violations detected")
+    if not ViolationsStats.is_empty():
+        print()
+        print(" VIOLATIONS STATS ".center(80, "="))
+        ViolationsStats.print()
+    else:
+        print("No violations detected")
     # else:
     #     print("No headroom found")
 
