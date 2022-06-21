@@ -401,7 +401,7 @@ class SwingBus:
 class RawSwingBuses:
     number: list[int]
     ex_name: list[str]
-    mva: list[float]
+    p_mw: list[float]
 
 
 class SwingBuses(Sequence):
@@ -413,11 +413,11 @@ class SwingBuses(Sequence):
         self._raw_buses: RawSwingBuses = RawSwingBuses(
             *zip(
                 *(
-                    (number, ex_name, mva)
-                    for number, ex_name, mva, bus_type in zip(
+                    (number, ex_name, p_mw)
+                    for number, ex_name, p_mw, bus_type in zip(
                         wf.agenbusint(string="number")[0],
                         wf.agenbuschar(string="exName")[0],
-                        wf.agenbusreal(string="mva")[0],
+                        wf.agenbusreal(string="p_mw")[0],
                         wf.agenbusint(string="type")[0],
                     )
                     if bus_type == swing_bus_type
@@ -453,18 +453,20 @@ class SwingBuses(Sequence):
     def __len__(self) -> int:
         return len(self._raw_buses.number)
 
-    def get_overloaded_indexes(self, max_swing_bus_power_mva: float) -> tuple[int, ...]:
+    def get_overloaded_indexes(
+        self, max_swing_bus_power_p_mw: float
+    ) -> tuple[int, ...]:
         return tuple(
             bus_idx
-            for bus_idx, power_mva in enumerate(self._raw_buses.mva)
-            if power_mva > max_swing_bus_power_mva
+            for bus_idx, power_p_mw in enumerate(self._raw_buses.p_mw)
+            if power_p_mw > max_swing_bus_power_p_mw
         )
 
-    def get_power_mva(
+    def get_power_p_mw(
         self,
         selected_indexes: tuple[int, ...],
     ) -> tuple[float, ...]:
-        return tuple(self._raw_buses.mva[idx] for idx in selected_indexes)
+        return tuple(self._raw_buses.p_mw[idx] for idx in selected_indexes)
 
     def log(
         self,
@@ -474,14 +476,14 @@ class SwingBuses(Sequence):
         if not log.isEnabledFor(level):
             return
         bus_fields: tuple[str, ...] = tuple(
-            (*dataclasses.asdict(self[0]).keys(), "mva")
+            (*dataclasses.asdict(self[0]).keys(), "p_mw")
         )
         self._log.log(level, bus_fields)
         for idx, bus in enumerate(self):
             if selected_indexes is None or idx in selected_indexes:
                 self._log.log(
                     level,
-                    tuple((*dataclasses.astuple(bus), self._raw_buses.mva[idx])),
+                    tuple((*dataclasses.astuple(bus), self._raw_buses.p_mw[idx])),
                 )
         self._log.log(level, bus_fields)
 

@@ -22,10 +22,11 @@ from dataclasses import dataclass
 from typing import Final, Optional
 
 from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.backends.subsystems import (  # SwingBuses,
+from gridcapacity.backends.subsystems import (
     Branches,
     Buses,
     Subsystems,
+    SwingBuses,
     Trafos,
     Trafos3w,
 )
@@ -72,7 +73,7 @@ class ViolationsLimits:
     min_bus_voltage_pu: float
     max_branch_loading_pct: float
     max_trafo_loading_pct: float
-    max_swing_bus_power_mva: float
+    max_swing_bus_power_p_mw: float
     branch_rate: str
     trafo_rate: str
 
@@ -117,8 +118,8 @@ class ViolationsStats:
         violated_values: tuple[float, ...]
         if isinstance(subsystems, Buses):
             violated_values = subsystems.get_voltage_pu(violated_subsystem_indexes)
-        # elif isinstance(subsystems, SwingBuses):
-        #     violated_values = subsystems.get_power_mva(violated_subsystem_indexes)
+        elif isinstance(subsystems, SwingBuses):
+            violated_values = subsystems.get_power_p_mw(violated_subsystem_indexes)
         else:
             violated_values = subsystems.get_loading_pct(violated_subsystem_indexes)
         for subsystem_index, violated_value in zip(
@@ -142,8 +143,8 @@ class ViolationsStats:
             subsystems = Trafos()
         elif violation == Violations.TRAFO_3W_LOADING:
             subsystems = Trafos3w()
-        # elif violation == Violations.SWING_BUS_LOADING:
-        #     subsystems = SwingBuses()
+        elif violation == Violations.SWING_BUS_LOADING:
+            subsystems = SwingBuses()
         else:
             raise RuntimeError(f"Unknown {violation=}")
         return subsystems
@@ -181,7 +182,7 @@ def check_violations(
     min_bus_voltage_pu: float = 0.9,
     max_branch_loading_pct: float = 100.0,
     max_trafo_loading_pct: float = 100.0,
-    max_swing_bus_power_mva: float = 1000.0,
+    max_swing_bus_power_p_mw: float = 1000.0,
     branch_rate: str = "Rate1",
     trafo_rate: str = "Rate1",
     use_full_newton_raphson: bool = False,
@@ -244,17 +245,17 @@ def check_violations(
             trafos3w,
             overloaded_trafos3w_indexes,
         )
-    # swing_buses: SwingBuses = SwingBuses()
-    # if overloaded_swing_buses_indexes := swing_buses.get_overloaded_indexes(
-    #     max_swing_bus_power_mva
-    # ):
-    #     v |= Violations.SWING_BUS_LOADING
-    #     ViolationsStats.append_violations(
-    #         Violations.SWING_BUS_LOADING,
-    #         max_swing_bus_power_mva,
-    #         swing_buses,
-    #         overloaded_swing_buses_indexes,
-    #     )
+    swing_buses: SwingBuses = SwingBuses()
+    if overloaded_swing_buses_indexes := swing_buses.get_overloaded_indexes(
+        max_swing_bus_power_p_mw
+    ):
+        v |= Violations.SWING_BUS_LOADING
+        ViolationsStats.append_violations(
+            Violations.SWING_BUS_LOADING,
+            max_swing_bus_power_p_mw,
+            swing_buses,
+            overloaded_swing_buses_indexes,
+        )
     return v
 
 

@@ -531,101 +531,150 @@ class Buses(Sequence):
 #
 #
 # TemporaryBusSubsystem = Union[TemporaryBusLoad, TemporaryBusMachine]
-#
-#
-# @dataclass(frozen=True)
-# class SwingBus:
-#     number: int
-#     ex_name: str
-#
-#
-# @dataclass
-# class RawSwingBuses:
-#     number: list[int]
-#     ex_name: list[str]
-#     mva: list[float]
-#
-#
-# class SwingBuses(Sequence):
-#     def __init__(self) -> None:
-#         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-#         # PSSE returns all buses, not only swing buses
-#         # Filter out all buses except swing buses (`type==3`)
-#         swing_bus_type: Final[int] = 3
-#         self._raw_buses: RawSwingBuses = RawSwingBuses(
-#             *zip(
-#                 *(
-#                     (number, ex_name, mva)
-#                     for number, ex_name, mva, bus_type in zip(
-#                         wf.agenbusint(string="number")[0],
-#                         wf.agenbuschar(string="exName")[0],
-#                         wf.agenbusreal(string="mva")[0],
-#                         wf.agenbusint(string="type")[0],
-#                     )
-#                     if bus_type == swing_bus_type
-#                 )
-#             )
-#         )
-#
-#     @overload
-#     def __getitem__(self, idx: int) -> SwingBus:
-#         ...
-#
-#     @overload
-#     def __getitem__(self, idx: slice) -> tuple[SwingBus, ...]:
-#         ...
-#
-#     def __getitem__(
-#         self, idx: Union[int, slice]
-#     ) -> Union[SwingBus, tuple[SwingBus, ...]]:
-#         if isinstance(idx, int):
-#             return SwingBus(
-#                 self._raw_buses.number[idx],
-#                 self._raw_buses.ex_name[idx],
-#             )
-#         elif isinstance(idx, slice):
-#             return tuple(
-#                 SwingBus(*args)
-#                 for args in zip(
-#                     self._raw_buses.number[idx],
-#                     self._raw_buses.ex_name[idx],
-#                 )
-#             )
-#
-#     def __len__(self) -> int:
-#         return len(self._raw_buses.number)
-#
-#     def get_overloaded_indexes(self, max_swing_bus_power_mva: float) -> tuple[int, ...]:
-#         return tuple(
-#             bus_idx
-#             for bus_idx, power_mva in enumerate(self._raw_buses.mva)
-#             if power_mva > max_swing_bus_power_mva
-#         )
-#
-#     def get_power_mva(
-#         self,
-#         selected_indexes: tuple[int, ...],
-#     ) -> tuple[float, ...]:
-#         return tuple(self._raw_buses.mva[idx] for idx in selected_indexes)
-#
-#     def log(
-#         self,
-#         level: int,
-#         selected_indexes: Optional[tuple[int, ...]] = None,
-#     ) -> None:
-#         if not log.isEnabledFor(level):
-#             return
-#         bus_fields: tuple[str, ...] = tuple(
-#             (*dataclasses.asdict(self[0]).keys(), "mva")
-#         )
-#         self._log.log(level, bus_fields)
-#         for idx, bus in enumerate(self):
-#             if selected_indexes is None or idx in selected_indexes:
-#                 self._log.log(
-#                     level,
-#                     tuple((*dataclasses.astuple(bus), self._raw_buses.mva[idx])),
-#                 )
-#         self._log.log(level, bus_fields)
+
+
+@dataclass(frozen=True)
+class SwingBus:
+    number: int
+    ex_name: str
+
+
+@dataclass
+class PsseSwingBuses:
+    number: list[int]
+    ex_name: list[str]
+    pgen: list[float]
+
+
+class SwingBuses(Sequence):
+    def __init__(self) -> None:
+        self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            # PSSE returns all buses, not only swing buses
+            # Filter out all buses except swing buses (`type==3`)
+            swing_bus_type: Final[int] = 3
+            self._raw_buses: PsseSwingBuses = PsseSwingBuses(
+                *zip(
+                    *(
+                        (number, ex_name, pgen)
+                        for number, ex_name, pgen, bus_type in zip(
+                            wf.agenbusint(string="number")[0],
+                            wf.agenbuschar(string="exName")[0],
+                            wf.agenbusreal(string="pgen")[0],
+                            wf.agenbusint(string="type")[0],
+                        )
+                        if bus_type == swing_bus_type
+                    )
+                )
+            )
+
+    @overload
+    def __getitem__(self, idx: int) -> SwingBus:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> tuple[SwingBus, ...]:
+        ...
+
+    def __getitem__(
+        self, idx: Union[int, slice]
+    ) -> Union[SwingBus, tuple[SwingBus, ...]]:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            if isinstance(idx, int):
+                return SwingBus(
+                    self._raw_buses.number[idx],
+                    self._raw_buses.ex_name[idx],
+                )
+            elif isinstance(idx, slice):
+                return tuple(
+                    SwingBus(*args)
+                    for args in zip(
+                        self._raw_buses.number[idx],
+                        self._raw_buses.ex_name[idx],
+                    )
+                )
+        else:
+
+            def swing_bus_from_pp(bus: int, vm_pu: float, max_p_mw: float) -> SwingBus:
+                return SwingBus(
+                    number=bus,
+                    ex_name=f"{vm_pu} {max_p_mw}",
+                )
+
+            if isinstance(idx, int):
+                return swing_bus_from_pp(
+                    pp_backend.net.ext_grid.bus[idx],
+                    pp_backend.net.ext_grid.vm_pu[idx],
+                    pp_backend.net.ext_grid.max_p_mw[idx],
+                )
+            elif isinstance(idx, slice):
+                return tuple(
+                    swing_bus_from_pp(*args)
+                    for args in zip(
+                        pp_backend.net.ext_grid.bus[idx],
+                        pp_backend.net.ext_grid.vm_pu[idx],
+                        pp_backend.net.ext_grid.max_p_mw[idx],
+                    )
+                )
+
+    def __len__(self) -> int:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            return len(self._raw_buses.number)
+        else:
+            return len(pp_backend.net.ext_grid)
+
+    def __iter__(self) -> Iterator[SwingBus]:
+        """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
+        for i in range(len(self)):
+            yield self[i]
+
+    def get_overloaded_indexes(
+        self, max_swing_bus_power_p_mw: float
+    ) -> tuple[int, ...]:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            powers_p_mw = self._raw_buses.pgen
+        else:
+            powers_p_mw = pp_backend.net.res_ext_grid.p_mw
+        return tuple(
+            bus_idx
+            for bus_idx, power_p_mw in enumerate(powers_p_mw)
+            if power_p_mw > max_swing_bus_power_p_mw
+        )
+
+    def get_power_p_mw(
+        self,
+        selected_indexes: tuple[int, ...],
+    ) -> tuple[float, ...]:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            return tuple(self._raw_buses.pgen[idx] for idx in selected_indexes)
+        else:
+            return tuple(
+                pp_backend.net.res_ext_grid.p_mw[idx] for idx in selected_indexes
+            )
+
+    def log(
+        self,
+        level: int,
+        selected_indexes: Optional[tuple[int, ...]] = None,
+    ) -> None:
+        if not log.isEnabledFor(level):
+            return
+        bus_fields: tuple[str, ...] = tuple(
+            (*dataclasses.asdict(self[0]).keys(), "pgen")
+        )
+        self._log.log(level, bus_fields)
+        for idx, bus in enumerate(self):
+            if selected_indexes is None or idx in selected_indexes:
+                p_mw: float
+                if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+                    p_mw = self._raw_buses.pgen[idx]
+                else:
+                    p_mw = pp_backend.net.res_ext_grid.p_mw[idx]
+                self._log.log(
+                    level,
+                    tuple((*dataclasses.astuple(bus), p_mw)),
+                )
+        self._log.log(level, bus_fields)
 
 
 @dataclass(frozen=True)
@@ -1009,5 +1058,4 @@ class Trafos3w(Sequence):
         self._log.log(level, trafo_fields)
 
 
-# Subsystems = Union[Buses, Branches, SwingBuses, Trafos, Trafos3w]
-Subsystems = Union[Buses, Branches, Trafos, Trafos3w]
+Subsystems = Union[Buses, Branches, SwingBuses, Trafos, Trafos3w]

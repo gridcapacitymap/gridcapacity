@@ -38,7 +38,7 @@ class TestContingencyAnalysis(unittest.TestCase):
                 min_bus_voltage_pu=0.88,
                 max_branch_loading_pct=120.0,
                 max_trafo_loading_pct=120.0,
-                max_swing_bus_power_mva=1000.0,
+                max_swing_bus_power_p_mw=1000.0,
                 branch_rate="Rate2",
                 trafo_rate="Rate1",
             ),
