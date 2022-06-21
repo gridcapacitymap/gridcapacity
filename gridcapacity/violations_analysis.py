@@ -22,11 +22,12 @@ from dataclasses import dataclass
 from typing import Final, Optional
 
 from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.backends.subsystems import (  # SwingBuses, Trafos3w,
+from gridcapacity.backends.subsystems import (  # SwingBuses,
     Branches,
     Buses,
     Subsystems,
     Trafos,
+    Trafos3w,
 )
 
 log = logging.getLogger(__name__)
@@ -139,8 +140,8 @@ class ViolationsStats:
             subsystems = Branches()
         elif violation == Violations.TRAFO_LOADING:
             subsystems = Trafos()
-        # elif violation == Violations.TRAFO_3W_LOADING:
-        #     subsystems = Trafos3w()
+        elif violation == Violations.TRAFO_3W_LOADING:
+            subsystems = Trafos3w()
         # elif violation == Violations.SWING_BUS_LOADING:
         #     subsystems = SwingBuses()
         else:
@@ -232,17 +233,17 @@ def check_violations(
             trafos,
             overloaded_trafos_indexes,
         )
-    # trafos3w: Trafos3w = Trafos3w(trafo_rate)
-    # if overloaded_trafos3w_indexes := trafos3w.get_overloaded_indexes(
-    #     max_trafo_loading_pct
-    # ):
-    #     v |= Violations.TRAFO_3W_LOADING
-    #     ViolationsStats.append_violations(
-    #         Violations.TRAFO_3W_LOADING,
-    #         max_trafo_loading_pct,
-    #         trafos3w,
-    #         overloaded_trafos3w_indexes,
-    #     )
+    trafos3w: Trafos3w = Trafos3w(trafo_rate)
+    if overloaded_trafos3w_indexes := trafos3w.get_overloaded_indexes(
+        max_trafo_loading_pct
+    ):
+        v |= Violations.TRAFO_3W_LOADING
+        ViolationsStats.append_violations(
+            Violations.TRAFO_3W_LOADING,
+            max_trafo_loading_pct,
+            trafos3w,
+            overloaded_trafos3w_indexes,
+        )
     # swing_buses: SwingBuses = SwingBuses()
     # if overloaded_swing_buses_indexes := swing_buses.get_overloaded_indexes(
     #     max_swing_bus_power_mva
