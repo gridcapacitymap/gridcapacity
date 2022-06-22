@@ -13,25 +13,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
 import sys
 import unittest
 
-assert sys.platform == "win32"
-
-import pssetools
+from gridcapacity.backends import wrapped_funcs as wf
 from gridcapacity.violations_analysis import (
     Violations,
     ViolationsStats,
     check_violations,
 )
-from pssetools import wrapped_funcs as wf
 from tests import DEFAULT_CASE
+
+PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
+if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+    from gridcapacity.backends.psse import init_psse
 
 
 class TestViolationsAnalysis(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        pssetools.init_psse()
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            init_psse()
         ViolationsStats.reset()
 
     def test_not_converged(self) -> None:

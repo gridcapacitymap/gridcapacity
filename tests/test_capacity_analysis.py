@@ -13,22 +13,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
 import sys
 import unittest
 
 assert sys.platform == "win32"
 
-import pssetools
-from gridcapacity.violations_analysis import Violations, ViolationsLimits
-from pssetools.capacity_analysis import (
+from gridcapacity.backends.subsystems import Branch, Bus, Trafo
+from gridcapacity.capacity_analysis import (
     CapacityAnalysisStats,
     Headroom,
     UnfeasibleCondition,
     buses_headroom,
 )
-from pssetools.contingency_analysis import ContingencyScenario, LimitingFactor
-from pssetools.subsystems import Branch, Bus, Trafo
+from gridcapacity.contingency_analysis import ContingencyScenario, LimitingFactor
+from gridcapacity.violations_analysis import Violations, ViolationsLimits
 from tests import DEFAULT_CASE
+
+PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
+if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+    from gridcapacity.backends.psse import init_psse
 
 
 class TestCapacityAnalysis(unittest.TestCase):
@@ -36,7 +40,8 @@ class TestCapacityAnalysis(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        pssetools.init_psse()
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            init_psse()
         cls.headroom = buses_headroom(
             case_name=DEFAULT_CASE,
             upper_load_limit_p_mw=100.0,

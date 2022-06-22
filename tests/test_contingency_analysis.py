@@ -1,23 +1,29 @@
+import os
+import sys
 import unittest
 
-import pssetools
-from gridcapacity.violations_analysis import Violations, ViolationsLimits
-from pssetools import wrapped_funcs as wf
-from pssetools.contingency_analysis import (
+from gridcapacity.backends import wrapped_funcs as wf
+from gridcapacity.backends.subsystems import Branch
+from gridcapacity.contingency_analysis import (
     ContingencyScenario,
     LimitingFactor,
     get_contingency_limiting_factor,
     get_contingency_scenario,
     get_default_contingency_limits,
 )
-from pssetools.subsystems import Branch
+from gridcapacity.violations_analysis import Violations, ViolationsLimits
 from tests import DEFAULT_CASE
+
+PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
+if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+    from gridcapacity.backends.psse import init_psse
 
 
 class TestContingencyAnalysis(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        pssetools.init_psse()
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            init_psse()
         wf.open_case(DEFAULT_CASE)
 
     def test_get_contingency_limiting_factor(self) -> None:

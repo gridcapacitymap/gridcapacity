@@ -17,12 +17,10 @@ import logging
 import os
 import sys
 
-from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.violations_analysis import ViolationsStats, check_violations
-
-# from pssetools.config import ConfigModel, load_config_model
-# from pssetools.capacity_analysis import CapacityAnalysisStats, buses_headroom
-# from pssetools.output import write_output
+from gridcapacity.capacity_analysis import CapacityAnalysisStats, buses_headroom
+from gridcapacity.config import ConfigModel, load_config_model
+from gridcapacity.output import write_output
+from gridcapacity.violations_analysis import ViolationsStats
 
 
 def build_headroom() -> None:
@@ -38,28 +36,23 @@ def build_headroom() -> None:
             f"as a program argument. Got {sys.argv}"
         )
     config_file_name: str = sys.argv[1]
-    wf.open_case(config_file_name)
-    wf.run_solver(use_full_newton_raphson=False)
-    print(f"Case is solved: {wf.is_converged()}")
-    v = check_violations()
-    print(f"{v=}")
-    # config_model: ConfigModel = load_config_model(config_file_name)
-    # headroom = buses_headroom(**config_model.dict(exclude_unset=True))
-    # if len(headroom):
-    #     write_output(config_model.case_name, headroom)
-    #     CapacityAnalysisStats.print()
-    #     print()
-    #     print(" HEADROOM ".center(80, "="))
-    #     for bus_headroom in headroom:
-    #         print(bus_headroom)
-    if not ViolationsStats.is_empty():
+    config_model: ConfigModel = load_config_model(config_file_name)
+    headroom = buses_headroom(**config_model.dict(exclude_unset=True))
+    if len(headroom):
+        write_output(config_model.case_name, headroom)
+        CapacityAnalysisStats.print()
         print()
-        print(" VIOLATIONS STATS ".center(80, "="))
-        ViolationsStats.print()
+        print(" HEADROOM ".center(80, "="))
+        for bus_headroom in headroom:
+            print(bus_headroom)
+        if not ViolationsStats.is_empty():
+            print()
+            print(" VIOLATIONS STATS ".center(80, "="))
+            ViolationsStats.print()
+        else:
+            print("No violations detected")
     else:
-        print("No violations detected")
-    # else:
-    #     print("No headroom found")
+        print("No headroom found")
 
 
 if __name__ == "__main__":

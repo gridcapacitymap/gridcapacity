@@ -18,8 +18,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from gridcapacity.capacity_analysis import CapacityAnalysisStats, Headroom
 from gridcapacity.violations_analysis import Violations, ViolationsStats
-from pssetools.capacity_analysis import CapacityAnalysisStats, Headroom
 
 
 def write_output(case_name: str, headroom: Headroom) -> None:

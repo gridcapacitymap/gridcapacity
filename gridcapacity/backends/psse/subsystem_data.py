@@ -20,7 +20,7 @@ import os
 from collections.abc import Callable
 from typing import Final, Optional, Union
 
-from pssetools import wrapped_funcs as wf
+from . import wrapped_funcs as wf
 
 log = logging.getLogger(__name__)
 LOG_LEVEL: Final[int] = (

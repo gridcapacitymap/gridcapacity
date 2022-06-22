@@ -27,11 +27,11 @@ PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not 
 if sys.platform == "win32" and not PANDAPOWER_BACKEND:
     import psspy
 
-    from pssetools import wrapped_funcs as wf
+    from .psse import wrapped_funcs as wf
 else:
     import pandapower as pp
 
-    import gridcapacity.backends.pandapower as pp_backend
+    from . import pandapower as pp_backend
 
 log = logging.getLogger(__name__)
 

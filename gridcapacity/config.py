@@ -19,8 +19,8 @@ from typing import Optional
 
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, PositiveInt
 
+from gridcapacity.contingency_analysis import ContingencyScenario
 from gridcapacity.violations_analysis import ViolationsLimits
-from pssetools.contingency_analysis import ContingencyScenario
 
 
 class ConfigModel(BaseModel):

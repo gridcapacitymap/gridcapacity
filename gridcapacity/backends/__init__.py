@@ -18,7 +18,7 @@ import sys
 
 if sys.platform == "win32" and not os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND"):
     print("Importing PSSE")
-    from pssetools import init_psse, wrapped_funcs
+    from .psse import init_psse, wrapped_funcs
 
     init_psse()
 else:

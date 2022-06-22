@@ -33,7 +33,7 @@ directory if the case file name is a relative path.
 
 ## Configuration file #
 
-All the configuration options are described as a `ConfigModel` class found in the [config.py](./pssetools/config.py)
+All the configuration options are described as a `ConfigModel` class found in the [config.py](gridcapacity/config.py)
 file.
 
 There are 3 required options:
