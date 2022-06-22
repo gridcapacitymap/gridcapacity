@@ -75,9 +75,10 @@ def run_solver(
             pp.runpp(pp_backend.net, algorithm="fdbx", **effective_solver_opts)
     except LoadflowNotConverged as e:
         log.log(LOG_LEVEL, e.args)
-    pp.diagnostic(
-        pp_backend.net,
-        report_style="compact",
-        warnings_only=True,
-        return_result_dict=False,
-    )
+    if log.isEnabledFor(LOG_LEVEL):
+        pp.diagnostic(
+            pp_backend.net,
+            report_style="compact",
+            warnings_only=True,
+            return_result_dict=False,
+        )

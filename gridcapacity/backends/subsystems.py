@@ -20,8 +20,9 @@ import sys
 from collections.abc import Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
+from pprint import pformat
 from types import TracebackType
-from typing import Final, Iterator, Optional, Union, overload
+from typing import Any, Final, Iterable, Iterator, Optional, Union, overload
 
 PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
 if sys.platform == "win32" and not PANDAPOWER_BACKEND:
@@ -34,6 +35,11 @@ else:
     from . import pandapower as pp_backend
 
 log = logging.getLogger(__name__)
+
+
+class Printable:
+    def __str__(self: Iterable) -> str:
+        return pformat(tuple(f"{idx}: {instance}" for idx, instance in enumerate(self)))
 
 
 @dataclass(frozen=True)
@@ -73,7 +79,7 @@ class PsseBranches:
     pct_rate: list[float]
 
 
-class Branches(Sequence):
+class Branches(Sequence, Printable):
     def __init__(self, rate: str = "Rate1") -> None:
         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._rate: str = rate
@@ -248,7 +254,7 @@ class PsseBuses:
     pu: list[float]
 
 
-class Buses(Sequence):
+class Buses(Sequence, Printable):
     def __init__(self) -> None:
         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
@@ -321,6 +327,7 @@ class Buses(Sequence):
         """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
         for i in range(len(self)):
             yield self[i]
+        return
 
     def get_overvoltage_indexes(self, max_bus_voltage: float) -> tuple[int, ...]:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
@@ -392,7 +399,7 @@ class PsseLoads:
     mva_act: list[complex]
 
 
-class Loads:
+class Loads(Printable):
     def __init__(self) -> None:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             self._raw_loads: PsseLoads = PsseLoads(
@@ -443,7 +450,7 @@ class PsseMachines:
     pq_gen: list[complex]
 
 
-class Machines:
+class Machines(Printable):
     def __init__(self) -> None:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             self._raw_machines: PsseMachines = PsseMachines(
@@ -598,7 +605,7 @@ class PsseSwingBuses:
     pgen: list[float]
 
 
-class SwingBuses(Sequence):
+class SwingBuses(Sequence, Printable):
     def __init__(self) -> None:
         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
@@ -768,7 +775,7 @@ class PsseTrafos:
     pct_rate: list[float]
 
 
-class Trafos(Sequence):
+class Trafos(Sequence, Printable):
     def __init__(self, rate: str = "Rate1") -> None:
         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._rate: str = rate
@@ -970,7 +977,7 @@ class PsseTrafos3w:
     pct_rate: list[float]
 
 
-class Trafos3w(Sequence):
+class Trafos3w(Sequence, Printable):
     def __init__(self, rate: str = "Rate1") -> None:
         self._log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._rate: str = rate

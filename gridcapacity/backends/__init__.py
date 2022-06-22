@@ -22,7 +22,7 @@ if sys.platform == "win32" and not os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND")
 
     init_psse()
 else:
-    print("Importing pandapower")
+    print("Using PandaPower as a solver backend")
     from .pandapower import wrapped_funcs  # type: ignore[no-redef]
 
 __all__ = ["wrapped_funcs"]
