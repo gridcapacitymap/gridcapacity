@@ -29,6 +29,8 @@ if sys.platform == "win32" and not PANDAPOWER_BACKEND:
 
     from pssetools import wrapped_funcs as wf
 else:
+    import pandapower as pp
+
     import gridcapacity.backends.pandapower as pp_backend
 
 log = logging.getLogger(__name__)
@@ -374,163 +376,213 @@ class Buses(Sequence):
         self._log.log(level, bus_fields)
 
 
-# @dataclass(frozen=True)
-# class Load:
-#     number: int
-#     ex_name: str
-#     load_id: str
-#     mva_act: complex
-#
-#
-# @dataclass(frozen=True)
-# class RawLoads:
-#     number: list[int]
-#     ex_name: list[str]
-#     load_id: list[str]
-#     mva_act: list[complex]
-#
-#
-# class Loads:
-#     def __init__(self) -> None:
-#         self._raw_loads: RawLoads = RawLoads(
-#             wf.aloadint(string="number")[0],
-#             wf.aloadchar(string="exName")[0],
-#             wf.aloadchar(string="id")[0],
-#             wf.aloadcplx(string="mvaAct")[0],
-#         )
-#
-#     def __iter__(self) -> Iterator[Load]:
-#         for load_idx in range(len(self)):
-#             yield Load(
-#                 self._raw_loads.number[load_idx],
-#                 self._raw_loads.ex_name[load_idx],
-#                 self._raw_loads.load_id[load_idx],
-#                 self._raw_loads.mva_act[load_idx],
-#             )
-#
-#     def __len__(self) -> int:
-#         return len(self._raw_loads.number)
-#
-#
-# @dataclass(frozen=True)
-# class Machine:
-#     number: int
-#     ex_name: str
-#     machine_id: str
-#     pq_gen: complex
-#
-#
-# @dataclass(frozen=True)
-# class RawMachines:
-#     number: list[int]
-#     ex_name: list[str]
-#     machine_id: list[str]
-#     pq_gen: list[complex]
-#
-#
-# class Machines:
-#     def __init__(self) -> None:
-#         self._raw_machines: RawMachines = RawMachines(
-#             wf.amachint(string="number")[0],
-#             wf.amachchar(string="exName")[0],
-#             wf.amachchar(string="id")[0],
-#             wf.amachcplx(string="pqGen")[0],
-#         )
-#
-#     def __iter__(self) -> Iterator[Machine]:
-#         for machine_idx in range(len(self)):
-#             yield Machine(
-#                 self._raw_machines.number[machine_idx],
-#                 self._raw_machines.ex_name[machine_idx],
-#                 self._raw_machines.machine_id[machine_idx],
-#                 self._raw_machines.pq_gen[machine_idx],
-#             )
-#
-#     def __len__(self) -> int:
-#         return len(self._raw_machines.number)
-#
-#
-# class TemporaryBusLoad:
-#     TEMP_LOAD_ID: str = "Tm"
-#
-#     def __init__(self, bus: Bus) -> None:
-#         self._bus: Bus = bus
-#         self._context_manager_is_active: bool = False
-#         self._load_mva: complex
-#
-#     def __enter__(self) -> None:
-#         # Create load
-#         wf.load_data_6(
-#             self._bus.number,
-#             self.TEMP_LOAD_ID,
-#             realar=[self._load_mva.real, self._load_mva.imag],
-#         )
-#         self._context_manager_is_active = True
-#
-#     def __exit__(
-#         self,
-#         exc_type: Optional[type[BaseException]],
-#         exc_val: Optional[BaseException],
-#         exc_tb: Optional[TracebackType],
-#     ) -> None:
-#         # Delete load
-#         wf.purgload(self._bus.number, self.TEMP_LOAD_ID)
-#         self._context_manager_is_active = False
-#
-#     def __call__(self, load_mva: complex) -> "TemporaryBusLoad":
-#         self._load_mva = load_mva
-#         return self
-#
-#     @property
-#     def bus(self) -> Bus:
-#         return self._bus
-#
-#     @property
-#     def load_mva(self) -> complex:
-#         return self._load_mva
-#
-#
-# class TemporaryBusMachine:
-#     TEMP_MACHINE_ID: str = "Tm"
-#
-#     def __init__(self, bus: Bus) -> None:
-#         self._bus: Bus = bus
-#         self._context_manager_is_active: bool = False
-#         self._gen_mva: complex
-#
-#     def __enter__(self) -> None:
-#         # Create machine
-#         wf.machine_data_4(
-#             self._bus.number,
-#             self.TEMP_MACHINE_ID,
-#             realar=[self._gen_mva.real, self._gen_mva.imag],
-#         )
-#         self._context_manager_is_active = True
-#
-#     def __exit__(
-#         self,
-#         exc_type: Optional[type[BaseException]],
-#         exc_val: Optional[BaseException],
-#         exc_tb: Optional[TracebackType],
-#     ) -> None:
-#         # Delete machine
-#         wf.purgmac(self._bus.number, self.TEMP_MACHINE_ID)
-#         self._context_manager_is_active = False
-#
-#     def __call__(self, gen_mva: complex) -> "TemporaryBusMachine":
-#         self._gen_mva = gen_mva
-#         return self
-#
-#     @property
-#     def bus(self) -> Bus:
-#         return self._bus
-#
-#     @property
-#     def gen_mva(self) -> complex:
-#         return self._gen_mva
-#
-#
-# TemporaryBusSubsystem = Union[TemporaryBusLoad, TemporaryBusMachine]
+@dataclass(frozen=True)
+class Load:
+    number: int
+    ex_name: str
+    load_id: str
+    mva_act: complex
+
+
+@dataclass(frozen=True)
+class PsseLoads:
+    number: list[int]
+    ex_name: list[str]
+    load_id: list[str]
+    mva_act: list[complex]
+
+
+class Loads:
+    def __init__(self) -> None:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            self._raw_loads: PsseLoads = PsseLoads(
+                wf.aloadint(string="number")[0],
+                wf.aloadchar(string="exName")[0],
+                wf.aloadchar(string="id")[0],
+                wf.aloadcplx(string="mvaAct")[0],
+            )
+
+    def __iter__(self) -> Iterator[Load]:
+        for load_idx in range(len(self)):
+            if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+                yield Load(
+                    self._raw_loads.number[load_idx],
+                    self._raw_loads.ex_name[load_idx],
+                    self._raw_loads.load_id[load_idx],
+                    self._raw_loads.mva_act[load_idx],
+                )
+            else:
+                yield Load(
+                    pp_backend.net.load.bus[load_idx],
+                    "",
+                    pp_backend.net.load.name[load_idx],
+                    pp_backend.net.load.p_mw[load_idx]
+                    + 1j * pp_backend.net.load.q_mvar[load_idx],
+                )
+
+    def __len__(self) -> int:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            return len(self._raw_loads.number)
+        else:
+            return len(pp_backend.net.load)
+
+
+@dataclass(frozen=True)
+class Machine:
+    number: int
+    ex_name: str
+    machine_id: str
+    pq_gen: complex
+
+
+@dataclass(frozen=True)
+class PsseMachines:
+    number: list[int]
+    ex_name: list[str]
+    machine_id: list[str]
+    pq_gen: list[complex]
+
+
+class Machines:
+    def __init__(self) -> None:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            self._raw_machines: PsseMachines = PsseMachines(
+                wf.amachint(string="number")[0],
+                wf.amachchar(string="exName")[0],
+                wf.amachchar(string="id")[0],
+                wf.amachcplx(string="pqGen")[0],
+            )
+
+    def __iter__(self) -> Iterator[Machine]:
+        for machine_idx in range(len(self)):
+            if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+                yield Machine(
+                    self._raw_machines.number[machine_idx],
+                    self._raw_machines.ex_name[machine_idx],
+                    self._raw_machines.machine_id[machine_idx],
+                    self._raw_machines.pq_gen[machine_idx],
+                )
+            else:
+                yield Machine(
+                    pp_backend.net.sgen.bus[machine_idx],
+                    "",
+                    pp_backend.net.sgen.name[machine_idx],
+                    pp_backend.net.sgen.p_mw[machine_idx]
+                    + 1j * pp_backend.net.sgen.q_mvar[machine_idx],
+                )
+
+    def __len__(self) -> int:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            return len(self._raw_machines.number)
+        else:
+            return len(pp_backend.net.sgen)
+
+
+class TemporaryBusLoad:
+    TEMP_LOAD_ID: str = "Tm"
+
+    def __init__(self, bus: Bus) -> None:
+        self._bus: Bus = bus
+        self._load_mva: complex
+
+    def __enter__(self) -> None:
+        # Create load
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            wf.load_data_6(
+                self._bus.number,
+                self.TEMP_LOAD_ID,
+                realar=[self._load_mva.real, self._load_mva.imag],
+            )
+        else:
+            pp.create_load(
+                pp_backend.net,
+                self._bus.number,
+                self._load_mva.real,
+                self._load_mva.imag,
+                name=self.TEMP_LOAD_ID,
+            )
+
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        # Delete load
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            wf.purgload(self._bus.number, self.TEMP_LOAD_ID)
+        else:
+            pp_backend.net.load = pp_backend.net.load.drop(
+                pp_backend.net.load[pp_backend.net.load.name == self.TEMP_LOAD_ID].index
+            )
+
+    def __call__(self, load_mva: complex) -> "TemporaryBusLoad":
+        self._load_mva = load_mva
+        return self
+
+    @property
+    def bus(self) -> Bus:
+        return self._bus
+
+    @property
+    def load_mva(self) -> complex:
+        return self._load_mva
+
+
+class TemporaryBusMachine:
+    TEMP_MACHINE_ID: str = "Tm"
+
+    def __init__(self, bus: Bus) -> None:
+        self._bus: Bus = bus
+        self._gen_mva: complex
+
+    def __enter__(self) -> None:
+        # Create machine
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            wf.machine_data_4(
+                self._bus.number,
+                self.TEMP_MACHINE_ID,
+                realar=[self._gen_mva.real, self._gen_mva.imag],
+            )
+        else:
+            pp.create_sgen(
+                pp_backend.net,
+                self._bus.number,
+                self._gen_mva.real,
+                self._gen_mva.imag,
+                name=self.TEMP_MACHINE_ID,
+            )
+
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        # Delete machine
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            wf.purgmac(self._bus.number, self.TEMP_MACHINE_ID)
+        else:
+            pp_backend.net.sgen = pp_backend.net.sgen.drop(
+                pp_backend.net.sgen[
+                    pp_backend.net.sgen.name == self.TEMP_MACHINE_ID
+                ].index
+            )
+
+    def __call__(self, gen_mva: complex) -> "TemporaryBusMachine":
+        self._gen_mva = gen_mva
+        return self
+
+    @property
+    def bus(self) -> Bus:
+        return self._bus
+
+    @property
+    def gen_mva(self) -> complex:
+        return self._gen_mva
+
+
+TemporaryBusSubsystem = Union[TemporaryBusLoad, TemporaryBusMachine]
 
 
 @dataclass(frozen=True)
