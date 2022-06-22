@@ -141,7 +141,7 @@ class TestViolationsAnalysis(unittest.TestCase):
             Violations.SWING_BUS_LOADING, check_violations(max_trafo_loading_pct=110.0)
         )
         self.assertEqual(
-            {1000.0: {0: [1259.0836181640625]}},
+            {1000.0: {0: [1258.0638427734375]}},
             ViolationsStats.asdict()[Violations.SWING_BUS_LOADING],
         )
 
