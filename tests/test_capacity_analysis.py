@@ -17,8 +17,6 @@ import os
 import sys
 import unittest
 
-assert sys.platform == "win32"
-
 from gridcapacity.backends.subsystems import Branch, Bus, Trafo
 from gridcapacity.capacity_analysis import (
     CapacityAnalysisStats,
