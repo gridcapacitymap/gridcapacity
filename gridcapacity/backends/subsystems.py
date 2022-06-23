@@ -56,19 +56,21 @@ class Branch:
             )
             return status != 0
         else:
-            branch_idx: int = get_pp_branch_idx(self)
+            branch_idx: int = self.pp_idx
             return pp_backend.net.line.in_service[branch_idx]
 
+    if sys.platform != "win32" or PANDAPOWER_BACKEND:
 
-def get_pp_branch_idx(branch: Branch) -> int:
-    """Returns index of a given branch of a PandaPower network."""
-    for idx in range(len(pp_backend.net.line)):
-        if (
-            pp_backend.net.line.from_bus[idx] == branch.from_number
-            and pp_backend.net.line.to_bus[idx] == branch.to_number
-        ):
-            return idx
-    raise KeyError(f"{branch=} not found!")
+        @property
+        def pp_idx(self) -> int:
+            """Returns index in a PandaPower network."""
+            for idx, line in pp_backend.net.line.iterrows():
+                if (
+                    line["from_bus"] == self.from_number
+                    and line["to_bus"] == self.to_number
+                ):
+                    return idx
+            raise KeyError(f"{self} not found!")
 
 
 @dataclass
@@ -228,7 +230,7 @@ def disable_branch(branch: Branch) -> Iterator[bool]:
     else:
         branch_idx: int
         try:
-            branch_idx = get_pp_branch_idx(branch)
+            branch_idx = branch.pp_idx
             pp_backend.net.line.in_service[branch_idx] = False
             is_disabled = True
             yield True
@@ -244,6 +246,15 @@ class Bus:
     number: int
     ex_name: str
     type: int
+    if sys.platform != "win32" or PANDAPOWER_BACKEND:
+
+        @property
+        def pp_idx(self) -> int:
+            """Returns index in a PandaPower network."""
+            for idx, bus in pp_backend.net.bus.iterrows():
+                if bus["name"] == self.number:
+                    return idx
+            raise KeyError(f"{self} not found!")
 
 
 @dataclass
@@ -503,7 +514,7 @@ class TemporaryBusLoad:
         else:
             pp.create_load(
                 pp_backend.net,
-                self._bus.number,
+                self._bus.pp_idx,
                 self._load_mva.real,
                 self._load_mva.imag,
                 name=self.TEMP_LOAD_ID,
@@ -554,7 +565,7 @@ class TemporaryBusMachine:
         else:
             pp.create_sgen(
                 pp_backend.net,
-                self._bus.number,
+                self._bus.pp_idx,
                 self._gen_mva.real,
                 self._gen_mva.imag,
                 name=self.TEMP_MACHINE_ID,
@@ -752,19 +763,21 @@ class Trafo:
             )
             return status != 0
         else:
-            trafo_idx: int = get_pp_trafo_idx(self)
+            trafo_idx: int = self.pp_idx
             return pp_backend.net.trafo.in_service[trafo_idx]
 
+    if sys.platform != "win32" or PANDAPOWER_BACKEND:
 
-def get_pp_trafo_idx(trafo: Trafo) -> int:
-    """Returns index of a given transformer of a PandaPower network."""
-    for idx in range(len(pp_backend.net.trafo)):
-        if (
-            pp_backend.net.trafo.hv_bus[idx] == trafo.from_number
-            and pp_backend.net.trafo.lv_bus[idx] == trafo.to_number
-        ):
-            return idx
-    raise KeyError(f"{trafo=} not found!")
+        @property
+        def pp_idx(self) -> int:
+            """Returns index in a PandaPower network."""
+            for idx, trafo in pp_backend.net.trafo.iterrows():
+                if (
+                    trafo["hv_bus"] == self.from_number
+                    and trafo["lv_bus"] == self.to_number
+                ):
+                    return idx
+            raise KeyError(f"{self} not found!")
 
 
 @dataclass
@@ -925,7 +938,7 @@ def disable_trafo(trafo: Trafo) -> Iterator[bool]:
     else:
         trafo_idx: int
         try:
-            trafo_idx = get_pp_trafo_idx(trafo)
+            trafo_idx = trafo.pp_idx
             pp_backend.net.trafo.in_service[trafo_idx] = False
             is_disabled = True
             yield True
