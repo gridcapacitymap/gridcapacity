@@ -431,7 +431,7 @@ class Loads(Printable):
                 )
             else:
                 yield Load(
-                    pp_backend.net.load.bus[load_idx],
+                    pp_backend.net.bus.name[pp_backend.net.load.bus[load_idx]],
                     "",
                     pp_backend.net.load.name[load_idx],
                     pp_backend.net.load.p_mw[load_idx]
@@ -482,7 +482,7 @@ class Machines(Printable):
                 )
             else:
                 yield Machine(
-                    pp_backend.net.sgen.bus[machine_idx],
+                    pp_backend.net.bus.name[pp_backend.net.sgen.bus[machine_idx]],
                     "",
                     pp_backend.net.sgen.name[machine_idx],
                     pp_backend.net.sgen.p_mw[machine_idx]
