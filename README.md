@@ -1,27 +1,31 @@
-# High level tools to work with PSS®E #
+# Grid capacity #
 
-The PSS®E has a Python API to perform sample activities. This project provides the tools to automate the complex PSSE®E
-workflows. They include
+The power flows simulation for grid capacity analysis is performed using either
+- [Siemens PSS®E](https://new.siemens.com/global/en/products/energy/energy-automation-and-smart-grid/pss-software/pss-e.html) or
+- [pandapower](https://www.pandapower.org/)
+as a backend.
 
-- wrappers for sample subsystems APIs
+The code includes:
+- JSON configuration file parser
 - routines for analysis of:
   - violations
   - contingencies
-  - headroom capacity
-- JSON writer for headroom and violations statistics
+  - grid capacity
+- backend wrappers to load model and work with subsystems
+- JSON writer for analysis results and statistics
 
 ## Running code #
 
 Requirements:
 
 - Python 3.9
-- [pipenv](https://pipenv.readthedocs.io/en/latest/) ≥ 2018.11.15
+- [pipenv](https://pipenv.readthedocs.io/en/latest/)
 
 ```powershell
 # Install project dependencies
 pipenv install --skip-lock
 # Run the simulation
-pipenv run python -m pssetools sample_config.json
+pipenv run python -m gridcapacity sample_config.json
 ```
 
 The config file name, `sample_config.json` in this example, is the required argument. Its path should be an absolute
@@ -33,7 +37,7 @@ directory if the case file name is a relative path.
 
 ## Configuration file #
 
-All the configuration options are described as a `ConfigModel` class found in the [config.py](./pssetools/config.py)
+All the configuration options are described as a `ConfigModel` class found in the [config.py](gridcapacity/config.py)
 file.
 
 There are 3 required options:
@@ -46,22 +50,25 @@ There are 3 required options:
 }
 ```
 
-The `case_name` is a file name from the PSS®E `EXAMPLE` directory or an absolute file path.
+The `case_name` should be an absolute file path. If the path is relative, its processing depends on the backend:
+- for the PSS®E backend, it is relative to PSS®E `EXAMPLE` directory
+- for the `pandapower` backend, it is relative to this repository root
 
 ## Environment variables #
 
-There are debugging features that could be enabled using the environment variables.
+PandaPower backend usage and debugging features could be enabled using the environment variables.
 
-| ENV                                       | Description              |
-|-------------------------------------------|:-------------------------|
-| `PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS` | Enable violations output |
-| `PSSE_TOOLS_VERBOSE`                      | Enable verbose output    |
+| ENV                                          | Description                 |
+|----------------------------------------------|:----------------------------|
+| `GRID_CAPACITY_PANDAPOWER_BACKEND`           | Force PandaPower on Windows |
+| `GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS` | Enable violations output    |
+| `GRID_CAPACITY_VERBOSE`                      | Enable verbose output       |
 
 To start the project with verbose output enabled, run:
 
 ```powershell
-$env:PSSE_TOOLS_VERBOSE = ’1’
-pipenv run python -m pssetools sample_config.json
+$env:GRID_CAPACITY_VERBOSE = ’1’
+pipenv run python -m gridcapacity sample_config.json
 ```
 
 ## Running tests #

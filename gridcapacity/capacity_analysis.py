@@ -25,15 +25,7 @@ from typing import Final, Iterator, Optional
 
 from tqdm import tqdm
 
-from pssetools import wrapped_funcs as wf
-from pssetools.contingency_analysis import (
-    ContingencyScenario,
-    LimitingFactor,
-    LimitingSubsystem,
-    get_contingency_limiting_factor,
-    get_contingency_scenario,
-)
-from pssetools.subsystems import (
+from gridcapacity.backends.subsystems import (
     Bus,
     Buses,
     Load,
@@ -44,7 +36,14 @@ from pssetools.subsystems import (
     TemporaryBusMachine,
     TemporaryBusSubsystem,
 )
-from pssetools.violations_analysis import (
+from gridcapacity.contingency_analysis import (
+    ContingencyScenario,
+    LimitingFactor,
+    LimitingSubsystem,
+    get_contingency_limiting_factor,
+    get_contingency_scenario,
+)
+from gridcapacity.violations_analysis import (
     PowerFlows,
     Violations,
     ViolationsLimits,
@@ -52,6 +51,8 @@ from pssetools.violations_analysis import (
     check_violations,
     run_solver,
 )
+
+from .backends import wrapped_funcs as wf
 
 log = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ class CapacityAnalyser:
         gen_power_factor: float,
         selected_buses_ids: Optional[Collection[int]],
         headroom_tolerance_p_mw: float,
-        solver_opts: dict,
+        solver_opts: Optional[dict],
         max_iterations: int,
         normal_limits: Optional[ViolationsLimits],
         contingency_limits: Optional[ViolationsLimits],
@@ -128,7 +129,7 @@ class CapacityAnalyser:
         )
         self._selected_buses_ids: Optional[Collection[int]] = selected_buses_ids
         self._headroom_tolerance_p_mw: Final[float] = headroom_tolerance_p_mw
-        self._solver_opts: dict = solver_opts
+        self._solver_opts: Optional[dict] = solver_opts
         self._max_iterations: Final[int] = max_iterations
         self._normal_limits: Final[Optional[ViolationsLimits]] = normal_limits
         self._contingency_limits: Final[Optional[ViolationsLimits]] = contingency_limits
@@ -154,7 +155,7 @@ class CapacityAnalyser:
         """Fixed slope Decoupled Newton-Raphson Solver (FDNS) is applicable"""
         self.reload_case()
         run_solver(use_full_newton_raphson=False, solver_opts=self._solver_opts)
-        is_applicable: Final[bool] = True if wf.is_solved() else False
+        is_applicable: Final[bool] = True if wf.is_converged() else False
         if not is_applicable:
             # Reload the case and run power flow to get solution convergence
             # after failed FDNS
@@ -432,18 +433,13 @@ def buses_headroom(
     gen_power_factor: float = 0.9,
     selected_buses_ids: Optional[Collection[int]] = None,
     headroom_tolerance_p_mw: float = 5.0,
-    solver_opts: dict = {"options1": 1, "options5": 1},
+    solver_opts: Optional[dict] = None,
     max_iterations: int = 10,
     normal_limits: Optional[ViolationsLimits] = None,
     contingency_limits: Optional[ViolationsLimits] = None,
     contingency_scenario: Optional[ContingencyScenario] = None,
 ) -> Headroom:
-    """Return actual load and max additional PQ power in MVA for each bus
-
-    Default solver options:
-        `options1=1` Use tap adjustment option setting
-        `options5=1` Use switched shunt adjustment option setting
-    """
+    """Return actual load and max additional PQ power in MVA for each bus."""
     capacity_analyser: CapacityAnalyser = CapacityAnalyser(
         case_name,
         upper_load_limit_p_mw,

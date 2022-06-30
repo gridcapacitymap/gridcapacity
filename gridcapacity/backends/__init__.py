@@ -17,6 +17,12 @@ import os
 import sys
 
 if sys.platform == "win32" and not os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND"):
-    DEFAULT_CASE = "savnw.sav"
+    print("Importing PSSE")
+    from .psse import init_psse, wrapped_funcs
+
+    init_psse()
 else:
-    DEFAULT_CASE = "sample_data/savnw.json"
+    print("Using PandaPower as a solver backend")
+    from .pandapower import wrapped_funcs  # type: ignore[no-redef]
+
+__all__ = ["wrapped_funcs"]

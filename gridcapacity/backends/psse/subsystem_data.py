@@ -20,12 +20,12 @@ import os
 from collections.abc import Callable
 from typing import Final, Optional, Union
 
-from pssetools import wrapped_funcs as wf
+from . import wrapped_funcs as wf
 
 log = logging.getLogger(__name__)
 LOG_LEVEL: Final[int] = (
     logging.INFO
-    if not os.getenv("PSSE_TOOLS_TREAT_VIOLATIONS_AS_WARNINGS")
+    if not os.getenv("GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS")
     else logging.WARNING
 )
 field_type2func_suffix: Final[dict[str, str]] = {
@@ -91,13 +91,13 @@ def get_overloaded_branches_ids(max_branch_loading_pct: float) -> tuple[int, ...
     return ids
 
 
-def get_overloaded_swing_buses_ids(max_swing_bus_power_mva: float) -> tuple[int, ...]:
+def get_overloaded_swing_buses_ids(max_swing_bus_power_p_mw: float) -> tuple[int, ...]:
     ids: tuple[int, ...] = tuple(
         bus_id
-        for bus_id, (bus_type, mva) in enumerate(
-            zip(wf.agenbusint(string="type")[0], wf.agenbusreal(string="mva")[0])
+        for bus_id, (bus_type, p_mw) in enumerate(
+            zip(wf.agenbusint(string="type")[0], wf.agenbusreal(string="p_mw")[0])
         )
-        if bus_type == SWING_BUS and mva > max_swing_bus_power_mva
+        if bus_type == SWING_BUS and p_mw > max_swing_bus_power_p_mw
     )
     return ids
 
@@ -213,7 +213,7 @@ def print_swing_buses(
     plant_bus_fields: tuple[str, ...] = (
         "number",
         "exName",
-        "mva",
+        "p_mw",
         "pqGen",
     ),
 ) -> None:

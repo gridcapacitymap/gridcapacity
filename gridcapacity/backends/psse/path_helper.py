@@ -20,6 +20,8 @@ import winreg
 from pathlib import Path
 from typing import Final, Optional
 
+assert sys.platform == "win32"
+
 
 def get_psse35_paths() -> list[str]:
     with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\PTI\PSSE 35") as pti_key:

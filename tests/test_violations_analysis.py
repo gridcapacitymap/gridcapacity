@@ -13,18 +13,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
+import sys
 import unittest
 
-import pssetools
-from pssetools import wrapped_funcs as wf
-from pssetools.violations_analysis import Violations, ViolationsStats, check_violations
+from gridcapacity.backends import wrapped_funcs as wf
+from gridcapacity.violations_analysis import (
+    Violations,
+    ViolationsStats,
+    check_violations,
+)
 from tests import DEFAULT_CASE
+
+PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
+if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+    from gridcapacity.backends.psse import init_psse
 
 
 class TestViolationsAnalysis(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        pssetools.init_psse()
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            init_psse()
         ViolationsStats.reset()
 
     def test_not_converged(self) -> None:
@@ -131,7 +141,7 @@ class TestViolationsAnalysis(unittest.TestCase):
             Violations.SWING_BUS_LOADING, check_violations(max_trafo_loading_pct=110.0)
         )
         self.assertEqual(
-            {1000.0: {0: [1259.0836181640625]}},
+            {1000.0: {0: [1258.0638427734375]}},
             ViolationsStats.asdict()[Violations.SWING_BUS_LOADING],
         )
 

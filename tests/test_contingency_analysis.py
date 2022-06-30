@@ -1,23 +1,44 @@
+"""
+Copyright 2022 Vattenfall AB
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+import os
+import sys
 import unittest
 
-import pssetools
-from pssetools import wrapped_funcs as wf
-from pssetools.contingency_analysis import (
+from gridcapacity.backends import wrapped_funcs as wf
+from gridcapacity.backends.subsystems import Branch
+from gridcapacity.contingency_analysis import (
     ContingencyScenario,
     LimitingFactor,
     get_contingency_limiting_factor,
     get_contingency_scenario,
     get_default_contingency_limits,
 )
-from pssetools.subsystems import Branch
-from pssetools.violations_analysis import Violations, ViolationsLimits
+from gridcapacity.violations_analysis import Violations, ViolationsLimits
 from tests import DEFAULT_CASE
+
+PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
+if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+    from gridcapacity.backends.psse import init_psse
 
 
 class TestContingencyAnalysis(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        pssetools.init_psse()
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            init_psse()
         wf.open_case(DEFAULT_CASE)
 
     def test_get_contingency_limiting_factor(self) -> None:
@@ -38,7 +59,7 @@ class TestContingencyAnalysis(unittest.TestCase):
                 min_bus_voltage_pu=0.88,
                 max_branch_loading_pct=120.0,
                 max_trafo_loading_pct=120.0,
-                max_swing_bus_power_mva=1000.0,
+                max_swing_bus_power_p_mw=1000.0,
                 branch_rate="Rate2",
                 trafo_rate="Rate1",
             ),

@@ -13,10 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import os
-import sys
+from pandapower import pandapowerNet
 
-if sys.platform == "win32" and not os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND"):
-    DEFAULT_CASE = "savnw.sav"
-else:
-    DEFAULT_CASE = "sample_data/savnw.json"
+net: pandapowerNet = None

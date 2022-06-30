@@ -16,47 +16,20 @@ limitations under the License.
 import logging
 import os
 import sys
-from typing import Final
 
-from pssetools.path_helper import get_psse35_paths
-
-psse35_paths = get_psse35_paths()
-sys.path = psse35_paths + sys.path
-os.environ["PATH"] = os.pathsep.join((*psse35_paths, os.environ["PATH"]))
-
-# `psspy` should be imported only after importing `psse35`
-import psse35
-import psspy
-import redirect
-
-from pssetools import wrapped_funcs as wf
-from pssetools.capacity_analysis import CapacityAnalysisStats, buses_headroom
-from pssetools.config import ConfigModel, load_config_model
-from pssetools.output import write_output
-from pssetools.violations_analysis import ViolationsStats
-
-
-def init_psse() -> None:
-    try:
-        redirect.py2psse()
-    except redirect.RedirectError:
-        pass
-    psspy.psseinit()
-    if not os.environ.get("PSSE_TOOLS_VERBOSE"):
-        # Suppress all PSSE output
-        no_output: Final[int] = 6
-        wf.alert_output(no_output)
-        wf.progress_output(no_output)
-        wf.prompt_output(no_output)
-        wf.report_output(no_output)
+from gridcapacity.capacity_analysis import CapacityAnalysisStats, buses_headroom
+from gridcapacity.config import ConfigModel, load_config_model
+from gridcapacity.output import write_output
+from gridcapacity.violations_analysis import ViolationsStats
 
 
 def build_headroom() -> None:
     logging_level: int = (
-        logging.WARNING if not os.environ.get("PSSE_TOOLS_VERBOSE") else logging.DEBUG
+        logging.WARNING
+        if not os.environ.get("GRID_CAPACITY_VERBOSE")
+        else logging.DEBUG
     )
     logging.basicConfig(level=logging_level)
-    init_psse()
     if len(sys.argv) != 2:
         raise RuntimeError(
             f"Config file name should be specified "
