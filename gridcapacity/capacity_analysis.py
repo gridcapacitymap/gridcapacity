@@ -169,9 +169,11 @@ class CapacityAnalyser:
 
     def check_base_case_violations(self) -> None:
         """Raise `RuntimeError` if base case has violations"""
+        ViolationsStats.reset()
         base_case_violations: Violations = self.check_violations()
-        if base_case_violations != Violations.NO_VIOLATIONS:
+        if base_case_violations & Violations.NOT_CONVERGED:
             raise RuntimeError(f"The base case has {base_case_violations}")
+        ViolationsStats.register_base_case_violations()
 
     def handle_empty_contingency_scenario(
         self, contingency_scenario: Optional[ContingencyScenario]

@@ -51,6 +51,12 @@ def build_headroom() -> None:
             ViolationsStats.print()
         else:
             print("No violations detected")
+        if not ViolationsStats.base_case_violations_detected():
+            print()
+            print(" BASE CASE VIOLATIONS ".center(80, "="))
+            ViolationsStats.print_base_case_violations()
+        else:
+            print("No base case violations detected")
     else:
         print("No headroom found")
 
