@@ -87,9 +87,8 @@ def write_output(case_name: str, headroom: Headroom) -> None:
 def json_encode_helper(obj: Any) -> Any:
     if isinstance(obj, complex):
         return [obj.real, obj.imag]
-    elif isinstance(obj, Violations):
+    if isinstance(obj, Violations):
         return str(obj)
-    elif dataclasses.is_dataclass(obj):
+    if dataclasses.is_dataclass(obj):
         return dataclasses.asdict(obj)
-    else:
-        raise TypeError(f"{obj=} is not serializable")
+    raise TypeError(f"{obj=} is not serializable")

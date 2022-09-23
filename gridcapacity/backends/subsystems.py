@@ -22,7 +22,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pprint import pformat
 from types import TracebackType
-from typing import Any, Final, Iterable, Iterator, Optional, Union, overload
+from typing import Final, Iterable, Iterator, Optional, Union, overload
 
 PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
 if sys.platform == "win32" and not PANDAPOWER_BACKEND:
@@ -55,9 +55,8 @@ class Branch:
                 self.from_number, self.to_number, self.branch_id, "STATUS"
             )
             return status != 0
-        else:
-            branch_idx: int = self.pp_idx
-            return pp_backend.net.line.in_service[branch_idx]
+        branch_idx: int = self.pp_idx
+        return pp_backend.net.line.in_service[branch_idx]
 
     if sys.platform != "win32" or PANDAPOWER_BACKEND:
 
@@ -109,7 +108,7 @@ class Branches(Sequence, Printable):
                     self._psse_branches.to_number[idx],
                     self._psse_branches.branch_id[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     Branch(*args)
                     for args in zip(
@@ -136,7 +135,7 @@ class Branches(Sequence, Printable):
                     pp_backend.net.line.to_bus[idx],
                     pp_backend.net.line.parallel[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     branch_from_pp(*args)
                     for args in zip(
@@ -145,12 +144,12 @@ class Branches(Sequence, Printable):
                         pp_backend.net.line.parallel[idx],
                     )
                 )
+        raise RuntimeError(f"Wrong index {idx}")
 
     def __len__(self) -> int:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return len(self._psse_branches.from_number)
-        else:
-            return len(pp_backend.net.line)
+        return len(pp_backend.net.line)
 
     def __iter__(self) -> Iterator[Branch]:
         """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
@@ -174,10 +173,9 @@ class Branches(Sequence, Printable):
     ) -> tuple[float, ...]:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return tuple(self._psse_branches.pct_rate[idx] for idx in selected_indexes)
-        else:
-            return tuple(
-                pp_backend.net.res_line.loading_percent[idx] for idx in selected_indexes
-            )
+        return tuple(
+            pp_backend.net.res_line.loading_percent[idx] for idx in selected_indexes
+        )
 
     def log(
         self,
@@ -220,7 +218,9 @@ def disable_branch(branch: Branch) -> Iterator[bool]:
                 is_disabled = True
                 yield True
             else:
-                log.info(f"Failed disabling branch {branch=} {error_code=}")
+                log.info(
+                    "Failed disabling branch %s, error_code=%s", branch, error_code
+                )
                 yield False
         finally:
             if is_disabled:
@@ -292,7 +292,7 @@ class Buses(Sequence, Printable):
                     self._psse_buses.ex_name[idx],
                     self._psse_buses.type[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     Bus(*args)
                     for args in zip(
@@ -317,7 +317,7 @@ class Buses(Sequence, Printable):
                     pp_backend.net.bus.zone[idx],
                     pp_backend.net.bus.type[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     bus_from_pp(*args)
                     for args in zip(
@@ -327,18 +327,17 @@ class Buses(Sequence, Printable):
                         pp_backend.net.bus.type[idx],
                     )
                 )
+        raise RuntimeError(f"Wrong index {idx}")
 
     def __len__(self) -> int:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return len(self._psse_buses.number)
-        else:
-            return len(pp_backend.net.bus)
+        return len(pp_backend.net.bus)
 
     def __iter__(self) -> Iterator[Bus]:
         """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
         for i in range(len(self)):
             yield self[i]
-        return
 
     def get_overvoltage_indexes(self, max_bus_voltage: float) -> tuple[int, ...]:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
@@ -368,8 +367,7 @@ class Buses(Sequence, Printable):
     ) -> tuple[float, ...]:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return tuple(self._psse_buses.pu[idx] for idx in selected_indexes)
-        else:
-            return tuple(pp_backend.net.res_bus.vm_pu[idx] for idx in selected_indexes)
+        return tuple(pp_backend.net.res_bus.vm_pu[idx] for idx in selected_indexes)
 
     def log(
         self,
@@ -441,8 +439,7 @@ class Loads(Printable):
     def __len__(self) -> int:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return len(self._raw_loads.number)
-        else:
-            return len(pp_backend.net.load)
+        return len(pp_backend.net.load)
 
 
 @dataclass(frozen=True)
@@ -492,8 +489,7 @@ class Machines(Printable):
     def __len__(self) -> int:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return len(self._raw_machines.number)
-        else:
-            return len(pp_backend.net.sgen)
+        return len(pp_backend.net.sgen)
 
 
 class TemporaryBusLoad:
@@ -655,7 +651,7 @@ class SwingBuses(Sequence, Printable):
                     self._raw_buses.number[idx],
                     self._raw_buses.ex_name[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     SwingBus(*args)
                     for args in zip(
@@ -677,7 +673,7 @@ class SwingBuses(Sequence, Printable):
                     pp_backend.net.ext_grid.vm_pu[idx],
                     pp_backend.net.ext_grid.max_p_mw[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     swing_bus_from_pp(*args)
                     for args in zip(
@@ -686,12 +682,12 @@ class SwingBuses(Sequence, Printable):
                         pp_backend.net.ext_grid.max_p_mw[idx],
                     )
                 )
+        raise RuntimeError(f"Wrong index {idx}")
 
     def __len__(self) -> int:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return len(self._raw_buses.number)
-        else:
-            return len(pp_backend.net.ext_grid)
+        return len(pp_backend.net.ext_grid)
 
     def __iter__(self) -> Iterator[SwingBus]:
         """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
@@ -717,10 +713,7 @@ class SwingBuses(Sequence, Printable):
     ) -> tuple[float, ...]:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return tuple(self._raw_buses.pgen[idx] for idx in selected_indexes)
-        else:
-            return tuple(
-                pp_backend.net.res_ext_grid.p_mw[idx] for idx in selected_indexes
-            )
+        return tuple(pp_backend.net.res_ext_grid.p_mw[idx] for idx in selected_indexes)
 
     def log(
         self,
@@ -762,9 +755,8 @@ class Trafo:
                 self.from_number, self.to_number, self.trafo_id, "STATUS"
             )
             return status != 0
-        else:
-            trafo_idx: int = self.pp_idx
-            return pp_backend.net.trafo.in_service[trafo_idx]
+        trafo_idx: int = self.pp_idx
+        return pp_backend.net.trafo.in_service[trafo_idx]
 
     if sys.platform != "win32" or PANDAPOWER_BACKEND:
 
@@ -816,7 +808,7 @@ class Trafos(Sequence, Printable):
                     self._raw_trafos.to_number[idx],
                     self._raw_trafos.trafo_id[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     Trafo(*args)
                     for args in zip(
@@ -843,7 +835,7 @@ class Trafos(Sequence, Printable):
                     pp_backend.net.trafo.lv_bus[idx],
                     pp_backend.net.trafo.parallel[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     trafo_from_pp(*args)
                     for args in zip(
@@ -852,12 +844,12 @@ class Trafos(Sequence, Printable):
                         pp_backend.net.trafo.parallel[idx],
                     )
                 )
+        raise RuntimeError(f"Wrong index {idx}")
 
     def __len__(self) -> int:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return len(self._raw_trafos.from_number)
-        else:
-            return len(pp_backend.net.trafo)
+        return len(pp_backend.net.trafo)
 
     def __iter__(self) -> Iterator[Trafo]:
         """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
@@ -881,11 +873,9 @@ class Trafos(Sequence, Printable):
     ) -> tuple[float, ...]:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return tuple(self._raw_trafos.pct_rate[idx] for idx in selected_indexes)
-        else:
-            return tuple(
-                pp_backend.net.res_trafo.loading_percent[idx]
-                for idx in selected_indexes
-            )
+        return tuple(
+            pp_backend.net.res_trafo.loading_percent[idx] for idx in selected_indexes
+        )
 
     def log(
         self,
@@ -928,7 +918,7 @@ def disable_trafo(trafo: Trafo) -> Iterator[bool]:
                 is_disabled = True
                 yield is_disabled
             else:
-                log.info(f"Failed disabling trafo {trafo=} {error_code=}")
+                log.info("Failed disabling trafo %s, error_code=%s", trafo, error_code)
                 yield is_disabled
         finally:
             if is_disabled:
@@ -964,9 +954,8 @@ class Trafo3w:
                 self.wind1_number, self.wind2_number, self.trafo_id, "STATUS"
             )
             return status != 0
-        else:
-            trafo3w_idx: int = get_pp_trafo3w_idx(self)
-            return pp_backend.net.trafo3w.in_service[trafo3w_idx]
+        trafo3w_idx: int = get_pp_trafo3w_idx(self)
+        return pp_backend.net.trafo3w.in_service[trafo3w_idx]
 
 
 def get_pp_trafo3w_idx(trafo3w: Trafo3w) -> int:
@@ -1022,7 +1011,7 @@ class Trafos3w(Sequence, Printable):
                     self._raw_trafos.wind3_number[idx],
                     self._raw_trafos.trafo_id[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     Trafo3w(*args)
                     for args in zip(
@@ -1056,7 +1045,7 @@ class Trafos3w(Sequence, Printable):
                     pp_backend.net.trafo3w.lv_bus[idx],
                     pp_backend.net.trafo3w.parallel[idx],
                 )
-            elif isinstance(idx, slice):
+            if isinstance(idx, slice):
                 return tuple(
                     trafo3w_from_pp(*args)
                     for args in zip(
@@ -1066,12 +1055,12 @@ class Trafos3w(Sequence, Printable):
                         pp_backend.net.trafo3w.parallel[idx],
                     )
                 )
+        raise RuntimeError(f"Wrong index {idx}")
 
     def __len__(self) -> int:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return len(self._raw_trafos.wind1_number)
-        else:
-            return len(pp_backend.net.trafo3w)
+        return len(pp_backend.net.trafo3w)
 
     def __iter__(self) -> Iterator[Trafo3w]:
         """Override Sequence `iter` method because PandaPower throws `KeyError` where `IndexError` is expected."""
@@ -1095,11 +1084,9 @@ class Trafos3w(Sequence, Printable):
     ) -> tuple[float, ...]:
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             return tuple(self._raw_trafos.pct_rate[idx] for idx in selected_indexes)
-        else:
-            return tuple(
-                pp_backend.net.res_trafo3w.loading_percent[idx]
-                for idx in selected_indexes
-            )
+        return tuple(
+            pp_backend.net.res_trafo3w.loading_percent[idx] for idx in selected_indexes
+        )
 
     def log(
         self,

@@ -146,7 +146,7 @@ def agenbustypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
-def alert_output() -> None:
+def alert_output(_islct: int) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
@@ -251,12 +251,12 @@ def awndtypes() -> list[list[str]]:
 
 
 @process_psse_api_error_code
-def branch_chng_3() -> None:
+def branch_chng_3(_from_bus: int, _to_bus: int, _id: str, **_: Any) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
 @process_psse_api_error_code
-def brnint() -> int:
+def brnint(_from_bus: int, _to_bus: int, _id: str, _str: str) -> int:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
@@ -266,7 +266,7 @@ def bus_chng_4() -> None:
 
 
 @process_psse_api_error_code
-def case() -> None:
+def case(_path: str) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
@@ -281,7 +281,7 @@ def fnsl() -> None:
 
 
 @process_psse_api_error_code
-def load_data_6() -> None:
+def load_data_6(_bus: int, _id: str, **_: Any) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
@@ -291,7 +291,7 @@ def load_chng_6() -> None:
 
 
 @process_psse_api_error_code
-def machine_data_4() -> None:
+def machine_data_4(_bus: int, _id: str, **_: Any) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
@@ -301,22 +301,22 @@ def machine_chng_4() -> None:
 
 
 @process_psse_api_error_code
-def progress_output() -> None:
+def progress_output(_islct: int) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
 @process_psse_api_error_code
-def prompt_output() -> None:
+def prompt_output(_islct: int) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
 @process_psse_api_error_code
-def purgload() -> None:
+def purgload(_bus: int, _id: str) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
 @process_psse_api_error_code
-def purgmac() -> None:
+def purgmac(_bus: int, _id: str) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
@@ -326,12 +326,12 @@ def rate_2() -> None:
 
 
 @process_psse_api_error_code
-def read() -> None:
+def read(_: int, __: str) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
 @process_psse_api_error_code
-def report_output() -> None:
+def report_output(_islct: int) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
@@ -354,7 +354,7 @@ def is_converged() -> bool:
 
 
 @process_psse_api_error_code
-def two_winding_chng_6() -> None:
+def two_winding_chng_6(_from_bus: int, _to_bus: int, _id: str, **_: Any) -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
@@ -439,7 +439,7 @@ def open_case(case_name: str) -> None:
         case(str(case_path))
     elif case_path.suffix == ".raw":
         read(0, str(case_path))
-    log.info(f"Opened file '{case_path}'")
+    log.info("Opened file '%s'", case_path)
 
 
 def run_solver(

@@ -39,15 +39,15 @@ def get_psse35_paths() -> list[str]:
                     winreg.QueryValueEx(paths_key, key)[0]
                     for key in (
                         "PsseExePath",
-                        f"PsseLocalPsspy{'{}{}'.format(*sys.version_info[:2])}Path",
+                        f"PsseLocalPsspy{sys.version_info[0]}{sys.version_info[1]}Path",
                     )
                 )
-            except FileNotFoundError:
+            except FileNotFoundError as e:
                 psse_minor_version: Final[str] = last_sub_key
                 raise RuntimeError(
-                    f"Python {'{}.{}'.format(*sys.version_info[:2])} "
+                    f"Python {sys.version_info[0]}{sys.version_info[1]} "
                     f"is not supported by PSSE 35.{psse_minor_version}"
-                )
+                ) from e
             for path in psse_paths:
                 if not Path(path).exists:
                     raise IOError(errno.ENOENT, os.strerror(errno.ENOENT), str(path))

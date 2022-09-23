@@ -34,7 +34,7 @@ LOG_LEVEL: Final[int] = (
 
 
 def is_converged() -> bool:
-    return pp_backend.net.get("converged", False)
+    return "converged" in pp_backend.net
 
 
 @functools.cache
@@ -58,7 +58,7 @@ def open_case(case_name: str) -> None:
         raise RuntimeError(
             f"Unsupported file type {case_path.suffix.removeprefix('.')}"
         )
-    log.info(f"Opened file '{case_path}'")
+    log.info("Opened file '%s'", case_path)
     log.info(pp_backend.net)
 
 
@@ -67,7 +67,7 @@ def run_solver(
     solver_opts: Optional[dict] = None,
 ) -> None:
     """Default solver options are empty."""
-    effective_solver_opts = solver_opts or dict()
+    effective_solver_opts = solver_opts or {}
     try:
         if not use_full_newton_raphson:
             pp.runpp(pp_backend.net, **effective_solver_opts)

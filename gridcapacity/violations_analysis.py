@@ -119,7 +119,7 @@ class ViolationsStats:
     ) -> Violations:
         """Return appended violation if it wasn't in base case, else return `NO_VIOLATIONS`"""
         new_violations_added: bool = False
-        log.log(LOG_LEVEL, f"{violation} {limit=} ")
+        log.log(LOG_LEVEL, "%s limit=%s", violation, limit)
         subsystems.log(LOG_LEVEL, violated_subsystem_indexes)
         violated_values: tuple[float, ...]
         if isinstance(subsystems, Buses):
@@ -145,10 +145,7 @@ class ViolationsStats:
     @classmethod
     def _get_subsystems_for_violation(cls, violation: Violations) -> Subsystems:
         subsystems: Subsystems
-        if (
-            violation == Violations.BUS_OVERVOLTAGE
-            or violation == Violations.BUS_UNDERVOLTAGE
-        ):
+        if violation in (Violations.BUS_OVERVOLTAGE, Violations.BUS_UNDERVOLTAGE):
             subsystems = Buses()
         elif violation == Violations.BRANCH_LOADING:
             subsystems = Branches()
@@ -244,7 +241,7 @@ def check_violations(
         v |= Violations.NOT_CONVERGED
         log.log(LOG_LEVEL, "Case not solved!")
         return v
-    log.info(f"\nCHECKING VIOLATIONS")
+    log.info("\nCHECKING VIOLATIONS")
     buses: Buses = Buses()
     if overvoltage_buses_indexes := buses.get_overvoltage_indexes(max_bus_voltage_pu):
         v |= ViolationsStats.append_violations(
