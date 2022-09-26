@@ -115,13 +115,15 @@ class TestCapacityAnalysis(unittest.TestCase):
             with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
                 self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)
 
-    def test_runtime_error(self) -> None:
-        # expecting RuntimeError Violations.TRAFO_LOADING
+    def test_raise_not_converged_base_case(self) -> None:
+        # expecting RuntimeError Violations.NOT_CONVERGED
         with self.assertRaises(RuntimeError):
             buses_headroom(
                 case_name=DEFAULT_CASE,
                 upper_load_limit_p_mw=100.0,
                 upper_gen_limit_p_mw=80.0,
+                # Flat start and non-divergent solution
+                solver_opts={"options6": 1, "options8": 1},
             )
 
     def test_violated_bus_count(self) -> None:

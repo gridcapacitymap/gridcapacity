@@ -38,7 +38,7 @@ def build_headroom() -> None:
     config_file_name: str = sys.argv[1]
     config_model: ConfigModel = load_config_model(config_file_name)
     headroom = buses_headroom(**config_model.dict(exclude_unset=True))
-    if len(headroom):
+    if headroom:
         write_output(config_model.case_name, headroom)
         CapacityAnalysisStats.print()
         print()
@@ -51,6 +51,12 @@ def build_headroom() -> None:
             ViolationsStats.print()
         else:
             print("No violations detected")
+        if not ViolationsStats.base_case_violations_detected():
+            print()
+            print(" BASE CASE VIOLATIONS ".center(80, "="))
+            ViolationsStats.print_base_case_violations()
+        else:
+            print("No base case violations detected")
     else:
         print("No headroom found")
 

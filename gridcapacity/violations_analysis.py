@@ -90,8 +90,12 @@ def limit_value_to_subsystem() -> LimitValueToSubsystem:
     return defaultdict(subsystem_idx_to_violation_values)
 
 
+ViolationTypeToSubsystemIdx = dict[Violations, SubsystemIdxToViolationValues]
+
+
 class ViolationsStats:
     _violations_stats: ViolationTypeToLimitValue = defaultdict(limit_value_to_subsystem)
+    _base_case_violations: ViolationTypeToSubsystemIdx = {}
 
     @classmethod
     def reset(cls) -> None:
@@ -112,8 +116,10 @@ class ViolationsStats:
         limit: float,
         subsystems: Subsystems,
         violated_subsystem_indexes: tuple[int, ...],
-    ) -> None:
-        log.log(LOG_LEVEL, f"{violation} {limit=} ")
+    ) -> Violations:
+        """Return appended violation if it wasn't in base case, else return `NO_VIOLATIONS`"""
+        new_violations_added: bool = False
+        log.log(LOG_LEVEL, "%s limit=%s", violation, limit)
         subsystems.log(LOG_LEVEL, violated_subsystem_indexes)
         violated_values: tuple[float, ...]
         if isinstance(subsystems, Buses):
@@ -125,17 +131,21 @@ class ViolationsStats:
         for subsystem_index, violated_value in zip(
             violated_subsystem_indexes, violated_values
         ):
+            if (
+                base_case_ss_violations := cls._base_case_violations.get(violation)
+            ) is not None and subsystem_index in base_case_ss_violations.keys():
+                # Exclude base case violations from the capacity analysis
+                continue
             cls._violations_stats[violation][limit][subsystem_index].append(
                 violated_value
             )
+            new_violations_added = True
+        return violation if new_violations_added else Violations.NO_VIOLATIONS
 
     @classmethod
     def _get_subsystems_for_violation(cls, violation: Violations) -> Subsystems:
         subsystems: Subsystems
-        if (
-            violation == Violations.BUS_OVERVOLTAGE
-            or violation == Violations.BUS_UNDERVOLTAGE
-        ):
+        if violation in (Violations.BUS_OVERVOLTAGE, Violations.BUS_UNDERVOLTAGE):
             subsystems = Buses()
         elif violation == Violations.BRANCH_LOADING:
             subsystems = Branches()
@@ -176,6 +186,43 @@ class ViolationsStats:
                         f"{subsystems[ss_idx]}: {tuple(sorted(violated_values, reverse=sort_values_descending))}"
                     )
 
+    @classmethod
+    def register_base_case_violations(cls) -> None:
+        cls._base_case_violations = {}
+        for violation, limit_value_to_ss_violations in cls._violations_stats.items():
+            for _, ss_violations in limit_value_to_ss_violations.items():
+                cls._base_case_violations[violation] = ss_violations
+        cls.reset()
+
+    @classmethod
+    def base_case_violations_detected(cls) -> bool:
+        return len(cls._base_case_violations.keys()) == 0
+
+    @classmethod
+    def print_base_case_violations(cls) -> None:
+        for (
+            violation,
+            ss_violations,
+        ) in cls._base_case_violations.items():
+            subsystems: Subsystems = cls._get_subsystems_for_violation(violation)
+            sort_values_descending: bool
+            collection_reducer: Callable[[Collection[float]], float]
+            if violation != Violations.BUS_UNDERVOLTAGE:
+                sort_values_descending = True
+                collection_reducer = max
+            else:
+                sort_values_descending = False
+                collection_reducer = min
+            print(f" {violation} ".center(80, "-"))
+            for ss_idx, violated_values in sorted(
+                ss_violations.items(),
+                key=lambda items: collection_reducer(items[1]),
+                reverse=sort_values_descending,
+            ):
+                print(
+                    f"{subsystems[ss_idx]}: {tuple(sorted(violated_values, reverse=sort_values_descending))}"
+                )
+
 
 def check_violations(
     max_bus_voltage_pu: float = 1.1,
@@ -194,19 +241,17 @@ def check_violations(
         v |= Violations.NOT_CONVERGED
         log.log(LOG_LEVEL, "Case not solved!")
         return v
-    log.info(f"\nCHECKING VIOLATIONS")
+    log.info("\nCHECKING VIOLATIONS")
     buses: Buses = Buses()
     if overvoltage_buses_indexes := buses.get_overvoltage_indexes(max_bus_voltage_pu):
-        v |= Violations.BUS_OVERVOLTAGE
-        ViolationsStats.append_violations(
+        v |= ViolationsStats.append_violations(
             Violations.BUS_OVERVOLTAGE,
             max_bus_voltage_pu,
             buses,
             overvoltage_buses_indexes,
         )
     if undervoltage_buses_indexes := buses.get_undervoltage_indexes(min_bus_voltage_pu):
-        v |= Violations.BUS_UNDERVOLTAGE
-        ViolationsStats.append_violations(
+        v |= ViolationsStats.append_violations(
             Violations.BUS_UNDERVOLTAGE,
             min_bus_voltage_pu,
             buses,
@@ -216,8 +261,7 @@ def check_violations(
     if overloaded_branches_indexes := branches.get_overloaded_indexes(
         max_branch_loading_pct
     ):
-        v |= Violations.BRANCH_LOADING
-        ViolationsStats.append_violations(
+        v |= ViolationsStats.append_violations(
             Violations.BRANCH_LOADING,
             max_branch_loading_pct,
             branches,
@@ -227,8 +271,7 @@ def check_violations(
     if overloaded_trafos_indexes := trafos.get_overloaded_indexes(
         max_trafo_loading_pct
     ):
-        v |= Violations.TRAFO_LOADING
-        ViolationsStats.append_violations(
+        v |= ViolationsStats.append_violations(
             Violations.TRAFO_LOADING,
             max_trafo_loading_pct,
             trafos,
@@ -238,8 +281,7 @@ def check_violations(
     if overloaded_trafos3w_indexes := trafos3w.get_overloaded_indexes(
         max_trafo_loading_pct
     ):
-        v |= Violations.TRAFO_3W_LOADING
-        ViolationsStats.append_violations(
+        v |= ViolationsStats.append_violations(
             Violations.TRAFO_3W_LOADING,
             max_trafo_loading_pct,
             trafos3w,
@@ -249,8 +291,7 @@ def check_violations(
     if overloaded_swing_buses_indexes := swing_buses.get_overloaded_indexes(
         max_swing_bus_power_p_mw
     ):
-        v |= Violations.SWING_BUS_LOADING
-        ViolationsStats.append_violations(
+        v |= ViolationsStats.append_violations(
             Violations.SWING_BUS_LOADING,
             max_swing_bus_power_p_mw,
             swing_buses,

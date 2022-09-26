@@ -88,12 +88,12 @@ def get_default_contingency_limits() -> ViolationsLimits:
         != "contingency_limits"
     ):
         raise RuntimeError(
-            f"`get_contingency_limiting_factor()` 2-nd arg should be `contingency_limits`"
+            "`get_contingency_limiting_factor()` 2-nd arg should be `contingency_limits`"
         )
     if (
         contingency_limiting_factor_defaults := get_contingency_limiting_factor.__defaults__
     ) is None:
-        raise RuntimeError(f"No defaults for `get_contingency_limiting_factor()`")
+        raise RuntimeError("No defaults for `get_contingency_limiting_factor()`")
     # The first `get_contingency_limiting_factor()` argument, `contingency_scenario`,
     # doesn't have a default value,
     # so the `defaults[0]` are defaults for the second argument.

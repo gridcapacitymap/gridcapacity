@@ -88,7 +88,7 @@ pipenv install --skip-lock --dev
 Format code and check typing errors with
 
 ```powershell
-pipenv run isort . ; black . ; mypy .
+pipenv run isort . ; black . ; mypy .; prospector
 ```
 
 Check unused imports with

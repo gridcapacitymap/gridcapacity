@@ -155,13 +155,13 @@ class CapacityAnalyser:
         """Fixed slope Decoupled Newton-Raphson Solver (FDNS) is applicable"""
         self.reload_case()
         run_solver(use_full_newton_raphson=False, solver_opts=self._solver_opts)
-        is_applicable: Final[bool] = True if wf.is_converged() else False
+        is_applicable: Final[bool] = wf.is_converged()
         if not is_applicable:
             # Reload the case and run power flow to get solution convergence
             # after failed FDNS
             self.reload_case()
             run_solver(use_full_newton_raphson=True, solver_opts=self._solver_opts)
-        log.info(f"Case solved")
+        log.info("Case solved")
         return is_applicable
 
     def reload_case(self) -> None:
@@ -169,9 +169,11 @@ class CapacityAnalyser:
 
     def check_base_case_violations(self) -> None:
         """Raise `RuntimeError` if base case has violations"""
+        ViolationsStats.reset()
         base_case_violations: Violations = self.check_violations()
-        if base_case_violations != Violations.NO_VIOLATIONS:
+        if base_case_violations & Violations.NOT_CONVERGED:
             raise RuntimeError(f"The base case has {base_case_violations}")
+        ViolationsStats.register_base_case_violations()
 
     def handle_empty_contingency_scenario(
         self, contingency_scenario: Optional[ContingencyScenario]
@@ -321,10 +323,9 @@ class CapacityAnalyser:
         limiting_factor: Optional[LimitingFactor]
         if (violations := self.check_violations()) != Violations.NO_VIOLATIONS:
             return False, LimitingFactor(violations, None)
-        else:
-            limiting_factor = self.contingency_check()
-            if limiting_factor.v != Violations.NO_VIOLATIONS:
-                return False, limiting_factor
+        limiting_factor = self.contingency_check()
+        if limiting_factor.v != Violations.NO_VIOLATIONS:
+            return False, limiting_factor
         return True, None
 
     def check_violations(self) -> Violations:
