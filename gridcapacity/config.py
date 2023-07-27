@@ -14,13 +14,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, PositiveInt
+from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, PositiveInt, confloat
 
 from gridcapacity.contingency_analysis import ContingencyScenario
 from gridcapacity.violations_analysis import ViolationsLimits
+
+
+@dataclass
+class ConnectionPower:
+    p_mw: float
+    pf: confloat(ge=0, le=1) = 0.9
+
+
+@dataclass
+class BusConnection:
+    load: Optional[ConnectionPower] = None
+    gen: Optional[ConnectionPower] = None
+
+
+ConnectionScenario = dict[str, BusConnection]
 
 
 class ConfigModel(BaseModel):
@@ -52,6 +68,7 @@ class ConfigModel(BaseModel):
         trafo_rate="Rate1",
     )
     contingency_scenario: Optional[ContingencyScenario]
+    connection_scenario: Optional[ConnectionScenario]
 
 
 def load_config_model(config_file_name: str) -> ConfigModel:

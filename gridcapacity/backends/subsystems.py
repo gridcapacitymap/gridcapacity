@@ -246,6 +246,81 @@ class Bus:
     number: int
     ex_name: str
     type: int
+
+    def add_load(self, load_mva: complex, load_id: str = "Tm") -> None:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            wf.load_data_6(
+                self.number,
+                load_id,
+                realar=[load_mva.real, load_mva.imag],
+            )
+        else:
+            pp.create_load(
+                pp_backend.net,
+                self.pp_idx,
+                load_mva.real,
+                load_mva.imag,
+                name=load_id,
+            )
+
+    def add_gen(self, gen_mva: complex, gen_id: str = "Tm") -> None:
+        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+            wf.machine_data_4(
+                self.number,
+                gen_id,
+                realar=[gen_mva.real, gen_mva.imag],
+            )
+        else:
+            pp.create_sgen(
+                pp_backend.net,
+                self.pp_idx,
+                gen_mva.real,
+                gen_mva.imag,
+                name=gen_id,
+            )
+
+    def load_mva(self) -> complex:
+        """Return sum of all bus loads."""
+        actual_load_mva: complex = 0j
+        loads_iterator: Iterator = iter(Loads())
+        loads_available: bool = True
+        try:
+            load: Load = next(loads_iterator)
+        except StopIteration:
+            loads_available = False
+        # Buses and loads are sorted by bus number [PSSE API.pdf].
+        # So loads are iterated until load bus number is lower or equal
+        # to the bus number.
+        while loads_available and load.number <= self.number:
+            if load.number == self.number:
+                actual_load_mva += load.mva_act
+            try:
+                load = next(loads_iterator)
+            except StopIteration:
+                loads_available = False
+        return actual_load_mva
+
+    def gen_mva(self) -> complex:
+        """Return sum of all bus generators."""
+        actual_gen_mva: complex = 0j
+        machines_iterator: Iterator = iter(Machines())
+        machines_available: bool = True
+        try:
+            machine: Machine = next(machines_iterator)
+        except StopIteration:
+            machines_available = False
+        # Buses and machines are sorted by bus number [PSSE API.pdf].
+        # So machines are iterated until machine bus number is lower or equal
+        # to the bus number.
+        while machines_available and machine.number <= self.number:
+            if machine.number == self.number:
+                actual_gen_mva += machine.pq_gen
+            try:
+                machine = next(machines_iterator)
+            except StopIteration:
+                machines_available = False
+        return actual_gen_mva
+
     if sys.platform != "win32" or PANDAPOWER_BACKEND:
 
         @property
@@ -500,21 +575,7 @@ class TemporaryBusLoad:
         self._load_mva: complex
 
     def __enter__(self) -> None:
-        # Create load
-        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
-            wf.load_data_6(
-                self._bus.number,
-                self.TEMP_LOAD_ID,
-                realar=[self._load_mva.real, self._load_mva.imag],
-            )
-        else:
-            pp.create_load(
-                pp_backend.net,
-                self._bus.pp_idx,
-                self._load_mva.real,
-                self._load_mva.imag,
-                name=self.TEMP_LOAD_ID,
-            )
+        self._bus.add_load(self._load_mva)
 
     def __exit__(
         self,
@@ -551,21 +612,7 @@ class TemporaryBusMachine:
         self._gen_mva: complex
 
     def __enter__(self) -> None:
-        # Create machine
-        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
-            wf.machine_data_4(
-                self._bus.number,
-                self.TEMP_MACHINE_ID,
-                realar=[self._gen_mva.real, self._gen_mva.imag],
-            )
-        else:
-            pp.create_sgen(
-                pp_backend.net,
-                self._bus.pp_idx,
-                self._gen_mva.real,
-                self._gen_mva.imag,
-                name=self.TEMP_MACHINE_ID,
-            )
+        self._bus.add_gen(self._gen_mva)
 
     def __exit__(
         self,

@@ -1,5 +1,5 @@
 """
-Copyright 2022 Vattenfall AB
+Copyright 2023 Vattenfall AB
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ from gridcapacity.capacity_analysis import (
     UnfeasibleCondition,
     buses_headroom,
 )
+from gridcapacity.config import BusConnection, ConnectionPower, ConnectionScenario
 from gridcapacity.contingency_analysis import ContingencyScenario, LimitingFactor
 from gridcapacity.violations_analysis import Violations, ViolationsLimits
 from tests import DEFAULT_CASE
@@ -33,7 +34,7 @@ if sys.platform == "win32" and not PANDAPOWER_BACKEND:
     from gridcapacity.backends.psse import init_psse
 
 
-class TestCapacityAnalysis(unittest.TestCase):
+class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
     headroom: Headroom
 
     @classmethod
@@ -68,31 +69,40 @@ class TestCapacityAnalysis(unittest.TestCase):
                 ),
                 trafos=(Trafo(3001, 3002), Trafo(3004, 3005)),
             ),
+            connection_scenario={
+                "3008": BusConnection(load=ConnectionPower(80)),
+                "3005": BusConnection(load=ConnectionPower(70)),
+                "3011": BusConnection(gen=ConnectionPower(30)),
+            },
         )
 
     def test_capacity_analysis_stats(self) -> None:
         self.assertEqual(0, len(CapacityAnalysisStats.contingencies_dict()))
-        self.assertEqual(21, len(CapacityAnalysisStats.feasibility_dict()))
+        self.assertEqual(17, len(CapacityAnalysisStats.feasibility_dict()))
         self.assertEqual(
             [
                 UnfeasibleCondition(
-                    -80 - 38.74576838702821j,
+                    100 + 48.432210483785255j,
                     LimitingFactor(
-                        Violations.BUS_UNDERVOLTAGE | Violations.BUS_OVERVOLTAGE,
+                        Violations.BUS_UNDERVOLTAGE,
                         ss=None,
                     ),
                 ),
                 UnfeasibleCondition(
-                    -15 - 7.264831572567789j,
+                    50 + 24.216105241892627j,
                     LimitingFactor(
-                        Violations.BUS_UNDERVOLTAGE | Violations.BUS_OVERVOLTAGE,
+                        Violations.BUS_UNDERVOLTAGE,
                         ss=None,
                     ),
                 ),
+                UnfeasibleCondition(
+                    25 + 12.108052620946314j,
+                    lf=LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                ),
             ],
             CapacityAnalysisStats.feasibility_dict()[
-                Bus(number=101, ex_name="NUC-A       21.600", type=2)
-            ][0:-1:3],
+                Bus(number=152, ex_name="MID500      500.00", type=1)
+            ],
         )
 
     def test_loads_avail_mva(self) -> None:
@@ -101,8 +111,8 @@ class TestCapacityAnalysis(unittest.TestCase):
             bus_idx,
             load_avail_mva,
         ) in (
-            (5, 0),
-            (3, 65.625 + 31.783638129984077j),
+            (5, 9.375 + 4.540519732854868j),
+            (3, 21.875 + 10.594546043328025j),
             (0, 100 + 48.432210483785255j),
         ):
             with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
@@ -115,8 +125,8 @@ class TestCapacityAnalysis(unittest.TestCase):
             gen_avail_mva,
         ) in (
             (3, 0),
-            (12, 25 + 12.108052620946314j),
-            (21, 52.5 + 25.42691050398726j),
+            (12, 80 + 38.74576838702821j),
+            (21, 80 + 38.74576838702821j),
         ):
             with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
                 self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)

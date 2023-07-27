@@ -425,7 +425,8 @@ def _get_case_path(case_name: str) -> Path:
 def _get_example_case_path(case_path: Path) -> Path:
     """Get example case filepath from the case filename.
 
-    The `EXAMPLE` directory is retrieved based on the current `psspy` module location."""
+    The `EXAMPLE` directory is retrieved based on the current `psspy` module location.
+    """
     psspy_path: Path = Path(psspy.__file__)
     psse_path = psspy_path.parents[1]
     examples_path = psse_path / "EXAMPLE"

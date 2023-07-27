@@ -17,6 +17,7 @@ import os
 import sys
 import unittest
 
+from gridcapacity import ViolationsStats
 from gridcapacity.backends import wrapped_funcs as wf
 from gridcapacity.backends.subsystems import Branch
 from gridcapacity.contingency_analysis import (
@@ -40,6 +41,7 @@ class TestContingencyAnalysis(unittest.TestCase):
         if sys.platform == "win32" and not PANDAPOWER_BACKEND:
             init_psse()
         wf.open_case(DEFAULT_CASE)
+        ViolationsStats.reset_base_case_violations()
 
     def test_get_contingency_limiting_factor(self) -> None:
         self.assertEqual(

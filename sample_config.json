@@ -42,5 +42,16 @@
             [3004, 3005]
         ]
     },
+    "connection_scenario": {
+        "3008": {
+            "load": [80]
+        },
+        "3005": {
+            "load": [70]
+        },
+        "3011": {
+            "gen": [30, 0.8]
+        }
+    },
     "use_full_newton_raphson": false
 }
