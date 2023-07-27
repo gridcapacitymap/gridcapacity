@@ -16,8 +16,7 @@ limitations under the License.
 """
 import dataclasses
 import logging
-import math
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass
 from pprint import pprint
@@ -53,6 +52,8 @@ from gridcapacity.violations_analysis import (
 )
 
 from .backends import wrapped_funcs as wf
+from .config import BusConnection, ConnectionScenario
+from .utils import p_to_mva
 
 log = logging.getLogger(__name__)
 
@@ -90,6 +91,9 @@ class UnfeasibleCondition:
     lf: LimitingFactor
 
 
+SortedConnectionScenario = OrderedDict[int, BusConnection]
+
+
 class CapacityAnalyser:
     """This class is made to simplify arguments passing
     between the capacity analysis steps:
@@ -113,19 +117,16 @@ class CapacityAnalyser:
         normal_limits: Optional[ViolationsLimits],
         contingency_limits: Optional[ViolationsLimits],
         contingency_scenario: Optional[ContingencyScenario] = None,
+        connection_scenario: Optional[ConnectionScenario] = None,
     ):
         self._case_name: str = case_name
-        upper_load_limit_q_mw: Final[float] = upper_load_limit_p_mw * math.tan(
-            math.acos(load_power_factor)
+        self._load_power_factor: float = load_power_factor
+        self._gen_power_factor: float = gen_power_factor
+        self._upper_load_limit_mva: Final[complex] = p_to_mva(
+            upper_load_limit_p_mw, self._load_power_factor
         )
-        self._upper_load_limit_mva: Final[complex] = (
-            upper_load_limit_p_mw + 1j * upper_load_limit_q_mw
-        )
-        upper_gen_limit_q_mw: Final[float] = upper_gen_limit_p_mw * math.tan(
-            math.acos(gen_power_factor)
-        )
-        self._upper_gen_limit_mva: Final[complex] = (
-            upper_gen_limit_p_mw + 1j * upper_gen_limit_q_mw
+        self._upper_gen_limit_mva: Final[complex] = p_to_mva(
+            upper_gen_limit_p_mw, self._gen_power_factor
         )
         self._selected_buses_ids: Optional[Collection[int]] = selected_buses_ids
         self._headroom_tolerance_p_mw: Final[float] = headroom_tolerance_p_mw
@@ -133,23 +134,14 @@ class CapacityAnalyser:
         self._max_iterations: Final[int] = max_iterations
         self._normal_limits: Final[Optional[ViolationsLimits]] = normal_limits
         self._contingency_limits: Final[Optional[ViolationsLimits]] = contingency_limits
+        self._connection_scenario: Optional[
+            SortedConnectionScenario
+        ] = sort_connection_scenario(connection_scenario)
         self._use_full_newton_raphson: Final[bool] = not self.fdns_is_applicable()
         self.check_base_case_violations()
         self._contingency_scenario: Final[
             ContingencyScenario
         ] = self.handle_empty_contingency_scenario(contingency_scenario)
-        self._loads_iterator: Iterator = iter(Loads())
-        self._loads_available: bool = True
-        try:
-            self._load: Load = next(self._loads_iterator)
-        except StopIteration:
-            self._loads_available = False
-        self._machines_iterator: Iterator = iter(Machines())
-        self._machines_available: bool = True
-        try:
-            self._machine: Machine = next(self._machines_iterator)
-        except StopIteration:
-            self._machines_available = False
 
     def fdns_is_applicable(self) -> bool:
         """Fixed slope Decoupled Newton-Raphson Solver (FDNS) is applicable"""
@@ -166,10 +158,40 @@ class CapacityAnalyser:
 
     def reload_case(self) -> None:
         wf.open_case(self._case_name)
+        self.apply_connection_scenario()
+
+    def apply_connection_scenario(self) -> None:
+        if self._connection_scenario is None:
+            return
+        connections_iterator: Iterator = iter(self._connection_scenario.items())
+        connections_available: bool = True
+        bus_number = 0
+        connection = BusConnection(load=None)
+        try:
+            bus_number, connection = next(connections_iterator)
+        except StopIteration:
+            connections_available = False
+        for bus in Buses():
+            if connections_available and bus.number == bus_number:
+                if (load_connection := connection.load) is not None:
+                    bus.add_load(
+                        p_to_mva(load_connection.p_mw, load_connection.pf),
+                        "CR",
+                    )
+                if (gen_connection := connection.gen) is not None:
+                    bus.add_gen(
+                        p_to_mva(gen_connection.p_mw, gen_connection.pf),
+                        "CR",
+                    )
+                try:
+                    bus_number, connection = next(connections_iterator)
+                except StopIteration:
+                    connections_available = False
 
     def check_base_case_violations(self) -> None:
         """Raise `RuntimeError` if base case has violations"""
         ViolationsStats.reset()
+        CapacityAnalysisStats.reset()
         base_case_violations: Violations = self.check_violations()
         if base_case_violations & Violations.NOT_CONVERGED:
             raise RuntimeError(f"The base case has {base_case_violations}")
@@ -211,8 +233,8 @@ class CapacityAnalyser:
 
     def bus_headroom(self, bus: Bus, progress: tqdm) -> BusHeadroom:
         """Return bus actual load and max additional PQ power in MVA"""
-        actual_load_mva: complex = self.bus_actual_load_mva(bus.number)
-        actual_gen_mva: complex = self.bus_actual_gen_mva(bus.number)
+        actual_load_mva: complex = bus.load_mva()
+        actual_gen_mva: complex = bus.gen_mva()
         load_lf: Optional[LimitingFactor]
         load_available_mva: complex
         temp_load: TemporaryBusLoad = TemporaryBusLoad(bus)
@@ -250,36 +272,6 @@ class CapacityAnalyser:
             load_lf=load_lf,
             gen_lf=gen_lf,
         )
-
-    def bus_actual_load_mva(self, bus_number: int) -> complex:
-        """Return sum of all bus loads"""
-        actual_load_mva: complex = 0j
-        # Buses and loads are sorted by bus number [PSSE API.pdf].
-        # So loads are iterated until load bus number is lower or equal
-        # to the bus number.
-        while self._loads_available and self._load.number <= bus_number:
-            if self._load.number == bus_number:
-                actual_load_mva += self._load.mva_act
-            try:
-                self._load = next(self._loads_iterator)
-            except StopIteration:
-                self._loads_available = False
-        return actual_load_mva
-
-    def bus_actual_gen_mva(self, bus_number: int) -> complex:
-        """Return sum of all bus generators"""
-        actual_gen_mva: complex = 0j
-        # Buses and machines are sorted by bus number [PSSE API.pdf].
-        # So machines are iterated until machine bus number is lower or equal
-        # to the bus number.
-        while self._machines_available and self._machine.number <= bus_number:
-            if self._machine.number == bus_number:
-                actual_gen_mva += self._machine.pq_gen
-            try:
-                self._machine = next(self._machines_iterator)
-            except StopIteration:
-                self._machines_available = False
-        return actual_gen_mva
 
     def max_power_available_mva(
         self,
@@ -425,6 +417,24 @@ class CapacityAnalysisStats:
                 )
                 pprint(dict(bus_to_contingency_conditions))
 
+    @classmethod
+    def reset(cls) -> None:
+        cls._feasibility_stats = defaultdict(list)
+        cls._contingency_stats = defaultdict(bus_to_contingency_conditions)
+
+
+def sort_connection_scenario(
+    connection_scenario: Optional[ConnectionScenario],
+) -> Optional[SortedConnectionScenario]:
+    if connection_scenario is None:
+        return None
+    return OrderedDict(
+        tuple(
+            (int(k), v)
+            for (k, v) in sorted(connection_scenario.items(), key=lambda kv: int(kv[0]))
+        )
+    )
+
 
 def buses_headroom(
     case_name: str,
@@ -439,6 +449,7 @@ def buses_headroom(
     normal_limits: Optional[ViolationsLimits] = None,
     contingency_limits: Optional[ViolationsLimits] = None,
     contingency_scenario: Optional[ContingencyScenario] = None,
+    connection_scenario: Optional[ConnectionScenario] = None,
 ) -> Headroom:
     """Return actual load and max additional PQ power in MVA for each bus."""
     capacity_analyser: CapacityAnalyser = CapacityAnalyser(
@@ -454,5 +465,6 @@ def buses_headroom(
         normal_limits,
         contingency_limits,
         contingency_scenario,
+        connection_scenario,
     )
     return capacity_analyser.buses_headroom()

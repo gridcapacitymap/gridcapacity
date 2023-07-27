@@ -188,11 +188,15 @@ class ViolationsStats:
 
     @classmethod
     def register_base_case_violations(cls) -> None:
-        cls._base_case_violations = {}
+        cls.reset_base_case_violations()
         for violation, limit_value_to_ss_violations in cls._violations_stats.items():
             for _, ss_violations in limit_value_to_ss_violations.items():
                 cls._base_case_violations[violation] = ss_violations
         cls.reset()
+
+    @classmethod
+    def reset_base_case_violations(cls) -> None:
+        cls._base_case_violations = {}
 
     @classmethod
     def base_case_violations_detected(cls) -> bool:
