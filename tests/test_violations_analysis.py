@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import os
 import sys
 import unittest
 
 from gridcapacity.backends import wrapped_funcs as wf
+from gridcapacity.envs import envs
 from gridcapacity.violations_analysis import (
     Violations,
     ViolationsStats,
@@ -25,15 +25,14 @@ from gridcapacity.violations_analysis import (
 )
 from tests import DEFAULT_CASE
 
-PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
-if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+if sys.platform == "win32" and not envs.pandapower_backend:
     from gridcapacity.backends.psse import init_psse
 
 
 class TestViolationsAnalysis(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+        if sys.platform == "win32" and not envs.pandapower_backend:
             init_psse()
         ViolationsStats.reset()
 

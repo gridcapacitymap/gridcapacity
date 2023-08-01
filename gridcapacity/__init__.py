@@ -14,22 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import os
 import sys
+
+from rich.logging import RichHandler
 
 from gridcapacity.capacity_analysis import CapacityAnalysisStats, buses_headroom
 from gridcapacity.config import ConfigModel, load_config_model
-from gridcapacity.output import write_output
+from gridcapacity.console import console
+from gridcapacity.envs import envs
+from gridcapacity.output import write_headroom_output
 from gridcapacity.violations_analysis import ViolationsStats
 
 
 def build_headroom() -> None:
-    logging_level: int = (
-        logging.WARNING
-        if not os.environ.get("GRID_CAPACITY_VERBOSE")
-        else logging.DEBUG
+    logging_level: int = logging.WARNING if not envs.verbose else logging.DEBUG
+    logging.basicConfig(
+        level=logging_level, handlers=[RichHandler(rich_tracebacks=True)]
     )
-    logging.basicConfig(level=logging_level)
     if len(sys.argv) != 2:
         raise RuntimeError(
             f"Config file name should be specified "
@@ -39,26 +40,23 @@ def build_headroom() -> None:
     config_model: ConfigModel = load_config_model(config_file_name)
     headroom = buses_headroom(**config_model.dict(exclude_unset=True))
     if headroom:
-        write_output(config_model.case_name, headroom)
+        write_headroom_output(config_model.case_name, headroom)
         CapacityAnalysisStats.print()
-        print()
-        print(" HEADROOM ".center(80, "="))
+        console.rule("HEADROOM")
         for bus_headroom in headroom:
-            print(bus_headroom)
+            console.print(bus_headroom)
         if not ViolationsStats.is_empty():
-            print()
-            print(" VIOLATIONS STATS ".center(80, "="))
+            console.rule("VIOLATIONS STATS")
             ViolationsStats.print()
         else:
-            print("No violations detected")
+            console.print("No violations detected", style="green")
         if not ViolationsStats.base_case_violations_detected():
-            print()
-            print(" BASE CASE VIOLATIONS ".center(80, "="))
+            console.rule("[bold red]BASE CASE VIOLATIONS")
             ViolationsStats.print_base_case_violations()
         else:
-            print("No base case violations detected")
+            console.print("No base case violations detected", style="green")
     else:
-        print("No headroom found")
+        console.print("No headroom found", style="bold red")
 
 
 if __name__ == "__main__":

@@ -18,30 +18,34 @@ import json
 from pathlib import Path
 from typing import Any
 
+import rich
+
+from gridcapacity.backends.subsystems import (
+    DataExportBranch,
+    DataExportBus,
+    DataExportLoad,
+    DataExportMachine,
+    DataExportTrafo,
+    DataExportTrafo3w,
+)
 from gridcapacity.capacity_analysis import CapacityAnalysisStats, Headroom
 from gridcapacity.violations_analysis import Violations, ViolationsStats
 
 
-def write_output(case_name: str, headroom: Headroom) -> None:
+def write_headroom_output(case_name: str, headroom: Headroom) -> None:
     case_path: Path = Path(case_name)
-    output_folder: Path = (
-        case_path if case_path.is_absolute() else Path(__file__).absolute().parents[1]
-    )
-    output_file_prefix: str = case_name.removesuffix(case_path.suffix)
-    headroom_output: Path = output_folder / (output_file_prefix + "_headroom.json")
-    violation_stats_output: Path = output_folder / (
-        output_file_prefix + "_violation_stats.json"
+    output_folder = get_output_folder(case_path)
+    output_file_prefix = case_path.stem
+    headroom_output: Path = output_folder / f"{output_file_prefix}_headroom.json"
+    violation_stats_output: Path = (
+        output_folder / f"{output_file_prefix}_violation_stats.json"
     )
     contingency_stats_output: Path = output_folder / (
-        output_file_prefix + "_contingency_stats.json"
+        f"{output_file_prefix}_contingency_stats.json"
     )
     feasibility_stats_output: Path = output_folder / (
-        output_file_prefix + "_feasibility_stats.json"
+        f"{output_file_prefix}_feasibility_stats.json"
     )
-    json_dump_kwargs: dict = {
-        "indent": 2,
-        "default": json_encode_helper,
-    }
     json.dump(
         {"headroom": headroom},
         headroom_output.open("w", encoding="utf-8"),
@@ -81,7 +85,38 @@ def write_output(case_name: str, headroom: Headroom) -> None:
         feasibility_stats_output.open("w", encoding="utf-8"),
         **json_dump_kwargs,
     )
-    print(f'Headroom was written to "{headroom_output}"')
+    rich.print(f'Headroom was written to "{headroom_output}"')
+
+
+@dataclasses.dataclass
+class ExportedData:
+    buses: tuple[DataExportBus, ...]
+    branches: tuple[DataExportBranch, ...]
+    trafos: tuple[DataExportTrafo, ...]
+    trafos3w: tuple[DataExportTrafo3w, ...]
+    loads: tuple[DataExportLoad, ...]
+    gens: tuple[DataExportMachine, ...]
+
+
+def write_exported_data(case_name: str, exported_data: ExportedData) -> None:
+    case_path: Path = Path(case_name)
+    output_folder = get_output_folder(case_path)
+    output_file_prefix = case_path.stem
+    exported_data_path: Path = (
+        output_folder / f"{output_file_prefix}_exported_data.json"
+    )
+    json.dump(
+        exported_data,
+        exported_data_path.open("w", encoding="utf-8"),
+        **json_dump_kwargs,
+    )
+    rich.print(f'Exported data was written to "{exported_data_path}"')
+
+
+def get_output_folder(case_path: Path) -> Path:
+    return (
+        case_path if case_path.is_absolute() else Path(__file__).absolute().parents[1]
+    )
 
 
 def json_encode_helper(obj: Any) -> Any:
@@ -92,3 +127,9 @@ def json_encode_helper(obj: Any) -> Any:
     if dataclasses.is_dataclass(obj):
         return dataclasses.asdict(obj)
     raise TypeError(f"{obj=} is not serializable")
+
+
+json_dump_kwargs: dict = {
+    "indent": 2,
+    "default": json_encode_helper,
+}

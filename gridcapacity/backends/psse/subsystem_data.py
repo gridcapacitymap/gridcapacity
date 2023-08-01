@@ -16,17 +16,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import os
 from collections.abc import Callable
 from typing import Final, Optional, Union
 
+from ...envs import envs
 from . import wrapped_funcs as wf
 
 log = logging.getLogger(__name__)
 LOG_LEVEL: Final[int] = (
-    logging.INFO
-    if not os.getenv("GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS")
-    else logging.WARNING
+    logging.INFO if not envs.treat_violations_as_warnings else logging.WARNING
 )
 field_type2func_suffix: Final[dict[str, str]] = {
     "I": "int",

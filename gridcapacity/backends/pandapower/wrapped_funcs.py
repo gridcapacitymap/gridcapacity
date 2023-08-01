@@ -24,12 +24,11 @@ import pandapower as pp
 from pandapower import LoadflowNotConverged
 
 import gridcapacity.backends.pandapower as pp_backend
+from gridcapacity.envs import envs
 
 log = logging.getLogger(__name__)
 LOG_LEVEL: Final[int] = (
-    logging.INFO
-    if not os.getenv("GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS")
-    else logging.WARNING
+    logging.INFO if not envs.treat_violations_as_warnings else logging.WARNING
 )
 
 

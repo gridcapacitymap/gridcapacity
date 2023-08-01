@@ -23,11 +23,11 @@ from typing import Any, Callable, Final, Optional
 
 import psspy
 
+from gridcapacity.envs import envs
+
 log = logging.getLogger(__name__)
 LOG_LEVEL: Final[int] = (
-    logging.INFO
-    if not os.getenv("GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS")
-    else logging.WARNING
+    logging.INFO if not envs.treat_violations_as_warnings else logging.WARNING
 )
 
 
@@ -102,6 +102,11 @@ def abuschar() -> list[list[str]]:
 
 @process_psse_api_error_code
 def abuscplx() -> list[list[complex]]:
+    pass  # Functionality is implemented by wrapped PSSE API function
+
+
+@process_psse_api_error_code
+def busint(ibus: int, string: str) -> int:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 
@@ -247,6 +252,26 @@ def awndreal() -> list[list[float]]:
 
 @process_psse_api_error_code
 def awndtypes() -> list[list[str]]:
+    pass  # Functionality is implemented by wrapped PSSE API function
+
+
+@process_psse_api_error_code
+def aareachar() -> list[list[str]]:
+    pass  # Functionality is implemented by wrapped PSSE API function
+
+
+@process_psse_api_error_code
+def aareaint() -> list[list[int]]:
+    pass  # Functionality is implemented by wrapped PSSE API function
+
+
+@process_psse_api_error_code
+def azonechar(string="zonename") -> list[list[str]]:
+    pass  # Functionality is implemented by wrapped PSSE API function
+
+
+@process_psse_api_error_code
+def azoneint() -> list[list[int]]:
     pass  # Functionality is implemented by wrapped PSSE API function
 
 

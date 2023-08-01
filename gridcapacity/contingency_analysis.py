@@ -17,14 +17,9 @@ import dataclasses
 from dataclasses import dataclass
 from typing import Optional, Union
 
-from gridcapacity.backends.subsystems import (
-    Branch,
-    Branches,
-    Trafo,
-    Trafos,
-    disable_branch,
-    disable_trafo,
-)
+from gridcapacity.backends.subsystems import Branches, Trafos
+from gridcapacity.backends.subsystems.branch import Branch, disable_branch
+from gridcapacity.backends.subsystems.trafo import Trafo, disable_trafo
 from gridcapacity.violations_analysis import (
     Violations,
     ViolationsLimits,

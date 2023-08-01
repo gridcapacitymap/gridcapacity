@@ -19,7 +19,6 @@ import logging
 from collections import OrderedDict, defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass
-from pprint import pprint
 from typing import Final, Iterator, Optional
 
 from tqdm import tqdm
@@ -27,14 +26,11 @@ from tqdm import tqdm
 from gridcapacity.backends.subsystems import (
     Bus,
     Buses,
-    Load,
-    Loads,
-    Machine,
-    Machines,
     TemporaryBusLoad,
     TemporaryBusMachine,
     TemporaryBusSubsystem,
 )
+from gridcapacity.console import console
 from gridcapacity.contingency_analysis import (
     ContingencyScenario,
     LimitingFactor,
@@ -215,7 +211,7 @@ class CapacityAnalyser:
     def buses_headroom(self) -> Headroom:
         """Return actual load and max additional PQ power in MVA for each bus"""
         buses: Buses = Buses()
-        print("Analysing headroom")
+        console.print("Analysing headroom", style="blue")
         with tqdm(
             total=len(buses)
             if self._selected_buses_ids is None
@@ -396,14 +392,12 @@ class CapacityAnalysisStats:
     @classmethod
     def print(cls) -> None:
         if len(cls._feasibility_stats.keys()):
-            print()
-            print(" FEASIBILITY STATS ".center(80, "="))
+            console.rule("FEASIBILITY STATS")
             for bus, unfeasible_conditions in cls._feasibility_stats.items():
-                print(f"{bus}[{len(unfeasible_conditions)}]:")
-                pprint(unfeasible_conditions)
+                console.print(f"{bus}[{len(unfeasible_conditions)}]:")
+                console.print(unfeasible_conditions)
         if len(cls._contingency_stats.keys()):
-            print()
-            print(" CONTINGENCIES STATS ".center(80, "="))
+            console.rule("CONTINGENCIES STATS")
             for contingency, bus_to_contingency_conditions in sorted(
                 cls._contingency_stats.items(),
                 key=lambda items: sum(
@@ -412,10 +406,10 @@ class CapacityAnalysisStats:
                 ),
                 reverse=True,
             ):
-                print(
+                console.print(
                     f"{contingency=}[{sum(len(violations) for violations in bus_to_contingency_conditions.values())}]:"
                 )
-                pprint(dict(bus_to_contingency_conditions))
+                console.print(dict(bus_to_contingency_conditions))
 
     @classmethod
     def reset(cls) -> None:
