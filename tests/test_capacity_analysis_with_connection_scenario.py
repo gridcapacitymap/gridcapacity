@@ -13,11 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import os
 import sys
 import unittest
 
-from gridcapacity.backends.subsystems import Branch, Bus, Trafo
+from gridcapacity.backends.subsystems import Bus
+from gridcapacity.backends.subsystems.branch import Branch
+from gridcapacity.backends.subsystems.trafo import Trafo
 from gridcapacity.capacity_analysis import (
     CapacityAnalysisStats,
     Headroom,
@@ -26,11 +27,11 @@ from gridcapacity.capacity_analysis import (
 )
 from gridcapacity.config import BusConnection, ConnectionPower, ConnectionScenario
 from gridcapacity.contingency_analysis import ContingencyScenario, LimitingFactor
+from gridcapacity.envs import envs
 from gridcapacity.violations_analysis import Violations, ViolationsLimits
 from tests import DEFAULT_CASE
 
-PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
-if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+if sys.platform == "win32" and not envs.pandapower_backend:
     from gridcapacity.backends.psse import init_psse
 
 
@@ -39,7 +40,7 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+        if sys.platform == "win32" and not envs.pandapower_backend:
             init_psse()
         cls.headroom = buses_headroom(
             case_name=DEFAULT_CASE,

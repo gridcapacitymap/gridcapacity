@@ -15,7 +15,6 @@ limitations under the License.
 """
 import enum
 import logging
-import os
 from collections import defaultdict
 from collections.abc import Callable, Collection
 from dataclasses import dataclass
@@ -30,12 +29,12 @@ from gridcapacity.backends.subsystems import (
     Trafos,
     Trafos3w,
 )
+from gridcapacity.console import console
+from gridcapacity.envs import envs
 
 log = logging.getLogger(__name__)
 LOG_LEVEL: Final[int] = (
-    logging.INFO
-    if not os.getenv("GRID_CAPACITY_TREAT_VIOLATIONS_AS_WARNINGS")
-    else logging.WARNING
+    logging.INFO if not envs.treat_violations_as_warnings else logging.WARNING
 )
 
 
@@ -176,13 +175,13 @@ class ViolationsStats:
                 key=lambda items: items[0],
                 reverse=sort_values_descending,
             ):
-                print(f" {violation} {limit=} ".center(80, "-"))
+                console.rule(f"[red]{violation} {limit=} ", align="left")
                 for ss_idx, violated_values in sorted(
                     ss_violations.items(),
                     key=lambda items: collection_reducer(items[1]),
                     reverse=sort_values_descending,
                 ):
-                    print(
+                    console.print(
                         f"{subsystems[ss_idx]}: {tuple(sorted(violated_values, reverse=sort_values_descending))}"
                     )
 
@@ -217,13 +216,13 @@ class ViolationsStats:
             else:
                 sort_values_descending = False
                 collection_reducer = min
-            print(f" {violation} ".center(80, "-"))
+            console.rule(f"[red]{violation}", align="left")
             for ss_idx, violated_values in sorted(
                 ss_violations.items(),
                 key=lambda items: collection_reducer(items[1]),
                 reverse=sort_values_descending,
             ):
-                print(
+                console.print(
                     f"{subsystems[ss_idx]}: {tuple(sorted(violated_values, reverse=sort_values_descending))}"
                 )
 

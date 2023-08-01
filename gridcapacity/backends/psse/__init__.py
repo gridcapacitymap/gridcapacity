@@ -17,6 +17,8 @@ import os
 import sys
 from typing import Final
 
+from ...envs import envs
+
 assert sys.platform == "win32"
 
 from .path_helper import get_psse35_paths
@@ -39,7 +41,7 @@ def init_psse() -> None:
     except redirect.RedirectError:
         pass
     psspy.psseinit()
-    if not os.environ.get("GRID_CAPACITY_VERBOSE"):
+    if not envs.verbose:
         # Suppress all PSSE output
         no_output: Final[int] = 6
         wf.alert_output(no_output)

@@ -13,13 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import os
 import sys
 import unittest
 
 from gridcapacity import ViolationsStats
 from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.backends.subsystems import Branch
+from gridcapacity.backends.subsystems.branch import Branch
 from gridcapacity.contingency_analysis import (
     ContingencyScenario,
     LimitingFactor,
@@ -27,18 +26,18 @@ from gridcapacity.contingency_analysis import (
     get_contingency_scenario,
     get_default_contingency_limits,
 )
+from gridcapacity.envs import envs
 from gridcapacity.violations_analysis import Violations, ViolationsLimits
 from tests import DEFAULT_CASE
 
-PANDAPOWER_BACKEND: bool = os.getenv("GRID_CAPACITY_PANDAPOWER_BACKEND") is not None
-if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+if sys.platform == "win32" and not envs.pandapower_backend:
     from gridcapacity.backends.psse import init_psse
 
 
 class TestContingencyAnalysis(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        if sys.platform == "win32" and not PANDAPOWER_BACKEND:
+        if sys.platform == "win32" and not envs.pandapower_backend:
             init_psse()
         wf.open_case(DEFAULT_CASE)
         ViolationsStats.reset_base_case_violations()

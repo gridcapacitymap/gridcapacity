@@ -1,5 +1,5 @@
 """
-Copyright 2022 Vattenfall AB
+Copyright 2023 Vattenfall AB
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,17 +13,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import logging
 import sys
 
-from ..envs import envs
+from ...envs import envs
 
 if sys.platform == "win32" and not envs.pandapower_backend:
-    print("Importing PSSE")
-    from .psse import init_psse, wrapped_funcs
+    import psspy
 
-    init_psse()
-else:
-    print("Using PandaPower as a solver backend")
-    from .pandapower import wrapped_funcs  # type: ignore[no-redef]
+    from ..psse import wrapped_funcs as wf
 
-__all__ = ["wrapped_funcs"]
+log = logging.getLogger(__name__)
+
+
+class ZoneByNumber(dict[int, str]):
+    def __init__(self):
+        super().__init__()
+        names = wf.azonechar(string="zonename")[0]
+        numbers = wf.azoneint(string="number")[0]
+        for name, number in zip(names, numbers):
+            self[number] = name
