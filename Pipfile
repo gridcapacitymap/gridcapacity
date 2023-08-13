@@ -4,12 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-numba = "*"
-pandapower = "*"
-pydantic = "*"
-tqdm = "*"
-typer = {version = "*", extras = ["all"]}
-rich = "*"
+numba = "~=0.57.1"
+pandapower = "~=2.13.1"
+pydantic = "~=1.10.8"
+tqdm = "~=4.65.0"
+typer = {version = "~=0.9.0", extras = ["all"]}
+rich = "~=13.5.1"
 
 [dev-packages]
 autoflake = "*"

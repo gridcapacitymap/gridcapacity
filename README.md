@@ -96,3 +96,31 @@ Check unused imports with
 ```powershell
 pipenv run autoflake --remove-all-unused-imports -r .
 ```
+
+## Headless execution
+
+With `pandapower` solver it is possible to run calculation unattended. Example with included test case follows
+
+```
+# build docker impage with gridcapacity & pandapower
+docker build -t gridcapacity/pandapower .
+
+# example config
+cat << EOF > ./cs_test_pp.json
+{
+    "case_name": "sample_data/savnw.json",
+    "upper_load_limit_p_mw": 200.0,
+    "upper_gen_limit_p_mw": 200.0,
+    "selected_buses_ids":  [3008, 3005, 3011],
+    "connection_scenario": {},
+    "contingency_scenario": {
+        "branches": [],
+        "trafos": []
+    }
+}
+EOF
+
+# run calculation
+docker run -it --rm --name gridcapacity -w /usr/src/app -v "$PWD":/usr/src/app:Z gridcapacity/pandapower pipenv run python -m gridcapacity cs_test_pp.json
+```
+
