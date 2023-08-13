@@ -99,13 +99,13 @@ pipenv run autoflake --remove-all-unused-imports -r .
 
 ## Headless execution
 
-With `pandapower` solver it is possible to run calculation unattended. Example with included test case follows
+Possilbe with `pandapower` on linux. Example with included test case follows
 
 ```
-# build docker impage with gridcapacity & pandapower
+# build docker image (once)
 docker build -t gridcapacity/pandapower .
 
-# example config
+# create example config
 cat << EOF > ./cs_test_pp.json
 {
     "case_name": "sample_data/savnw.json",
