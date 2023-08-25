@@ -29,7 +29,8 @@ from gridcapacity.violations_analysis import ViolationsStats
 def build_headroom() -> None:
     logging_level: int = logging.WARNING if not envs.verbose else logging.DEBUG
     logging.basicConfig(
-        level=logging_level, handlers=[RichHandler(rich_tracebacks=True)]
+        level=logging_level,
+        handlers=[RichHandler(rich_tracebacks=True, log_time_format="%X")],
     )
     if len(sys.argv) != 2:
         raise RuntimeError(

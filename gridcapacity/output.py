@@ -15,6 +15,7 @@ limitations under the License.
 """
 import dataclasses
 import json
+import numpy as np
 from pathlib import Path
 from typing import Any
 
@@ -126,6 +127,14 @@ def json_encode_helper(obj: Any) -> Any:
         return str(obj)
     if dataclasses.is_dataclass(obj):
         return dataclasses.asdict(obj)
+
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+        
     raise TypeError(f"{obj=} is not serializable")
 
 
