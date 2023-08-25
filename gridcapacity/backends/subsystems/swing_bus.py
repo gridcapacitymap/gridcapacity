@@ -102,9 +102,9 @@ class SwingBuses(Sequence, Printable):
 
             if isinstance(idx, int):
                 return swing_bus_from_pp(
-                    pp_backend.net.ext_grid.bus[idx],
-                    pp_backend.net.ext_grid.vm_pu[idx],
-                    pp_backend.net.ext_grid.max_p_mw[idx],
+                    pp_backend.net.ext_grid.bus.iat[idx],
+                    pp_backend.net.ext_grid.vm_pu.iat[idx],
+                    pp_backend.net.ext_grid.max_p_mw.iat[idx],
                 )
             if isinstance(idx, slice):
                 return tuple(
@@ -146,7 +146,9 @@ class SwingBuses(Sequence, Printable):
     ) -> tuple[float, ...]:
         if sys.platform == "win32" and not envs.pandapower_backend:
             return tuple(self._raw_buses.pgen[idx] for idx in selected_indexes)
-        return tuple(pp_backend.net.res_ext_grid.p_mw[idx] for idx in selected_indexes)
+        return tuple(
+            pp_backend.net.res_ext_grid.p_mw.iat[idx] for idx in selected_indexes
+        )
 
     def log(
         self,

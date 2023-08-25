@@ -122,7 +122,7 @@ class GenericBranches(Sequence, Printable, Generic[GenericBranch]):
         if sys.platform == "win32" and not envs.pandapower_backend:
             return tuple(self._psse_branches.pct_rate[idx] for idx in selected_indexes)
         return tuple(
-            pp_backend.net.res_line.loading_percent[idx] for idx in selected_indexes
+            pp_backend.net.res_line.loading_percent.iat[idx] for idx in selected_indexes
         )
 
     def log(
@@ -204,9 +204,9 @@ class Branches(GenericBranches[Branch]):
 
             if isinstance(idx, int):
                 return branch_from_pp(
-                    pp_backend.net.line.from_bus[idx],
-                    pp_backend.net.line.to_bus[idx],
-                    pp_backend.net.line.parallel[idx],
+                    pp_backend.net.line.from_bus.iat[idx],
+                    pp_backend.net.line.to_bus.iat[idx],
+                    pp_backend.net.line.parallel.iat[idx],
                 )
             if isinstance(idx, slice):
                 return tuple(

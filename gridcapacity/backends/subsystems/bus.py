@@ -212,7 +212,7 @@ class GenericBuses(Sequence, Printable, Generic[GenericBus]):
     ) -> tuple[float, ...]:
         if sys.platform == "win32" and not envs.pandapower_backend:
             return tuple(self._psse_buses.pu[idx] for idx in selected_indexes)
-        return tuple(pp_backend.net.res_bus.vm_pu[idx] for idx in selected_indexes)
+        return tuple(pp_backend.net.res_bus.vm_pu.iat[idx] for idx in selected_indexes)
 
     def log(
         self,
@@ -284,10 +284,10 @@ class Buses(GenericBuses[Bus]):
 
             if isinstance(idx, int):
                 return bus_from_pp(
-                    pp_backend.net.bus.name[idx],
-                    pp_backend.net.bus.vn_kv[idx],
-                    pp_backend.net.bus.zone[idx],
-                    pp_backend.net.bus.type[idx],
+                    pp_backend.net.bus.name.iat[idx],
+                    pp_backend.net.bus.vn_kv.iat[idx],
+                    pp_backend.net.bus.zone.iat[idx],
+                    pp_backend.net.bus.type.iat[idx],
                 )
             if isinstance(idx, slice):
                 return tuple(

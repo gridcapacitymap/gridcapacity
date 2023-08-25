@@ -131,7 +131,8 @@ class GenericTrafos3w(Sequence, Printable, Generic[GenericTrafo3w]):
         if sys.platform == "win32" and not envs.pandapower_backend:
             return tuple(self._raw_trafos.pct_rate[idx] for idx in selected_indexes)
         return tuple(
-            pp_backend.net.res_trafo3w.loading_percent[idx] for idx in selected_indexes
+            pp_backend.net.res_trafo3w.loading_percent.iat[idx]
+            for idx in selected_indexes
         )
 
     def log(
@@ -224,10 +225,10 @@ class Trafos3w(GenericTrafos3w[Trafo3w]):
 
             if isinstance(idx, int):
                 return trafo3w_from_pp(
-                    pp_backend.net.trafo3w.hv_bus[idx],
-                    pp_backend.net.trafo3w.mv_bus[idx],
-                    pp_backend.net.trafo3w.lv_bus[idx],
-                    pp_backend.net.trafo3w.parallel[idx],
+                    pp_backend.net.trafo3w.hv_bus.iat[idx],
+                    pp_backend.net.trafo3w.mv_bus.iat[idx],
+                    pp_backend.net.trafo3w.lv_bus.iat[idx],
+                    pp_backend.net.trafo3w.parallel.iat[idx],
                 )
             if isinstance(idx, slice):
                 return tuple(
