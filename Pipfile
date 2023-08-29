@@ -15,7 +15,7 @@ rich = "~=13.5.1"
 autoflake = "*"
 black = {extras = ["d"], version = "*"}
 isort = "*"
-mypy = "*"
+mypy = "^0.982"
 prospector = {extras = ["with_everything"], version = "*"}
 
 [requires]
