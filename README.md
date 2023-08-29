@@ -106,7 +106,7 @@ Possilbe with `pandapower` on linux. Example with included test case follows
 docker build -t gridcapacity/pandapower .
 
 # create example config
-cat << EOF > ./cs_test_pp.json
+cat << EOF > ./test_config.json
 {
     "case_name": "sample_data/savnw.json",
     "upper_load_limit_p_mw": 200.0,
@@ -121,6 +121,5 @@ cat << EOF > ./cs_test_pp.json
 EOF
 
 # run calculation
-docker run -it --rm --name gridcapacity -w /usr/src/app -v "$PWD":/usr/src/app:Z gridcapacity/pandapower pipenv run python -m gridcapacity cs_test_pp.json
+docker run -it --rm --name gridcapacity -w /usr/src/app -v "$PWD":/usr/src/app:Z gridcapacity/pandapower pipenv run python -m gridcapacity test_config.json
 ```
-
