@@ -60,6 +60,9 @@ class Trafo:
             """Returns index in a PandaPower network."""
             for idx, trafo in pp_backend.net.trafo.iterrows():
                 if (
+                    trafo["lv_bus"] == self.from_number
+                    and trafo["hv_bus"] == self.to_number
+                ) or (
                     trafo["hv_bus"] == self.from_number
                     and trafo["lv_bus"] == self.to_number
                 ):

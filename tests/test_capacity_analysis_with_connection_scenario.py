@@ -42,6 +42,35 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
     def setUpClass(cls) -> None:
         if sys.platform == "win32" and not envs.pandapower_backend:
             init_psse()
+        branch_args = (
+            (
+                (151, 201),
+                (152, 202),
+                (152, 3004),
+                (153, 154),
+                (153, 3006),
+                (154, 203),
+                (154, 3008),
+            )
+            if sys.platform == "win32" and not envs.pandapower_backend
+            else (
+                (2, 6),
+                (3, 7),
+                (3, 16),
+                (4, 5),
+                (4, 18),
+                (5, 8),
+                (5, 20),
+            )
+        )
+        trafo_args = (
+            (
+                (3001, 3002),
+                (3004, 3005),
+            )
+            if sys.platform == "win32" and not envs.pandapower_backend
+            else ((13, 14), (16, 17))
+        )
         cls.headroom = buses_headroom(
             case_name=DEFAULT_CASE,
             upper_load_limit_p_mw=100.0,
@@ -56,19 +85,8 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
                 trafo_rate="Rate1",
             ),
             contingency_scenario=ContingencyScenario(
-                branches=tuple(
-                    Branch(*args)
-                    for args in (
-                        (151, 201),
-                        (152, 202),
-                        (152, 3004),
-                        (153, 154),
-                        (153, 3006),
-                        (154, 203),
-                        (154, 3008),
-                    )
-                ),
-                trafos=(Trafo(3001, 3002), Trafo(3004, 3005)),
+                branches=tuple(Branch(*args) for args in branch_args),
+                trafos=tuple(Trafo(*args) for args in trafo_args),
             ),
             connection_scenario={
                 "3008": BusConnection(load=ConnectionPower(80)),

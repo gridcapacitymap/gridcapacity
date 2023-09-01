@@ -43,13 +43,18 @@ class TestContingencyAnalysis(unittest.TestCase):
         ViolationsStats.reset_base_case_violations()
 
     def test_get_contingency_limiting_factor(self) -> None:
+        branch_arg = (
+            (154, 205)
+            if sys.platform == "win32" and not envs.pandapower_backend
+            else (5, 10)
+        )
         self.assertEqual(
             LimitingFactor(
                 Violations.BRANCH_LOADING | Violations.BUS_UNDERVOLTAGE,
-                ss=Branch(154, 205),
+                ss=Branch(*branch_arg),
             ),
             get_contingency_limiting_factor(
-                ContingencyScenario(branches=(Branch(154, 205),), trafos=()),
+                ContingencyScenario(branches=(Branch(*branch_arg),), trafos=()),
             ),
         )
 
@@ -68,19 +73,32 @@ class TestContingencyAnalysis(unittest.TestCase):
         )
 
     def test_get_contingency_scenario(self) -> None:
+        branch_args = (
+            (  # "1 " with space is needed, the default value "1" without space is not working
+                (151, 152, "2 "),
+                (151, 201, "1 "),
+                (152, 202, "1 "),
+                (152, 3004, "1 "),
+                (153, 154, "1 "),
+                (153, 154, "2 "),
+                (153, 3006, "1 "),
+                (154, 203, "1 "),
+                (154, 3008, "1 "),
+            )
+            if sys.platform == "win32" and not envs.pandapower_backend
+            else (
+                (2, 6),
+                (3, 7),
+                (3, 16),
+                (4, 5),
+                (4, 18),
+                (5, 8),
+                (5, 20),
+            )
+        )
         self.assertEqual(
             ContingencyScenario(
-                branches=(  # "1 " with space is needed, the default value "1" without space is not working
-                    Branch(151, 152, "2 "),
-                    Branch(151, 201, "1 "),
-                    Branch(152, 202, "1 "),
-                    Branch(152, 3004, "1 "),
-                    Branch(153, 154, "1 "),
-                    Branch(153, 154, "2 "),
-                    Branch(153, 3006, "1 "),
-                    Branch(154, 203, "1 "),
-                    Branch(154, 3008, "1 "),
-                ),
+                branches=tuple(Branch(*args) for args in branch_args),
                 trafos=(),
             ),
             get_contingency_scenario(False, {"options1": 1, "options5": 1}),

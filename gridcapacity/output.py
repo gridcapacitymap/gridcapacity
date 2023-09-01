@@ -15,10 +15,10 @@ limitations under the License.
 """
 import dataclasses
 import json
-import numpy as np
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import rich
 
 from gridcapacity.backends.subsystems import (
@@ -134,7 +134,7 @@ def json_encode_helper(obj: Any) -> Any:
         return float(obj)
     if isinstance(obj, np.ndarray):
         return obj.tolist()
-        
+
     raise TypeError(f"{obj=} is not serializable")
 
 
