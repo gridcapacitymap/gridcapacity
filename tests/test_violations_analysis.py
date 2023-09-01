@@ -17,6 +17,7 @@ import sys
 import unittest
 
 from gridcapacity.backends import wrapped_funcs as wf
+from gridcapacity.backends.subsystems import Branch
 from gridcapacity.envs import envs
 from gridcapacity.violations_analysis import (
     Violations,
@@ -100,8 +101,14 @@ class TestViolationsAnalysis(unittest.TestCase):
 
     def test_branch_loading(self) -> None:
         wf.open_case(DEFAULT_CASE)
-        wf.branch_chng_3(152, 3004, st=0)
-        wf.branch_chng_3(153, 3006, st=0)
+        branch_args = (
+            ((152, 3004), (153, 3006))
+            if sys.platform == "win32" and not envs.pandapower_backend
+            else ((3, 16), (4, 18))
+        )
+        for args in branch_args:
+            branch = Branch(*args)
+            branch.disable()
         self.assertEqual(
             Violations.BRANCH_LOADING, check_violations(max_trafo_loading_pct=115.0)
         )

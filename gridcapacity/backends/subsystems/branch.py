@@ -51,6 +51,14 @@ class Branch:
         branch_idx: int = self.pp_idx
         return pp_backend.net.line.in_service[branch_idx]
 
+    def disable(self) -> None:
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            wf.branch_chng_3(self.from_number, self.to_number, self.branch_id, st=0)
+            return
+        branch_idx: int = self.pp_idx
+        pp_backend.net.line.in_service[branch_idx] = False
+        return
+
     if sys.platform != "win32" or envs.pandapower_backend:
 
         @property
