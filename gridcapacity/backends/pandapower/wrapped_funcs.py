@@ -33,7 +33,7 @@ LOG_LEVEL: Final[int] = (
 
 
 def is_converged() -> bool:
-    return "converged" in pp_backend.net
+    return pp_backend.net.converged
 
 
 @functools.cache
@@ -69,9 +69,9 @@ def run_solver(
     effective_solver_opts = solver_opts or {}
     try:
         if not use_full_newton_raphson:
-            pp.runpp(pp_backend.net, **effective_solver_opts)
-        else:
             pp.runpp(pp_backend.net, algorithm="fdbx", **effective_solver_opts)
+        else:
+            pp.runpp(pp_backend.net, **effective_solver_opts)
     except LoadflowNotConverged as e:
         log.log(LOG_LEVEL, e.args)
     if log.isEnabledFor(LOG_LEVEL):

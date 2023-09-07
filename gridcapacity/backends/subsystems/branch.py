@@ -57,7 +57,15 @@ class Branch:
             return
         branch_idx: int = self.pp_idx
         pp_backend.net.line.in_service[branch_idx] = False
-        return
+
+    def set_r(self, r: float) -> None:
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            wf.branch_chng_3(self.from_number, self.to_number, self.branch_id, r=r)
+            return
+        branch_idx: int = self.pp_idx
+        # No idea why values in cases imported from PSSE to PandaPower are so different
+        psse_r_to_pp_r_ohm_per_km = 529
+        pp_backend.net.line.r_ohm_per_km[branch_idx] = r * psse_r_to_pp_r_ohm_per_km
 
     if sys.platform != "win32" or envs.pandapower_backend:
 
