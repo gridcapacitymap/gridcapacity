@@ -30,7 +30,7 @@ variables:
 # test:
 #   stage: test
 #   extends: .default_vars
-#   image: python:3.9-slim
+#   image: python:3.9
 #   cache:                      # Pip's cache doesn't store the python packages
 #     paths:                    # https://pip.pypa.io/en/stable/topics/caching/
 #       - .cache/pip

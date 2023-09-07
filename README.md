@@ -97,9 +97,9 @@ Check unused imports with
 pipenv run autoflake --remove-all-unused-imports -r .
 ```
 
-## Headless execution
+## Usage with docker
 
-Possilbe with `pandapower` on linux. Example with included test case follows
+Possilbe with `pandapower` backend. Example with included test case follows
 
 ```
 # build docker image (once)
@@ -121,5 +121,5 @@ cat << EOF > ./test_config.json
 EOF
 
 # run calculation
-docker run -it --rm --name gridcapacity -w /usr/src/app -v "$PWD":/usr/src/app:Z gridcapacity/pandapower pipenv run python -m gridcapacity test_config.json
+docker run -it --rm --name gridcapacity -w /app -v "$PWD":/app:Z gridcapacity/pandapower python -m gridcapacity test_config.json
 ```
