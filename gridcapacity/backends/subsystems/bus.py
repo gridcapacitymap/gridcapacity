@@ -229,7 +229,7 @@ class GenericBuses(Sequence, Printable, Generic[GenericBus]):
                 if sys.platform == "win32" and not envs.pandapower_backend:
                     pu = self._psse_buses.pu[idx]
                 else:
-                    pu = pp_backend.net.res_bus.vm_pu[idx]
+                    pu = pp_backend.net.res_bus.vm_pu.iat[idx]
                 self._log.log(
                     level,
                     tuple((*dataclasses.astuple(bus), pu)),
