@@ -281,6 +281,11 @@ def branch_chng_3(_from_bus: int, _to_bus: int, _id: str, **_: Any) -> None:
 
 
 @process_psse_api_error_code
+def brndt2(_from_bus: int, _to_bus: int, _id: str, _str: str) -> complex:
+    pass  # Functionality is implemented by wrapped PSSE API function
+
+
+@process_psse_api_error_code
 def brnint(_from_bus: int, _to_bus: int, _id: str, _str: str) -> int:
     pass  # Functionality is implemented by wrapped PSSE API function
 
@@ -313,6 +318,11 @@ def load_data_6(_bus: int, _id: str, **_: Any) -> None:
 @process_psse_api_error_code
 def load_chng_6() -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
+
+@process_psse_api_error_code
+def loddt2(_bus: int, _id: str, _str: str) -> complex:
+    pass  # Functionality is implemented by wrapped PSSE API function
+
 
 
 @process_psse_api_error_code

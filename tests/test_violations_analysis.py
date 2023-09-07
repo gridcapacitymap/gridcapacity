@@ -39,7 +39,12 @@ class TestViolationsAnalysis(unittest.TestCase):
 
     def test_not_converged(self) -> None:
         wf.open_case(DEFAULT_CASE)
-        wf.branch_chng_3(154, 3008, realar1=10.0)
+        branch_args = (
+            (154, 3008)
+            if sys.platform == "win32" and not envs.pandapower_backend
+            else (5, 20)
+        )
+        Branch(*branch_args).set_r(10.0)
         self.assertEqual(Violations.NOT_CONVERGED, check_violations())
 
     def test_bus_overvoltage(self) -> None:
