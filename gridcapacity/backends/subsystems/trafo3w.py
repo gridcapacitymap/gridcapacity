@@ -151,7 +151,7 @@ class GenericTrafos3w(Sequence, Printable, Generic[GenericTrafo3w]):
                 if sys.platform == "win32" and not envs.pandapower_backend:
                     loadings_pct = self._raw_trafos.pct_rate[idx]
                 else:
-                    loadings_pct = pp_backend.net.res_trafo3w.loading_percent[idx]
+                    loadings_pct = pp_backend.net.res_trafo3w.loading_percent.iat[idx]
                 self._log.log(
                     level,
                     tuple(

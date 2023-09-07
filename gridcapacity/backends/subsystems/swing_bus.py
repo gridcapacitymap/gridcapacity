@@ -167,7 +167,7 @@ class SwingBuses(Sequence, Printable):
                 if sys.platform == "win32" and not envs.pandapower_backend:
                     p_mw = self._raw_buses.pgen[idx]
                 else:
-                    p_mw = pp_backend.net.res_ext_grid.p_mw[idx]
+                    p_mw = pp_backend.net.res_ext_grid.p_mw.iat[idx]
                 self._log.log(
                     level,
                     tuple((*dataclasses.astuple(bus), p_mw)),

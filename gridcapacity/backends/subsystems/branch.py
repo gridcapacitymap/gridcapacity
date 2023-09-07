@@ -149,7 +149,7 @@ class GenericBranches(Sequence, Printable, Generic[GenericBranch]):
                 if sys.platform == "win32" and not envs.pandapower_backend:
                     loading_pct = self._psse_branches.pct_rate[idx]
                 else:
-                    loading_pct = pp_backend.net.res_line.loading_percent[idx]
+                    loading_pct = pp_backend.net.res_line.loading_percent.iat[idx]
                 self._log.log(
                     level,
                     tuple(
