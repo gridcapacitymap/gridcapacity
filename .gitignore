@@ -1,5 +1,6 @@
 __pycache__/
 
+/dist/
 /.idea/
 /.vscode/
 
@@ -10,3 +11,5 @@ __pycache__/
 /*_violation_stats.json
 
 *.pyc
+*.egg-info
+

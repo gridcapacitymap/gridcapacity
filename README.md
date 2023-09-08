@@ -97,6 +97,14 @@ Check unused imports with
 pipenv run autoflake --remove-all-unused-imports -r .
 ```
 
+## Usage as python package
+
+Run command below to produce python wheel in `dist` dir
+
+```
+python -m build .
+```
+
 ## Usage with docker
 
 Possilbe with `pandapower` backend. Example with included test case follows

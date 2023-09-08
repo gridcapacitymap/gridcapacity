@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
+dynamic = ["version"]
 name = "gridcapacity"
-version = "0.0.1"
 authors = [{ name = "Example Author", email = "author@example.com" }]
 description = "grid capacity calculation tool for electrical network models"
 readme = "README.md"
@@ -19,13 +19,13 @@ dependencies = [
     "rich~=13.5.1",
 ]
 
+[tool.setuptools_scm]
+
 [tool.setuptools.packages.find]
 exclude = ["sample_data*"]
 
 [project.optional-dependencies]
-ppfull = [
-    "pandapower[all]~=2.13.1",
-]
+ppfull = ["pandapower[all]~=2.13.1"]
 devtools = [
     "autoflake",
     "black[d]",
