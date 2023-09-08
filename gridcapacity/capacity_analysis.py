@@ -19,9 +19,7 @@ import logging
 from collections import OrderedDict, defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Final, Iterator, Optional
-
-from tqdm import tqdm
+from typing import Final, Generator, Iterator, List, Optional, Tuple
 
 from gridcapacity.backends.subsystems import (
     Bus,
@@ -46,6 +44,7 @@ from gridcapacity.violations_analysis import (
     check_violations,
     run_solver,
 )
+from tqdm import tqdm
 
 from .backends import wrapped_funcs as wf
 from .config import BusConnection, ConnectionScenario
@@ -210,24 +209,46 @@ class CapacityAnalyser:
 
     def buses_headroom(self) -> Headroom:
         """Return actual load and max additional PQ power in MVA for each bus"""
-        buses: Buses = Buses()
         console.print("Analysing headroom", style="blue")
+
+        generate, total = self.create_buses_headroom_generator()
+        headroom: List[BusHeadroom] = []
+
         with tqdm(
-            total=len(buses)
+            total=total
             if self._selected_buses_ids is None
             else len(self._selected_buses_ids),
             postfix=[{}],
         ) as progress:
-            PowerFlows.reset_count()
-            ViolationsStats.reset()
-            return tuple(
-                self.bus_headroom(bus, progress)
-                for bus in buses
-                if self._selected_buses_ids is None
-                or bus.number in self._selected_buses_ids
-            )
+            for bus_headroom, _ in generate():
+                progress.postfix[0]["bus_number"] = bus_headroom.bus.number
+                progress.postfix[0]["power_flows"] = PowerFlows.count
+                progress.update()
+                headroom.append(bus_headroom)
 
-    def bus_headroom(self, bus: Bus, progress: tqdm) -> BusHeadroom:
+        return tuple(headroom)
+
+    def create_buses_headroom_generator(self):
+        buses: Buses = Buses()
+        total = (
+            len(buses)
+            if self._selected_buses_ids is None
+            else len(self._selected_buses_ids)
+        )
+        PowerFlows.reset_count()
+        ViolationsStats.reset()
+
+        def generate():
+            for bus in buses:
+                if (
+                    self._selected_buses_ids is None
+                    or bus.number in self._selected_buses_ids
+                ):
+                    yield self.bus_headroom(bus), PowerFlows.count
+
+        return generate, total
+
+    def bus_headroom(self, bus: Bus) -> BusHeadroom:
         """Return bus actual load and max additional PQ power in MVA"""
         actual_load_mva: complex = bus.load_mva()
         actual_gen_mva: complex = bus.gen_mva()
@@ -256,9 +277,6 @@ class CapacityAnalyser:
                 and gen_lf.v == Violations.NOT_CONVERGED
             ):
                 self.reload_case()
-        progress.postfix[0]["bus_number"] = bus.number
-        progress.postfix[0]["power_flows"] = PowerFlows.count
-        progress.update()
         return BusHeadroom(
             bus=bus,
             actual_load_mva=actual_load_mva,
