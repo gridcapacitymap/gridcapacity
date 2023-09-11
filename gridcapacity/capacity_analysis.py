@@ -238,7 +238,7 @@ class CapacityAnalyser:
         PowerFlows.reset_count()
         ViolationsStats.reset()
 
-        def generate():
+        def generate() -> Generator[tuple[BusHeadroom, int]]:
             for bus in buses:
                 if (
                     self._selected_buses_ids is None
