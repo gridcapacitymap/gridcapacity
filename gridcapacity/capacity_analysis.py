@@ -19,7 +19,7 @@ import logging
 from collections import OrderedDict, defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Final, Generator, Iterator, List, Optional, Tuple
+from typing import Final, Generator, Iterator, Optional, Tuple
 
 from gridcapacity.backends.subsystems import (
     Bus,
