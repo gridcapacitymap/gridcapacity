@@ -212,7 +212,7 @@ class CapacityAnalyser:
         console.print("Analysing headroom", style="blue")
 
         generate, total = self.create_buses_headroom_generator()
-        headroom: List[BusHeadroom] = []
+        headroom: list[BusHeadroom] = []
 
         with tqdm(
             total=total
