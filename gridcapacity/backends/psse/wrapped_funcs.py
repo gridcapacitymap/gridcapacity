@@ -319,10 +319,10 @@ def load_data_6(_bus: int, _id: str, **_: Any) -> None:
 def load_chng_6() -> None:
     pass  # Functionality is implemented by wrapped PSSE API function
 
+
 @process_psse_api_error_code
 def loddt2(_bus: int, _id: str, _str: str) -> complex:
     pass  # Functionality is implemented by wrapped PSSE API function
-
 
 
 @process_psse_api_error_code
