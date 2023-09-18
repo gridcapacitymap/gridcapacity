@@ -17,7 +17,7 @@ import sys
 import unittest
 
 from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.backends.subsystems import Branch
+from gridcapacity.backends.subsystems import Branch, Bus
 from gridcapacity.envs import envs
 from gridcapacity.violations_analysis import (
     Violations,
@@ -147,7 +147,12 @@ class TestViolationsAnalysis(unittest.TestCase):
 
     def test_swing_bus_loading(self) -> None:
         wf.open_case(DEFAULT_CASE)
-        wf.load_data_6(3011, realar1=1000.0)
+        bus_args = (
+            (3011, "MINE_G      13.800", 3)
+            if sys.platform == "win32" and not envs.pandapower_backend
+            else (3010, "13.8 5.0", 1)
+        )
+        Bus(*bus_args).add_load(1000.0)
         self.assertEqual(
             Violations.SWING_BUS_LOADING, check_violations(max_trafo_loading_pct=110.0)
         )
