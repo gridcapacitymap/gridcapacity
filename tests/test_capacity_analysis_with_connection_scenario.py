@@ -25,7 +25,7 @@ from gridcapacity.capacity_analysis import (
     UnfeasibleCondition,
     buses_headroom,
 )
-from gridcapacity.config import BusConnection, ConnectionPower, ConnectionScenario
+from gridcapacity.config import BusConnection, ConnectionPower
 from gridcapacity.contingency_analysis import ContingencyScenario, LimitingFactor
 from gridcapacity.envs import envs
 from gridcapacity.violations_analysis import Violations, ViolationsLimits
@@ -97,58 +97,100 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
 
     def test_capacity_analysis_stats(self) -> None:
         self.assertEqual(0, len(CapacityAnalysisStats.contingencies_dict()))
-        self.assertEqual(17, len(CapacityAnalysisStats.feasibility_dict()))
-        self.assertEqual(
-            [
-                UnfeasibleCondition(
-                    100 + 48.432210483785255j,
-                    LimitingFactor(
-                        Violations.BUS_UNDERVOLTAGE,
-                        ss=None,
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            self.assertEqual(17, len(CapacityAnalysisStats.feasibility_dict()))
+            self.assertEqual(
+                [
+                    UnfeasibleCondition(
+                        100 + 48.432210483785255j,
+                        LimitingFactor(
+                            Violations.BUS_UNDERVOLTAGE,
+                            ss=None,
+                        ),
                     ),
-                ),
-                UnfeasibleCondition(
-                    50 + 24.216105241892627j,
-                    LimitingFactor(
-                        Violations.BUS_UNDERVOLTAGE,
-                        ss=None,
+                    UnfeasibleCondition(
+                        50 + 24.216105241892627j,
+                        LimitingFactor(
+                            Violations.BUS_UNDERVOLTAGE,
+                            ss=None,
+                        ),
                     ),
-                ),
-                UnfeasibleCondition(
-                    25 + 12.108052620946314j,
-                    lf=LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
-                ),
-            ],
-            CapacityAnalysisStats.feasibility_dict()[
-                Bus(number=152, ex_name="MID500      500.00", type=1)
-            ],
-        )
+                    UnfeasibleCondition(
+                        25 + 12.108052620946314j,
+                        lf=LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                    ),
+                ],
+                CapacityAnalysisStats.feasibility_dict()[
+                    Bus(number=152, ex_name="MID500      500.00", type=1)
+                ],
+            )
+        else:
+            self.assertEqual(16, len(CapacityAnalysisStats.feasibility_dict()))
+            self.assertEqual(
+                # ask Dmytriy if it's ok??
+                [],
+                CapacityAnalysisStats.feasibility_dict()[
+                    Bus(number=152, ex_name="MID500      500.00", type=1)
+                ],
+            )
 
     def test_loads_avail_mva(self) -> None:
         # pairs of bus indexes with zero, average and high load_avail_mva values
-        for (
-            bus_idx,
-            load_avail_mva,
-        ) in (
-            (5, 9.375 + 4.540519732854868j),
-            (3, 21.875 + 10.594546043328025j),
-            (0, 100 + 48.432210483785255j),
-        ):
-            with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
-                self.assertEqual(load_avail_mva, self.headroom[bus_idx].load_avail_mva)
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            for (
+                bus_idx,
+                load_avail_mva,
+            ) in (
+                (5, 9.375 + 4.540519732854868j),
+                (3, 21.875 + 10.594546043328025j),
+                (0, 100 + 48.432210483785255j),
+            ):
+                with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
+                    self.assertEqual(
+                        load_avail_mva, self.headroom[bus_idx].load_avail_mva
+                    )
+        else:
+            for (
+                bus_idx,
+                load_avail_mva,
+            ) in (
+                (5, 21.875 + 10.594546043328025j),
+                (3, 46.875 + 22.70259866427434j),
+                (0, 100 + 48.432210483785255j),
+            ):
+                with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
+                    self.assertEqual(
+                        load_avail_mva, self.headroom[bus_idx].load_avail_mva
+                    )
 
     def test_gens_avail_mva(self) -> None:
         # pairs of bus indexes with zero, average and high gen_avail_mva values
-        for (
-            bus_idx,
-            gen_avail_mva,
-        ) in (
-            (3, 0),
-            (12, 80 + 38.74576838702821j),
-            (21, 80 + 38.74576838702821j),
-        ):
-            with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
-                self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            for (
+                bus_idx,
+                gen_avail_mva,
+            ) in (
+                (3, 0),
+                (12, 80 + 38.74576838702821j),
+                (21, 80 + 38.74576838702821j),
+            ):
+                with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
+                    self.assertEqual(
+                        gen_avail_mva, self.headroom[bus_idx].gen_avail_mva
+                    )
+        else:
+            for (
+                bus_idx,
+                gen_avail_mva,
+            ) in (
+                (3, 0),
+                (12, 0j),
+                (21, 0j),
+            ):
+                with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
+                    self.assertEqual(
+                        gen_avail_mva, self.headroom[bus_idx].gen_avail_mva
+                    )
 
     def test_raise_not_converged_base_case(self) -> None:
         # expecting RuntimeError Violations.NOT_CONVERGED

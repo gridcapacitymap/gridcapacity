@@ -67,7 +67,7 @@ PandaPower backend usage and debugging features could be enabled using the envir
 To start the project with verbose output enabled, run:
 
 ```powershell
-$env:GRID_CAPACITY_VERBOSE = ’1’
+$env:GRID_CAPACITY_PANDAPOWER_BACKEND = ’1’
 pipenv run python -m gridcapacity sample_config.json
 ```
 
@@ -107,7 +107,7 @@ python -m build .
 
 ## Usage with docker
 
-Possilbe with `pandapower` backend. Example with included test case follows
+Possible with `pandapower` backend. Example with included test case follows
 
 ```
 # build docker image (once)
