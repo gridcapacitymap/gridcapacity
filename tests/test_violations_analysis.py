@@ -187,9 +187,8 @@ class TestViolationsAnalysis(unittest.TestCase):
                 ViolationsStats.asdict()[Violations.TRAFO_LOADING],
             )
 
-    @unittest.skipIf(envs.pandapower_backend, "find a way to trigger on pandapower")
+    @unittest.skipIf(envs.pandapower_backend, "No 3w trafo in pandapower")
     def test_3w_trafo_loading(self) -> None:
-        # if sys.platform == "win32" and not envs.pandapower_backend:
         wf.open_case("iec60909_testnetwork_50Hz.sav")
         self.assertEqual(
             Violations.TRAFO_3W_LOADING,
