@@ -64,7 +64,7 @@ class BusHeadroom:
     gen_lf: Optional[LimitingFactor]
 
 
-Headroom = tuple[BusHeadroom, ...]
+Headroom = List[BusHeadroom]
 
 
 @dataclass(frozen=True)
@@ -226,7 +226,7 @@ class CapacityAnalyser:
                 progress.update()
                 headroom.append(bus_headroom)
 
-        return tuple(headroom)
+        return headroom
 
     def create_buses_headroom_generator(self):
         buses: Buses = Buses()
