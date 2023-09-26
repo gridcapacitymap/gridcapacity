@@ -95,7 +95,11 @@ class GenericMachines(Printable, Generic[GenericMachine, GenericPsseMachines]):
     def __len__(self) -> int:
         if sys.platform == "win32" and not envs.pandapower_backend:
             return len(self._raw_machines.number)
-        return len(pp_backend.net.sgen)
+        # PandaPower models the generator either as static or dynamic generator.
+        # And dynamic generator may be converted to a static
+        # in certain conditions under the hood. See the note in
+        # https://pandapower.readthedocs.io/en/v2.13.1/elements/gen.html#result-parameters
+        return len(pp_backend.net.sgen) + len(pp_backend.net.gen)
 
 
 class Machines(GenericMachines[Machine, PsseMachines]):
@@ -119,13 +123,23 @@ class Machines(GenericMachines[Machine, PsseMachines]):
                     self._raw_machines.pq_gen[machine_idx],
                 )
             else:
-                yield Machine(
-                    pp_backend.net.bus.name[pp_backend.net.sgen.bus[machine_idx]],
-                    "",
-                    pp_backend.net.sgen.name[machine_idx],
-                    pp_backend.net.sgen.p_mw[machine_idx]
-                    + 1j * pp_backend.net.sgen.q_mvar[machine_idx],
-                )
+                if machine_idx < len(pp_backend.net.sgen):
+                    yield Machine(
+                        pp_backend.net.bus.name[pp_backend.net.sgen.bus[machine_idx]],
+                        "",
+                        pp_backend.net.sgen.name[machine_idx],
+                        pp_backend.net.res_sgen.p_mw[machine_idx]
+                        + 1j * pp_backend.net.res_sgen.q_mvar[machine_idx],
+                    )
+                else:
+                    machine_idx -= len(pp_backend.net.sgen)
+                    yield Machine(
+                        pp_backend.net.bus.name[pp_backend.net.gen.bus[machine_idx]],
+                        "",
+                        pp_backend.net.gen.name[machine_idx],
+                        pp_backend.net.res_gen.p_mw[machine_idx]
+                        + 1j * pp_backend.net.res_gen.q_mvar[machine_idx],
+                    )
 
 
 class DataExportMachines(GenericMachines[DataExportMachine, DataExportPsseMachines]):
