@@ -16,6 +16,7 @@ limitations under the License.
 """
 import dataclasses
 import logging
+import sys
 from collections import OrderedDict, defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass
@@ -38,6 +39,7 @@ from gridcapacity.contingency_analysis import (
     get_contingency_limiting_factor,
     get_contingency_scenario,
 )
+from gridcapacity.envs import envs
 from gridcapacity.violations_analysis import (
     PowerFlows,
     Violations,
@@ -229,6 +231,13 @@ class CapacityAnalyser:
 
     def bus_headroom(self, bus: Bus, progress: tqdm) -> BusHeadroom:
         """Return bus actual load and max additional PQ power in MVA"""
+        if sys.platform != "win32" or envs.pandapower_backend:
+            # The dynamic generators data is valid only after converged PandaPower solution
+            if not wf.is_converged():
+                run_solver(
+                    use_full_newton_raphson=self._use_full_newton_raphson,
+                    solver_opts=self._solver_opts,
+                )
         actual_load_mva: complex = bus.load_mva()
         actual_gen_mva: complex = bus.gen_mva()
         load_lf: Optional[LimitingFactor]
