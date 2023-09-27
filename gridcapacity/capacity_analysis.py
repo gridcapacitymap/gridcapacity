@@ -20,7 +20,7 @@ import sys
 from collections import OrderedDict, defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Final, Generator, Iterator, Optional, Tuple
+from typing import Any, Final, Generator, Iterator, Optional, List
 
 from gridcapacity.backends.subsystems import (
     Bus,
@@ -240,7 +240,7 @@ class CapacityAnalyser:
         PowerFlows.reset_count()
         ViolationsStats.reset()
 
-        def generate() -> Generator[tuple[BusHeadroom, int]]:
+        def generate() -> Generator[tuple[BusHeadroom, Any], Any, None]:
             for bus in buses:
                 if (
                     self._selected_buses_ids is None
