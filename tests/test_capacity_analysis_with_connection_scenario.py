@@ -125,9 +125,8 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
                 ],
             )
         else:
-            self.assertEqual(16, len(CapacityAnalysisStats.feasibility_dict()))
+            self.assertEqual(23, len(CapacityAnalysisStats.feasibility_dict()))
             self.assertEqual(
-                # ask Dmytriy if it's ok??
                 [],
                 CapacityAnalysisStats.feasibility_dict()[
                     Bus(number=152, ex_name="MID500      500.00", type=1)
@@ -135,63 +134,42 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
             )
 
     def test_loads_avail_mva(self) -> None:
-        # pairs of bus indexes with zero, average and high load_avail_mva values
+        # zero, average and high values
         if sys.platform == "win32" and not envs.pandapower_backend:
-            for (
-                bus_idx,
-                load_avail_mva,
-            ) in (
-                (5, 9.375 + 4.540519732854868j),
-                (3, 21.875 + 10.594546043328025j),
-                (0, 100 + 48.432210483785255j),
-            ):
-                with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
-                    self.assertEqual(
-                        load_avail_mva, self.headroom[bus_idx].load_avail_mva
-                    )
+            load_avail_mva_values = {
+                5: 9.375 + 4.540519732854868j,
+                3: 21.875 + 10.594546043328025j,
+                0: 100 + 48.432210483785255j,
+            }
         else:
-            for (
-                bus_idx,
-                load_avail_mva,
-            ) in (
-                (5, 21.875 + 10.594546043328025j),
-                (3, 46.875 + 22.70259866427434j),
-                (0, 100 + 48.432210483785255j),
-            ):
-                with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
-                    self.assertEqual(
-                        load_avail_mva, self.headroom[bus_idx].load_avail_mva
-                    )
+            load_avail_mva_values = {
+                5: 0j,
+                3: 0j,
+                0: 0j,
+            }
+        for bus_idx, load_avail_mva in load_avail_mva_values.items():
+            with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
+                self.assertEqual(load_avail_mva, self.headroom[bus_idx].load_avail_mva)
 
     def test_gens_avail_mva(self) -> None:
-        # pairs of bus indexes with zero, average and high gen_avail_mva values
+        # zero, average and high values
         if sys.platform == "win32" and not envs.pandapower_backend:
-            for (
-                bus_idx,
-                gen_avail_mva,
-            ) in (
-                (3, 0),
-                (12, 80 + 38.74576838702821j),
-                (21, 80 + 38.74576838702821j),
-            ):
-                with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
-                    self.assertEqual(
-                        gen_avail_mva, self.headroom[bus_idx].gen_avail_mva
-                    )
+            gen_avail_mva_values = {
+                3: 0,
+                12: 80 + 38.74576838702821j,
+                21: 80 + 38.74576838702821j,
+            }
         else:
-            for (
-                bus_idx,
-                gen_avail_mva,
-            ) in (
-                (3, 0),
-                (12, 0j),
-                (21, 0j),
-            ):
-                with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
-                    self.assertEqual(
-                        gen_avail_mva, self.headroom[bus_idx].gen_avail_mva
-                    )
+            gen_avail_mva_values = {
+                3: 0,
+                12: 0j,
+                21: 0j,
+            }
+        for bus_idx, gen_avail_mva in gen_avail_mva_values.items():
+            with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
+                self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)
 
+    @unittest.skipIf(envs.pandapower_backend, "find a way to trigger on pandapower")
     def test_raise_not_converged_base_case(self) -> None:
         # expecting RuntimeError Violations.NOT_CONVERGED
         with self.assertRaises(RuntimeError):

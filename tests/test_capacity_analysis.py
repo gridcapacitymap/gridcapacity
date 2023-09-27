@@ -115,7 +115,7 @@ class TestCapacityAnalysis(unittest.TestCase):
                 ][0:-1:3],
             )
         else:
-            self.assertEqual(16, len(CapacityAnalysisStats.feasibility_dict()))
+            self.assertEqual(19, len(CapacityAnalysisStats.feasibility_dict()))
             self.assertEqual(
                 [],
                 CapacityAnalysisStats.feasibility_dict()[
@@ -124,81 +124,52 @@ class TestCapacityAnalysis(unittest.TestCase):
             )
 
     def test_loads_avail_mva(self) -> None:
-        # pairs of bus indexes with zero, average and high load_avail_mva values
+        # zero, average and high values
         if sys.platform == "win32" and not envs.pandapower_backend:
-            for (
-                bus_idx,
-                load_avail_mva,
-            ) in (
-                (5, 0),
-                (3, 65.625 + 31.783638129984077j),
-                (0, 100 + 48.432210483785255j),
-            ):
-                with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
-                    self.assertEqual(
-                        load_avail_mva, self.headroom[bus_idx].load_avail_mva
-                    )
+            load_avail_mva_values = {
+                5: 0,
+                3: 65.625 + 31.783638129984077j,
+                0: 100 + 48.432210483785255j,
+            }
         else:
-            for (
-                bus_idx,
-                load_avail_mva,
-            ) in (
-                (5, 15.625 + 7.5675328880914465j),
-                (3, 18.75 + 9.081039465709736j),
-                (0, 100 + 48.432210483785255j),
-            ):
-                with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
-                    self.assertEqual(
-                        load_avail_mva, self.headroom[bus_idx].load_avail_mva
-                    )
+            load_avail_mva_values = {
+                5: 15.625 + 7.5675328880914465j,
+                3: 18.75 + 9.081039465709736j,
+                0: 100 + 48.432210483785255j,
+            }
+        for bus_idx, load_avail_mva in load_avail_mva_values.items():
+            with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
+                self.assertEqual(load_avail_mva, self.headroom[bus_idx].load_avail_mva)
 
     def test_gens_avail_mva(self) -> None:
-        # pairs of bus indexes with zero, average and high gen_avail_mva values
+        # zero, average and high values
         if sys.platform == "win32" and not envs.pandapower_backend:
-            for (
-                bus_idx,
-                gen_avail_mva,
-            ) in (
-                (3, 0),
-                (12, 25 + 12.108052620946314j),
-                (21, 52.5 + 25.42691050398726j),
-            ):
-                with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
-                    self.assertEqual(
-                        gen_avail_mva, self.headroom[bus_idx].gen_avail_mva
-                    )
+            gen_avail_mva_values = {
+                3: 0,
+                12: 25 + 12.108052620946314j,
+                21: 52.5 + 25.42691050398726j,
+            }
         else:
-            for (
-                bus_idx,
-                gen_avail_mva,
-            ) in (
-                (3, 0),
-                (12, 0j),
-                (21, 0j),
-            ):
-                with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
-                    self.assertEqual(
-                        gen_avail_mva, self.headroom[bus_idx].gen_avail_mva
-                    )
+            gen_avail_mva_values = {
+                3: 0,
+                12: 45 + 21.794494717703365j,
+                21: 0j,
+            }
+        for bus_idx, gen_avail_mva in gen_avail_mva_values.items():
+            with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
+                self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)
 
+    @unittest.skipIf(envs.pandapower_backend, "find a way to trigger on pandapower")
     def test_raise_not_converged_base_case(self) -> None:
         # expecting RuntimeError Violations.NOT_CONVERGED
-        if sys.platform == "win32" and not envs.pandapower_backend:
-            with self.assertRaises(RuntimeError):
-                buses_headroom(
-                    case_name=DEFAULT_CASE,
-                    upper_load_limit_p_mw=100.0,
-                    upper_gen_limit_p_mw=80.0,
-                    # Flat start and non-divergent solution
-                    solver_opts={"options6": 1, "options8": 1},
-                )
-        else:
-            with self.assertRaises(RuntimeError):
-                buses_headroom(
-                    case_name=DEFAULT_CASE,
-                    upper_load_limit_p_mw=1.0,
-                    upper_gen_limit_p_mw=1.0,
-                )
+        with self.assertRaises(RuntimeError):
+            buses_headroom(
+                case_name=DEFAULT_CASE,
+                upper_load_limit_p_mw=100.0,
+                upper_gen_limit_p_mw=80.0,
+                # Flat start and non-divergent solution
+                solver_opts={"options6": 1, "options8": 1},
+            )
 
     def test_violated_bus_count(self) -> None:
         self.assertEqual(

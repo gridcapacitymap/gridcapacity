@@ -17,7 +17,7 @@ import sys
 import unittest
 
 from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.backends.subsystems import Branch, Bus
+from gridcapacity.backends.subsystems import Branch
 from gridcapacity.envs import envs
 from gridcapacity.violations_analysis import (
     Violations,
@@ -187,27 +187,25 @@ class TestViolationsAnalysis(unittest.TestCase):
                 ViolationsStats.asdict()[Violations.TRAFO_LOADING],
             )
 
+    @unittest.skipIf(envs.pandapower_backend, "find a way to trigger on pandapower")
     def test_3w_trafo_loading(self) -> None:
-        if sys.platform == "win32" and not envs.pandapower_backend:
-            wf.open_case("iec60909_testnetwork_50Hz.sav")
-            self.assertEqual(
-                Violations.TRAFO_3W_LOADING,
-                check_violations(
-                    use_full_newton_raphson=True,
-                    min_bus_voltage_pu=10e-9,
-                    max_trafo_loading_pct=1170.0,
-                ),
-            )
-            self.assertEqual(
-                {1170.0: {4: [1195.140625], 5: [1195.140625]}},
-                ViolationsStats.asdict()[Violations.TRAFO_3W_LOADING],
-            )
-        else:
-            pass
+        # if sys.platform == "win32" and not envs.pandapower_backend:
+        wf.open_case("iec60909_testnetwork_50Hz.sav")
+        self.assertEqual(
+            Violations.TRAFO_3W_LOADING,
+            check_violations(
+                use_full_newton_raphson=True,
+                min_bus_voltage_pu=10e-9,
+                max_trafo_loading_pct=1170.0,
+            ),
+        )
+        self.assertEqual(
+            {1170.0: {4: [1195.140625], 5: [1195.140625]}},
+            ViolationsStats.asdict()[Violations.TRAFO_3W_LOADING],
+        )
 
     def test_swing_bus_loading(self) -> None:
         wf.open_case(DEFAULT_CASE)
-
         if sys.platform == "win32" and not envs.pandapower_backend:
             wf.load_data_6(3011, realar1=1000.0)
             self.assertEqual(
