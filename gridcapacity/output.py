@@ -115,9 +115,10 @@ def write_exported_data(case_name: str, exported_data: ExportedData) -> None:
 
 
 def get_output_folder(case_path: Path) -> Path:
-    return (
-        case_path if case_path.is_absolute() else Path(__file__).absolute().parents[1]
-    )
+    if case_path.is_absolute():
+        return case_path.parent
+    else:
+        return Path(__file__).absolute().parents[1]
 
 
 def json_encode_helper(obj: Any) -> Any:
