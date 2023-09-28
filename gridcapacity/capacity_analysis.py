@@ -172,12 +172,16 @@ class CapacityAnalyser:
             connections_available = False
         for bus in Buses():
             if connections_available and bus.number == bus_number:
-                if (load_connection := connection.load) is not None:
+                if (
+                    load_connection := connection.load
+                ) is not None and load_connection.p_mw:
                     bus.add_load(
                         p_to_mva(load_connection.p_mw, load_connection.pf),
                         "CR",
                     )
-                if (gen_connection := connection.gen) is not None:
+                if (
+                    gen_connection := connection.gen
+                ) is not None and gen_connection.p_mw:
                     bus.add_gen(
                         p_to_mva(gen_connection.p_mw, gen_connection.pf),
                         "CR",
