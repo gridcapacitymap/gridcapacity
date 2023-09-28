@@ -20,7 +20,9 @@ import sys
 from collections import OrderedDict, defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any, Final, Generator, Iterator, Optional, List
+from typing import Any, Final, Generator, Iterator, List, Optional
+
+from tqdm import tqdm
 
 from gridcapacity.backends.subsystems import (
     Bus,
@@ -46,7 +48,6 @@ from gridcapacity.violations_analysis import (
     check_violations,
     run_solver,
 )
-from tqdm import tqdm
 
 from .backends import wrapped_funcs as wf
 from .config import BusConnection, ConnectionScenario
@@ -117,6 +118,7 @@ class CapacityAnalyser:
         connection_scenario: Optional[ConnectionScenario] = None,
     ):
         self._case_name: str = case_name
+        wf.open_case(case_name)
         self._load_power_factor: float = load_power_factor
         self._gen_power_factor: float = gen_power_factor
         self._upper_load_limit_mva: Final[complex] = p_to_mva(
@@ -447,14 +449,36 @@ class CapacityAnalysisStats:
 def sort_connection_scenario(
     connection_scenario: Optional[ConnectionScenario],
 ) -> Optional[SortedConnectionScenario]:
+    """The sorting order is relied on by the `apply_connection_scenario` method."""
     if connection_scenario is None:
         return None
-    return OrderedDict(
-        tuple(
-            (int(k), v)
-            for (k, v) in sorted(connection_scenario.items(), key=lambda kv: int(kv[0]))
+    key_is_integer: bool
+    try:
+        first_key = next(iter(connection_scenario))
+        int(first_key)
+        key_is_integer = True
+    except ValueError:
+        key_is_integer = False
+    if key_is_integer:
+        return OrderedDict(
+            tuple(
+                (int(k), v)
+                for (k, v) in sorted(
+                    connection_scenario.items(), key=lambda kv: int(kv[0])
+                )
+            )
         )
-    )
+    else:
+        connection_scenario_buses = connection_scenario.keys()
+        return OrderedDict(
+            tuple(
+                (bus.number, connection_scenario[bus.number])
+                # When strings are used for the bus "numbers" (possible with PandaPower),
+                # the connection scenario order should be made the same as the buses have.
+                for bus in Buses()
+                if bus.number in connection_scenario_buses
+            )
+        )
 
 
 def buses_headroom(
