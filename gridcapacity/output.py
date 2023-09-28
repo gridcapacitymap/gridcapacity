@@ -116,7 +116,7 @@ def write_exported_data(case_name: str, exported_data: ExportedData) -> None:
 
 def get_output_folder(case_path: Path) -> Path:
     if case_path.is_absolute():
-        return case_path if case_path.is_dir() else case_path.parent
+        return case_path.parent
     else:
         return Path(__file__).absolute().parents[1]
 
