@@ -142,6 +142,26 @@ class TestViolationsAnalysis(unittest.TestCase):
                 Violations.BUS_UNDERVOLTAGE,
                 check_violations(max_trafo_loading_pct=110, min_bus_voltage_pu=1),
             )
+            self.assertEqual(
+                {
+                    1: {
+                        3: [0.9965497100851284],
+                        4: [0.9713180191374471],
+                        5: [0.906023303993857],
+                        7: [0.9867971068362426],
+                        8: [0.937484271617664],
+                        9: [0.9504205281039497],
+                        10: [0.9144496566324744],
+                        11: [0.98],
+                        16: [0.999455971345114],
+                        17: [0.977371597778954],
+                        18: [0.973568068955505],
+                        19: [0.9430062941853239],
+                        20: [0.9353504288240114],
+                    }
+                },
+                ViolationsStats.asdict()[Violations.BUS_UNDERVOLTAGE],
+            )
 
     def test_branch_loading(self) -> None:
         wf.open_case(DEFAULT_CASE)
