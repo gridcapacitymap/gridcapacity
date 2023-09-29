@@ -117,27 +117,42 @@ class TestCapacityAnalysis(unittest.TestCase):
         else:
             self.assertEqual(19, len(CapacityAnalysisStats.feasibility_dict()))
             self.assertEqual(
-                [],
+                [
+                    UnfeasibleCondition(
+                        -80 - 38.74576838702821j,
+                        LimitingFactor(
+                            Violations.BUS_UNDERVOLTAGE,
+                            ss=None,
+                        ),
+                    ),
+                    UnfeasibleCondition(
+                        -40 - 19.372884193514103j,
+                        LimitingFactor(
+                            Violations.BUS_UNDERVOLTAGE,
+                            ss=None,
+                        ),
+                    ),
+                ],
                 CapacityAnalysisStats.feasibility_dict()[
-                    Bus(number=101, ex_name="NUC-A       21.600", type=2)
-                ][0:-1:3],
+                    Bus(number=100, ex_name="21.6 77.0", type=1)
+                ],
             )
 
     def test_loads_avail_mva(self) -> None:
         # zero, average and high values
         if sys.platform == "win32" and not envs.pandapower_backend:
-            load_avail_mva_values = {
-                5: 0,
-                3: 65.625 + 31.783638129984077j,
-                0: 100 + 48.432210483785255j,
-            }
+            load_avail_mva_values = (
+                (5, 0),
+                (3, 65.625 + 31.783638129984077j),
+                (0, 100 + 48.432210483785255j),
+            )
         else:
             load_avail_mva_values = {
-                5: 15.625 + 7.5675328880914465j,
-                3: 18.75 + 9.081039465709736j,
-                0: 100 + 48.432210483785255j,
+                (5, 15.625 + 7.5675328880914465j),
+                (3, 18.75 + 9.081039465709736j),
+                (0, 100 + 48.432210483785255j),
             }
-        for bus_idx, load_avail_mva in load_avail_mva_values.items():
+        for bus_idx, load_avail_mva in load_avail_mva_values:
             with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
                 self.assertEqual(load_avail_mva, self.headroom[bus_idx].load_avail_mva)
 

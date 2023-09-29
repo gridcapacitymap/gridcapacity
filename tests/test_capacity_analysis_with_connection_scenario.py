@@ -95,9 +95,10 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
             },
         )
 
+    # please, take a look at this test: while executing if separately, it fails
     def test_capacity_analysis_stats(self) -> None:
-        self.assertEqual(0, len(CapacityAnalysisStats.contingencies_dict()))
         if sys.platform == "win32" and not envs.pandapower_backend:
+            self.assertEqual(0, len(CapacityAnalysisStats.contingencies_dict()))
             self.assertEqual(17, len(CapacityAnalysisStats.feasibility_dict()))
             self.assertEqual(
                 [
@@ -117,7 +118,7 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
                     ),
                     UnfeasibleCondition(
                         25 + 12.108052620946314j,
-                        lf=LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
                     ),
                 ],
                 CapacityAnalysisStats.feasibility_dict()[
@@ -125,29 +126,61 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
                 ],
             )
         else:
+            self.assertEqual(0, len(CapacityAnalysisStats.contingencies_dict()))
             self.assertEqual(23, len(CapacityAnalysisStats.feasibility_dict()))
             self.assertEqual(
-                [],
+                [
+                    UnfeasibleCondition(
+                        100 + 48.432210483785255j,
+                        LimitingFactor(
+                            Violations.TRAFO_LOADING | Violations.BUS_UNDERVOLTAGE,
+                            ss=None,
+                        ),
+                    ),
+                    UnfeasibleCondition(
+                        50 + 24.216105241892627j,
+                        LimitingFactor(
+                            Violations.BUS_UNDERVOLTAGE,
+                            ss=None,
+                        ),
+                    ),
+                    UnfeasibleCondition(
+                        25 + 12.108052620946314j,
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                    ),
+                    UnfeasibleCondition(
+                        (12.5 + 6.054026310473157j),
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                    ),
+                    UnfeasibleCondition(
+                        (6.25 + 3.0270131552365784j),
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                    ),
+                    UnfeasibleCondition(
+                        (3.125 + 1.5135065776182892j),
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                    ),
+                ],
                 CapacityAnalysisStats.feasibility_dict()[
-                    Bus(number=152, ex_name="MID500      500.00", type=1)
+                    Bus(number=151, ex_name="500.0 1.0", type=1)
                 ],
             )
 
     def test_loads_avail_mva(self) -> None:
         # zero, average and high values
         if sys.platform == "win32" and not envs.pandapower_backend:
-            load_avail_mva_values = {
-                5: 9.375 + 4.540519732854868j,
-                3: 21.875 + 10.594546043328025j,
-                0: 100 + 48.432210483785255j,
-            }
+            load_avail_mva_values = (
+                (5, 9.375 + 4.540519732854868j),
+                (3, 21.875 + 10.594546043328025j),
+                (0, 100 + 48.432210483785255j),
+            )
         else:
-            load_avail_mva_values = {
-                5: 0j,
-                3: 0j,
-                0: 0j,
-            }
-        for bus_idx, load_avail_mva in load_avail_mva_values.items():
+            load_avail_mva_values = (
+                (5, 0j),
+                (3, 0j),
+                (0, 0j),
+            )
+        for bus_idx, load_avail_mva in load_avail_mva_values:
             with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
                 self.assertEqual(load_avail_mva, self.headroom[bus_idx].load_avail_mva)
 
