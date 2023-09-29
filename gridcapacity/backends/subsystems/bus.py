@@ -52,17 +52,23 @@ class BusBase:
         loads_available: bool = True
         try:
             load: Load = next(loads_iterator)
-        except StopIteration:
+        except (StopIteration, KeyError):
             loads_available = False
-        # Buses and loads are sorted by bus number [PSSE API.pdf].
-        # So loads are iterated until load bus number is lower or equal
-        # to the bus number.
-        while loads_available and load.number <= self.number:
+        while loads_available:
+            # Buses and loads are sorted by bus number [PSSE API.pdf].
+            # So PSSE loads are iterated until load bus number is lower or equal
+            # to the bus number.
+            if (
+                sys.platform == "win32"
+                and not envs.pandapower_backend
+                and load.number <= self.number
+            ):
+                break
             if load.number == self.number:
                 actual_load_mva += load.mva_act
             try:
                 load = next(loads_iterator)
-            except StopIteration:
+            except (StopIteration, KeyError):
                 loads_available = False
         return actual_load_mva
 
@@ -73,17 +79,23 @@ class BusBase:
         machines_available: bool = True
         try:
             machine: Machine = next(machines_iterator)
-        except StopIteration:
+        except (StopIteration, KeyError):
             machines_available = False
-        # Buses and machines are sorted by bus number [PSSE API.pdf].
-        # So machines are iterated until machine bus number is lower or equal
-        # to the bus number.
-        while machines_available and machine.number <= self.number:
+        while machines_available:
+            # Buses and machines are sorted by bus number [PSSE API.pdf].
+            # So PSSE machines are iterated until machine bus number is lower or equal
+            # to the bus number.
+            if (
+                sys.platform == "win32"
+                and not envs.pandapower_backend
+                and machine.number <= self.number
+            ):
+                break
             if machine.number == self.number:
                 actual_gen_mva += machine.pq_gen
             try:
                 machine = next(machines_iterator)
-            except StopIteration:
+            except (StopIteration, KeyError):
                 machines_available = False
         return actual_gen_mva
 

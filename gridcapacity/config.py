@@ -16,7 +16,7 @@ limitations under the License.
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, PositiveInt, confloat
 
@@ -45,7 +45,7 @@ class ConfigModel(BaseModel):
     upper_gen_limit_p_mw: NonNegativeFloat
     load_power_factor: Optional[NonNegativeFloat] = 0.9
     gen_power_factor: Optional[NonNegativeFloat] = 0.9
-    selected_buses_ids: Optional[list[NonNegativeInt]]
+    selected_buses_ids: Optional[list[Union[NonNegativeInt, str]]]
     headroom_tolerance_p_mw: Optional[NonNegativeFloat] = 5.0
     solver_opts: Optional[dict] = None
     max_iterations: Optional[PositiveInt] = 10
