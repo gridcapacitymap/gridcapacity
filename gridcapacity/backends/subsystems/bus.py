@@ -61,7 +61,7 @@ class BusBase:
             if (
                 sys.platform == "win32"
                 and not envs.pandapower_backend
-                and load.number <= self.number
+                and self.number < load.number
             ):
                 break
             if load.number == self.number:
@@ -88,7 +88,7 @@ class BusBase:
             if (
                 sys.platform == "win32"
                 and not envs.pandapower_backend
-                and machine.number <= self.number
+                and self.number < machine.number
             ):
                 break
             if machine.number == self.number:
