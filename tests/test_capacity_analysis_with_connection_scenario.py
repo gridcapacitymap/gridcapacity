@@ -56,8 +56,6 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
             else (
                 (2, 6),
                 (3, 7),
-                (3, 16),
-                (4, 5),
                 (4, 18),
                 (5, 8),
                 (5, 20),
@@ -70,6 +68,19 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
             )
             if sys.platform == "win32" and not envs.pandapower_backend
             else ((13, 14), (16, 17))
+        )
+        connection_scenario_buses = (
+            (
+                "3008",
+                "3005",
+                "3011",
+            )
+            if sys.platform == "win32" and not envs.pandapower_backend
+            else (
+                "3007",
+                "3004",
+                "3010",
+            )
         )
         cls.headroom = buses_headroom(
             case_name=DEFAULT_CASE,
@@ -89,16 +100,16 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
                 trafos=tuple(Trafo(*args) for args in trafo_args),
             ),
             connection_scenario={
-                "3008": BusConnection(load=ConnectionPower(80)),
-                "3005": BusConnection(load=ConnectionPower(70)),
-                "3011": BusConnection(gen=ConnectionPower(30)),
+                connection_scenario_buses[0]: BusConnection(load=ConnectionPower(80)),
+                connection_scenario_buses[1]: BusConnection(load=ConnectionPower(70)),
+                connection_scenario_buses[2]: BusConnection(gen=ConnectionPower(30)),
             },
         )
 
     # please, take a look at this test: while executing if separately, it fails
     def test_capacity_analysis_stats(self) -> None:
+        self.assertEqual(0, len(CapacityAnalysisStats.contingencies_dict()))
         if sys.platform == "win32" and not envs.pandapower_backend:
-            self.assertEqual(0, len(CapacityAnalysisStats.contingencies_dict()))
             self.assertEqual(17, len(CapacityAnalysisStats.feasibility_dict()))
             self.assertEqual(
                 [
@@ -124,14 +135,13 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
                 ],
             )
         else:
-            self.assertEqual(0, len(CapacityAnalysisStats.contingencies_dict()))
             self.assertEqual(23, len(CapacityAnalysisStats.feasibility_dict()))
             self.assertEqual(
                 [
                     UnfeasibleCondition(
                         100 + 48.432210483785255j,
                         LimitingFactor(
-                            Violations.TRAFO_LOADING | Violations.BUS_UNDERVOLTAGE,
+                            Violations.BUS_UNDERVOLTAGE,
                         ),
                     ),
                     UnfeasibleCondition(
