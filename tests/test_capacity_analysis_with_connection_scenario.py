@@ -106,19 +106,17 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
                         100 + 48.432210483785255j,
                         LimitingFactor(
                             Violations.BUS_UNDERVOLTAGE,
-                            ss=None,
                         ),
                     ),
                     UnfeasibleCondition(
                         50 + 24.216105241892627j,
                         LimitingFactor(
                             Violations.BUS_UNDERVOLTAGE,
-                            ss=None,
                         ),
                     ),
                     UnfeasibleCondition(
                         25 + 12.108052620946314j,
-                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE),
                     ),
                 ],
                 CapacityAnalysisStats.feasibility_dict()[
@@ -134,31 +132,29 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
                         100 + 48.432210483785255j,
                         LimitingFactor(
                             Violations.TRAFO_LOADING | Violations.BUS_UNDERVOLTAGE,
-                            ss=None,
                         ),
                     ),
                     UnfeasibleCondition(
                         50 + 24.216105241892627j,
                         LimitingFactor(
                             Violations.BUS_UNDERVOLTAGE,
-                            ss=None,
                         ),
                     ),
                     UnfeasibleCondition(
                         25 + 12.108052620946314j,
-                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE),
                     ),
                     UnfeasibleCondition(
                         (12.5 + 6.054026310473157j),
-                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE),
                     ),
                     UnfeasibleCondition(
                         (6.25 + 3.0270131552365784j),
-                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE),
                     ),
                     UnfeasibleCondition(
                         (3.125 + 1.5135065776182892j),
-                        LimitingFactor(Violations.BUS_UNDERVOLTAGE, ss=None),
+                        LimitingFactor(Violations.BUS_UNDERVOLTAGE),
                     ),
                 ],
                 CapacityAnalysisStats.feasibility_dict()[

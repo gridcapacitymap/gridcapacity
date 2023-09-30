@@ -39,7 +39,7 @@ LimitingSubsystem = Union[None, Branch, Trafo]
 @dataclass
 class LimitingFactor:
     v: Violations
-    ss: LimitingSubsystem
+    ss: LimitingSubsystem = None
 
 
 def get_contingency_limiting_factor(

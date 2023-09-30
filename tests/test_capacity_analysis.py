@@ -99,14 +99,12 @@ class TestCapacityAnalysis(unittest.TestCase):
                         -80 - 38.74576838702821j,
                         LimitingFactor(
                             Violations.BUS_UNDERVOLTAGE | Violations.BUS_OVERVOLTAGE,
-                            ss=None,
                         ),
                     ),
                     UnfeasibleCondition(
                         -15 - 7.264831572567789j,
                         LimitingFactor(
                             Violations.BUS_UNDERVOLTAGE | Violations.BUS_OVERVOLTAGE,
-                            ss=None,
                         ),
                     ),
                 ],
@@ -122,14 +120,12 @@ class TestCapacityAnalysis(unittest.TestCase):
                         -80 - 38.74576838702821j,
                         LimitingFactor(
                             Violations.BUS_UNDERVOLTAGE,
-                            ss=None,
                         ),
                     ),
                     UnfeasibleCondition(
                         -40 - 19.372884193514103j,
                         LimitingFactor(
                             Violations.BUS_UNDERVOLTAGE,
-                            ss=None,
                         ),
                     ),
                 ],
