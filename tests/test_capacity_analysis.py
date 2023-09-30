@@ -170,6 +170,19 @@ class TestCapacityAnalysis(unittest.TestCase):
             with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
                 self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)
 
+    def test_violated_bus_count(self) -> None:
+        self.assertEqual(
+            23,
+            len(self.headroom),
+        )
+
+
+class TestCapacityAnalysisBaseCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            init_psse()
+
     def test_raise_not_converged_base_case(self) -> None:
         # expecting RuntimeError Violations.NOT_CONVERGED
         with self.assertRaises(RuntimeError):
@@ -185,9 +198,3 @@ class TestCapacityAnalysis(unittest.TestCase):
                 upper_gen_limit_p_mw=80.0,
                 solver_opts=solver_options,
             )
-
-    def test_violated_bus_count(self) -> None:
-        self.assertEqual(
-            23,
-            len(self.headroom),
-        )
