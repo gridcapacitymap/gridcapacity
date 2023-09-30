@@ -187,18 +187,18 @@ class TestCapacityAnalysisWithConnectionScenario(unittest.TestCase):
     def test_gens_avail_mva(self) -> None:
         # zero, average and high values
         if sys.platform == "win32" and not envs.pandapower_backend:
-            gen_avail_mva_values = {
-                3: 0,
-                12: 80 + 38.74576838702821j,
-                21: 80 + 38.74576838702821j,
-            }
+            gen_avail_mva_values = (
+                (3, 0),
+                (12, 80 + 38.74576838702821j),
+                (21, 80 + 38.74576838702821j),
+            )
         else:
-            gen_avail_mva_values = {
-                3: 0,
-                12: 0j,
-                21: 0j,
-            }
-        for bus_idx, gen_avail_mva in gen_avail_mva_values.items():
+            gen_avail_mva_values = (
+                (3, 0),
+                (12, 0j),
+                (21, 0j),
+            )
+        for bus_idx, gen_avail_mva in gen_avail_mva_values:
             with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
                 self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)
 

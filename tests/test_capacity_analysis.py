@@ -147,11 +147,11 @@ class TestCapacityAnalysis(unittest.TestCase):
                 (0, 100 + 48.432210483785255j),
             )
         else:
-            load_avail_mva_values = {
+            load_avail_mva_values = (
                 (5, 15.625 + 7.5675328880914465j),
                 (3, 18.75 + 9.081039465709736j),
                 (0, 100 + 48.432210483785255j),
-            }
+            )
         for bus_idx, load_avail_mva in load_avail_mva_values:
             with self.subTest(bus_idx=bus_idx, load_avail_mva=load_avail_mva):
                 self.assertEqual(load_avail_mva, self.headroom[bus_idx].load_avail_mva)
@@ -159,18 +159,18 @@ class TestCapacityAnalysis(unittest.TestCase):
     def test_gens_avail_mva(self) -> None:
         # zero, average and high values
         if sys.platform == "win32" and not envs.pandapower_backend:
-            gen_avail_mva_values = {
-                3: 0,
-                12: 25 + 12.108052620946314j,
-                21: 52.5 + 25.42691050398726j,
-            }
+            gen_avail_mva_values = (
+                (3, 0),
+                (12, 25 + 12.108052620946314j),
+                (21, 52.5 + 25.42691050398726j),
+            )
         else:
-            gen_avail_mva_values = {
-                3: 0,
-                12: 45 + 21.794494717703365j,
-                21: 0j,
-            }
-        for bus_idx, gen_avail_mva in gen_avail_mva_values.items():
+            gen_avail_mva_values = (
+                (3, 0),
+                (12, 45 + 21.794494717703365j),
+                (21, 0j),
+            )
+        for bus_idx, gen_avail_mva in gen_avail_mva_values:
             with self.subTest(bus_idx=bus_idx, gen_avail_mva=gen_avail_mva):
                 self.assertEqual(gen_avail_mva, self.headroom[bus_idx].gen_avail_mva)
 
