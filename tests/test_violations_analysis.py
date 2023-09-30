@@ -195,17 +195,14 @@ class TestViolationsAnalysis(unittest.TestCase):
     def test_2w_trafo_loading(self) -> None:
         wf.open_case(DEFAULT_CASE)
         if sys.platform == "win32" and not envs.pandapower_backend:
-            self.assertEqual(Violations.TRAFO_LOADING, check_violations())
-            self.assertEqual(
-                {100.0: {6: [102.952880859375]}},
-                ViolationsStats.asdict()[Violations.TRAFO_LOADING],
-            )
+            violated_values = 102.952880859375
         else:
-            self.assertEqual(Violations.TRAFO_LOADING, check_violations())
-            self.assertEqual(
-                {100.0: {6: [107.74284564774533]}},
-                ViolationsStats.asdict()[Violations.TRAFO_LOADING],
-            )
+            violated_values = 107.74284564774533
+        self.assertEqual(Violations.TRAFO_LOADING, check_violations())
+        self.assertEqual(
+            {100.0: {6: [violated_values]}},
+            ViolationsStats.asdict()[Violations.TRAFO_LOADING],
+        )
 
     @unittest.skipIf(
         envs.pandapower_backend,
