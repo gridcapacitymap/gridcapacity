@@ -15,9 +15,13 @@ limitations under the License.
 """
 import os
 import sys
+import unittest
 from typing import Final
 
 from ...envs import envs
+
+if sys.platform != "win32" or envs.pandapower_backend:
+    raise unittest.SkipTest("This module should not be imported for PandaPower tests")
 
 assert sys.platform == "win32"
 
