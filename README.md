@@ -107,7 +107,7 @@ python -m build .
 
 ## Usage with docker
 
-Possilbe with `pandapower` backend. Example with included test case follows
+Possible with `pandapower` backend. Example with included test case follows
 
 ```
 # build docker image (once)

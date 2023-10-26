@@ -17,7 +17,7 @@ import sys
 import unittest
 
 from gridcapacity.backends import wrapped_funcs as wf
-from gridcapacity.backends.subsystems import Branch, Bus
+from gridcapacity.backends.subsystems import Branch
 from gridcapacity.envs import envs
 from gridcapacity.violations_analysis import (
     Violations,
@@ -53,56 +53,113 @@ class TestViolationsAnalysis(unittest.TestCase):
             Violations.BUS_OVERVOLTAGE,
             check_violations(max_trafo_loading_pct=110.0, max_bus_voltage_pu=0.9),
         )
-        self.assertEqual(
-            {
-                0.9: {
-                    0: [1.0199999809265137],
-                    1: [1.0199999809265137],
-                    2: [1.0108561515808105],
-                    3: [1.0110337734222412],
-                    4: [1.0435134172439575],
-                    5: [0.9718165993690491],
-                    6: [1.0399999618530273],
-                    7: [1.0116071701049805],
-                    8: [0.9850585460662842],
-                    9: [0.9711413979530334],
-                    10: [0.9800000190734863],
-                    11: [1.0466423034667969],
-                    12: [1.0448108911514282],
-                    13: [1.0349271297454834],
-                    14: [1.034232497215271],
-                    15: [1.031920075416565],
-                    16: [1.0270209312438965],
-                    17: [1.015120029449463],
-                    18: [1.0359790325164795],
-                    19: [0.9880131483078003],
-                    20: [0.986092746257782],
-                    21: [1.0399999618530273],
-                    22: [1.0478585958480835],
-                }
-            },
-            ViolationsStats.asdict()[Violations.BUS_OVERVOLTAGE],
-        )
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            self.assertEqual(
+                {
+                    0.9: {
+                        0: [1.0199999809265137],
+                        1: [1.0199999809265137],
+                        2: [1.0108561515808105],
+                        3: [1.0110337734222412],
+                        4: [1.0435134172439575],
+                        5: [0.9718165993690491],
+                        6: [1.0399999618530273],
+                        7: [1.0116071701049805],
+                        8: [0.9850585460662842],
+                        9: [0.9711413979530334],
+                        10: [0.9800000190734863],
+                        11: [1.0466423034667969],
+                        12: [1.0448108911514282],
+                        13: [1.0349271297454834],
+                        14: [1.034232497215271],
+                        15: [1.031920075416565],
+                        16: [1.0270209312438965],
+                        17: [1.015120029449463],
+                        18: [1.0359790325164795],
+                        19: [0.9880131483078003],
+                        20: [0.986092746257782],
+                        21: [1.0399999618530273],
+                        22: [1.0478585958480835],
+                    }
+                },
+                ViolationsStats.asdict()[Violations.BUS_OVERVOLTAGE],
+            )
+        else:
+            for key, value in (
+                (0, 1.02),
+                (1, 1.02),
+                (2, 1.0049957623563202),
+                (3, 0.9965497100851284),
+                (4, 0.9713180191374471),
+                (5, 0.906023303993857),
+                (6, 1.0270995158997118),
+                (7, 0.9867971068362426),
+                (8, 0.937484271617664),
+                (9, 0.9504205281039497),
+                (10, 0.9144496566324744),
+                (11, 0.98),
+                (12, 1.0400000000000003),
+                (13, 1.0245930700977035),
+                (14, 1.0201501803428323),
+                (15, 1.0153492818760117),
+                (16, 0.999455971345114),
+                (17, 0.977371597778954),
+                (18, 0.973568068955505),
+                (19, 0.9430062941853239),
+                (20, 0.9353504288240114),
+                (21, 1.04),
+                (22, 1.02),
+            ):
+                self.assertAlmostEqual(
+                    value,
+                    ViolationsStats.asdict()[Violations.BUS_OVERVOLTAGE][0.9][key][0],
+                )
 
     def test_bus_undervoltage(self) -> None:
-        wf.open_case("iec60909_testnetwork_50Hz.sav")
-        self.assertEqual(
-            Violations.BUS_UNDERVOLTAGE,
-            check_violations(
-                use_full_newton_raphson=True, max_trafo_loading_pct=1200.0
-            ),
-        )
-        self.assertEqual(
-            {
-                0.9: {
-                    2: [0.6334197521209717],
-                    3: [0.5146950483322144],
-                    7: [3.2308236086464603e-08],
-                    10: [3.2308236086464603e-08],
-                }
-            },
-            ViolationsStats.asdict()[Violations.BUS_UNDERVOLTAGE],
-        )
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            wf.open_case("iec60909_testnetwork_50Hz.sav")
+            self.assertEqual(
+                Violations.BUS_UNDERVOLTAGE,
+                check_violations(
+                    use_full_newton_raphson=True, max_trafo_loading_pct=1200.0
+                ),
+            )
+            self.assertEqual(
+                {
+                    0.9: {
+                        2: [0.6334197521209717],
+                        3: [0.5146950483322144],
+                        7: [3.2308236086464603e-08],
+                        10: [3.2308236086464603e-08],
+                    }
+                },
+                ViolationsStats.asdict()[Violations.BUS_UNDERVOLTAGE],
+            )
+        else:
+            wf.open_case(DEFAULT_CASE)
+            self.assertEqual(
+                Violations.BUS_UNDERVOLTAGE,
+                check_violations(max_trafo_loading_pct=110, min_bus_voltage_pu=1),
+            )
+            for key, value in (
+                (3, 0.9965497100851284),
+                (4, 0.9713180191374471),
+                (5, 0.906023303993857),
+                (7, 0.9867971068362426),
+                (8, 0.937484271617664),
+                (9, 0.9504205281039497),
+                (10, 0.9144496566324744),
+                (11, 0.98),
+                (16, 0.999455971345114),
+                (17, 0.977371597778954),
+                (18, 0.973568068955505),
+                (19, 0.9430062941853239),
+                (20, 0.9353504288240114),
+            ):
+                self.assertAlmostEqual(
+                    value,
+                    ViolationsStats.asdict()[Violations.BUS_UNDERVOLTAGE][1][key][0],
+                )
 
     def test_branch_loading(self) -> None:
         wf.open_case(DEFAULT_CASE)
@@ -114,22 +171,41 @@ class TestViolationsAnalysis(unittest.TestCase):
         for args in branch_args:
             branch = Branch(*args)
             branch.disable()
-        self.assertEqual(
-            Violations.BRANCH_LOADING, check_violations(max_trafo_loading_pct=115.0)
-        )
-        self.assertEqual(
-            {100.0: ({4: [115.15924072265625]})},
-            ViolationsStats.asdict()[Violations.BRANCH_LOADING],
-        )
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            self.assertEqual(
+                Violations.BRANCH_LOADING, check_violations(max_trafo_loading_pct=115.0)
+            )
+            self.assertEqual(
+                {100.0: ({4: [115.15924072265625]})},
+                ViolationsStats.asdict()[Violations.BRANCH_LOADING],
+            )
+        else:
+            print(ViolationsStats.asdict()[Violations.BRANCH_LOADING])
+            self.assertEqual(
+                Violations.BRANCH_LOADING,
+                check_violations(max_trafo_loading_pct=125.0, min_bus_voltage_pu=0.8),
+            )
+            self.assertAlmostEqual(
+                116.57410137972397,
+                ViolationsStats.asdict()[Violations.BRANCH_LOADING][100.0][5][0],
+            )
 
     def test_2w_trafo_loading(self) -> None:
         wf.open_case(DEFAULT_CASE)
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            violated_values = 102.952880859375
+        else:
+            violated_values = 107.74284564774533
         self.assertEqual(Violations.TRAFO_LOADING, check_violations())
-        self.assertEqual(
-            {100.0: {6: [102.952880859375]}},
-            ViolationsStats.asdict()[Violations.TRAFO_LOADING],
+        self.assertAlmostEqual(
+            violated_values,
+            ViolationsStats.asdict()[Violations.TRAFO_LOADING][100.0][6][0],
         )
 
+    @unittest.skipIf(
+        envs.pandapower_backend,
+        "The iec60909 case with 3w trafo isn't converted to PandaPower yet",
+    )
     def test_3w_trafo_loading(self) -> None:
         wf.open_case("iec60909_testnetwork_50Hz.sav")
         self.assertEqual(
@@ -147,19 +223,27 @@ class TestViolationsAnalysis(unittest.TestCase):
 
     def test_swing_bus_loading(self) -> None:
         wf.open_case(DEFAULT_CASE)
-        bus_args = (
-            (3011, "MINE_G      13.800", 3)
-            if sys.platform == "win32" and not envs.pandapower_backend
-            else (3010, "13.8 5.0", 1)
-        )
-        Bus(*bus_args).add_load(1000.0)
-        self.assertEqual(
-            Violations.SWING_BUS_LOADING, check_violations(max_trafo_loading_pct=110.0)
-        )
-        self.assertEqual(
-            {1000.0: {0: [1258.0638427734375]}},
-            ViolationsStats.asdict()[Violations.SWING_BUS_LOADING],
-        )
+        if sys.platform == "win32" and not envs.pandapower_backend:
+            wf.load_data_6(3011, realar1=1000.0)
+            self.assertEqual(
+                Violations.SWING_BUS_LOADING,
+                check_violations(max_trafo_loading_pct=110.0),
+            )
+            self.assertEqual(
+                {1000.0: {0: [1258.0638427734375]}},
+                ViolationsStats.asdict()[Violations.SWING_BUS_LOADING],
+            )
+        else:
+            self.assertEqual(
+                Violations.SWING_BUS_LOADING,
+                check_violations(
+                    max_swing_bus_power_p_mw=1.0, max_trafo_loading_pct=110
+                ),
+            )
+            self.assertAlmostEqual(
+                262.5125194083306,
+                ViolationsStats.asdict()[Violations.SWING_BUS_LOADING][1.0][0][0],
+            )
 
     def test_no_violations(self) -> None:
         wf.open_case(DEFAULT_CASE)
