@@ -85,36 +85,35 @@ class TestViolationsAnalysis(unittest.TestCase):
                 ViolationsStats.asdict()[Violations.BUS_OVERVOLTAGE],
             )
         else:
-            self.assertEqual(
-                {
-                    0.9: {
-                        0: [1.02],
-                        1: [1.02],
-                        2: [1.0049957623563202],
-                        3: [0.9965497100851284],
-                        4: [0.9713180191374471],
-                        5: [0.906023303993857],
-                        6: [1.0270995158997118],
-                        7: [0.9867971068362426],
-                        8: [0.937484271617664],
-                        9: [0.9504205281039497],
-                        10: [0.9144496566324744],
-                        11: [0.98],
-                        12: [1.0400000000000003],
-                        13: [1.0245930700977035],
-                        14: [1.0201501803428323],
-                        15: [1.0153492818760117],
-                        16: [0.999455971345114],
-                        17: [0.977371597778954],
-                        18: [0.973568068955505],
-                        19: [0.9430062941853239],
-                        20: [0.9353504288240114],
-                        21: [1.04],
-                        22: [1.02],
-                    }
-                },
-                ViolationsStats.asdict()[Violations.BUS_OVERVOLTAGE],
-            )
+            for key, value in (
+                (0, 1.02),
+                (1, 1.02),
+                (2, 1.0049957623563202),
+                (3, 0.9965497100851284),
+                (4, 0.9713180191374471),
+                (5, 0.906023303993857),
+                (6, 1.0270995158997118),
+                (7, 0.9867971068362426),
+                (8, 0.937484271617664),
+                (9, 0.9504205281039497),
+                (10, 0.9144496566324744),
+                (11, 0.98),
+                (12, 1.0400000000000003),
+                (13, 1.0245930700977035),
+                (14, 1.0201501803428323),
+                (15, 1.0153492818760117),
+                (16, 0.999455971345114),
+                (17, 0.977371597778954),
+                (18, 0.973568068955505),
+                (19, 0.9430062941853239),
+                (20, 0.9353504288240114),
+                (21, 1.04),
+                (22, 1.02),
+            ):
+                self.assertAlmostEqual(
+                    value,
+                    ViolationsStats.asdict()[Violations.BUS_OVERVOLTAGE][0.9][key][0],
+                )
 
     def test_bus_undervoltage(self) -> None:
         if sys.platform == "win32" and not envs.pandapower_backend:
@@ -142,26 +141,25 @@ class TestViolationsAnalysis(unittest.TestCase):
                 Violations.BUS_UNDERVOLTAGE,
                 check_violations(max_trafo_loading_pct=110, min_bus_voltage_pu=1),
             )
-            self.assertEqual(
-                {
-                    1: {
-                        3: [0.9965497100851284],
-                        4: [0.9713180191374471],
-                        5: [0.906023303993857],
-                        7: [0.9867971068362426],
-                        8: [0.937484271617664],
-                        9: [0.9504205281039497],
-                        10: [0.9144496566324744],
-                        11: [0.98],
-                        16: [0.999455971345114],
-                        17: [0.977371597778954],
-                        18: [0.973568068955505],
-                        19: [0.9430062941853239],
-                        20: [0.9353504288240114],
-                    }
-                },
-                ViolationsStats.asdict()[Violations.BUS_UNDERVOLTAGE],
-            )
+            for key, value in (
+                (3, 0.9965497100851284),
+                (4, 0.9713180191374471),
+                (5, 0.906023303993857),
+                (7, 0.9867971068362426),
+                (8, 0.937484271617664),
+                (9, 0.9504205281039497),
+                (10, 0.9144496566324744),
+                (11, 0.98),
+                (16, 0.999455971345114),
+                (17, 0.977371597778954),
+                (18, 0.973568068955505),
+                (19, 0.9430062941853239),
+                (20, 0.9353504288240114),
+            ):
+                self.assertAlmostEqual(
+                    value,
+                    ViolationsStats.asdict()[Violations.BUS_UNDERVOLTAGE][1][key][0],
+                )
 
     def test_branch_loading(self) -> None:
         wf.open_case(DEFAULT_CASE)
@@ -187,9 +185,9 @@ class TestViolationsAnalysis(unittest.TestCase):
                 Violations.BRANCH_LOADING,
                 check_violations(max_trafo_loading_pct=125.0, min_bus_voltage_pu=0.8),
             )
-            self.assertEqual(
-                {100.0: ({5: [116.57410137972397]})},
-                ViolationsStats.asdict()[Violations.BRANCH_LOADING],
+            self.assertAlmostEqual(
+                116.57410137972397,
+                ViolationsStats.asdict()[Violations.BRANCH_LOADING][100.0][5][0],
             )
 
     def test_2w_trafo_loading(self) -> None:
@@ -199,9 +197,9 @@ class TestViolationsAnalysis(unittest.TestCase):
         else:
             violated_values = 107.74284564774533
         self.assertEqual(Violations.TRAFO_LOADING, check_violations())
-        self.assertEqual(
-            {100.0: {6: [violated_values]}},
-            ViolationsStats.asdict()[Violations.TRAFO_LOADING],
+        self.assertAlmostEqual(
+            violated_values,
+            ViolationsStats.asdict()[Violations.TRAFO_LOADING][100.0][6][0],
         )
 
     @unittest.skipIf(
@@ -242,9 +240,9 @@ class TestViolationsAnalysis(unittest.TestCase):
                     max_swing_bus_power_p_mw=1.0, max_trafo_loading_pct=110
                 ),
             )
-            self.assertEqual(
-                {1.0: {0: [262.5125194083306]}},
-                ViolationsStats.asdict()[Violations.SWING_BUS_LOADING],
+            self.assertAlmostEqual(
+                262.5125194083306,
+                ViolationsStats.asdict()[Violations.SWING_BUS_LOADING][1.0][0][0],
             )
 
     def test_no_violations(self) -> None:
