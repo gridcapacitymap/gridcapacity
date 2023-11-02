@@ -27,8 +27,8 @@ jobs:
         pipenv install --skip-lock --dev
     - name: Check formatting
       run: |
-        isort . --check
-        black . --check
+        pipenv run isort . --check
+        pipenv run black . --check
     - name: Test with unittest
       run: |
         export GRID_CAPACITY_PANDAPOWER_BACKEND=1
